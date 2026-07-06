@@ -1,4 +1,6 @@
+
 #!/usr/bin/env python3
+
 """Daily WSB attention archiver.
 - ApeWisdom: top ~300 (3 pages) for wallstreetbets + all-stocks -> data/apewisdom/{UTC date}.json
   Same UTC day overwrites: the last run of the day (23:45 UTC cron) becomes the daily record;
