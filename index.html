@@ -76,6 +76,10 @@ a{color:var(--blue);text-decoration:none}
 
     <h2>研究篮子今日席位</h2>
     <table id="baskT"><thead><tr><th class="num">榜位</th><th>代码</th><th class="num">提及</th><th class="num">Δ 24h</th><th class="num">点赞</th></tr></thead><tbody></tbody></table>
+
+    <h2>完整榜单 <span id="fullCount" style="font-weight:400;font-size:13px;color:var(--ink3)"></span></h2>
+    <table id="fullT"><thead><tr><th class="num">榜位</th><th>代码</th><th class="num">提及</th><th class="num">Δ 24h</th><th class="num">点赞</th></tr></thead><tbody></tbody></table>
+    <button id="moreBtn" style="margin-top:10px;font:inherit;font-size:13px;padding:7px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">展开全部</button>
   </div>
   <footer>
     数据:<a href="https://apewisdom.io" target="_blank" rel="noopener">ApeWisdom</a>(r/wallstreetbets 提及量,24 小时滚动)· 由 <a id="repoLink" href="#" target="_blank" rel="noopener">wsb-attention-archiver</a> 每日两次自动归档 · 档案存满 21 天后自动启用 spike 标注
@@ -127,6 +131,25 @@ async function spikeFlags(day){
 
 function fmtD(n){ return (n>0?'+':'') + n; }
 
+let fullN = 50, curRows = [], curFlags = null;
+function renderFull(){
+  const rows = curRows, flags = curFlags;
+  const n = Math.min(fullN, rows.length);
+  document.getElementById('fullCount').textContent = `· 显示 ${n} / ${rows.length}`;
+  document.querySelector('#fullT tbody').innerHTML = rows.slice(0,n).map(r=>{
+    const d24 = r.mentions - r.mentions_24h_ago;
+    const nm = String(r.name||'').replace(/"/g,'&quot;');
+    return `<tr><td class="num">${r.rank}</td>
+      <td><span class="tick" title="${nm}">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge">篮子</span>':''}${flags&&flags[r.ticker]?'<span class="badge spike">spike</span>':''}</td>
+      <td class="num">${r.mentions}</td>
+      <td class="num ${d24>=0?'up':'dn'}">${fmtD(d24)}</td>
+      <td class="num">${r.upvotes}</td></tr>`;}).join('');
+  const btn = document.getElementById('moreBtn');
+  btn.style.display = rows.length > 50 ? '' : 'none';
+  btn.textContent = fullN >= rows.length ? '收起到 Top 50' : `展开全部 ${rows.length}`;
+}
+document.getElementById('moreBtn').onclick = ()=>{ fullN = (fullN >= curRows.length) ? 50 : curRows.length; renderFull(); };
+
 async function render(day){
   document.getElementById('status').style.display='block';
   document.getElementById('app').style.display='none';
@@ -172,6 +195,8 @@ async function render(day){
     : '<p class="note">今日无满足条件的飙升。</p>';
   const wd = new Date(day+'T12:00:00Z').getUTCDay();
   document.getElementById('wkNote').textContent = (wd===1) ? '注:周一的 24h 对照基准是周日的清淡水位,增量普遍虚高,阅读时打折。' : '';
+
+  curRows = rows; curFlags = flags; fullN = 50; renderFull();
 
   document.querySelector('#baskT tbody').innerHTML = bask.map(r=>{
     const d24 = r.mentions - r.mentions_24h_ago;
