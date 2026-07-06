@@ -1,0 +1,21 @@
+name: Backfill historical data (one-off)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import tracker archive
+        run: python3 scripts/backfill.py
+      - name: Commit & push
+        run: |
+          git config user.name "wsb-archiver-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/
+          git diff --staged --quiet && echo "no changes" || \
+            (git commit -m "backfill: import apewisdom-tracker history" && git push)
