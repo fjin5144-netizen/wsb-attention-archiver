@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WSB 注意力简报</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#faf9f5;--card:#ffffff;--ink:#141413;--ink2:#5f5e5a;--ink3:#898781;--line:#e1e0d9;--blue:#2a78d6;--green:#1baf7a;--amber:#ba7517;--red:#a32d2d;--chip:#eef4fc}
+@media (prefers-color-scheme:dark){:root{--bg:#161615;--card:#1f1f1e;--ink:#f2f1ec;--ink2:#c3c2b7;--ink3:#898781;--line:#2c2c2a;--blue:#3987e5;--green:#199e70;--amber:#eda100;--red:#e66767;--chip:#12233a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:28px 18px 60px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:6px}
+h1{font-size:22px;font-weight:600;margin:0}
+select{font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+.sub{font-size:13px;color:var(--ink3);margin:0 0 20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card .k{font-size:12px;color:var(--ink3);margin-bottom:2px}
+.card .v{font-size:21px;font-weight:600}
+h2{font-size:16px;font-weight:600;margin:28px 0 10px}
+.chartbox{position:relative;width:100%}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--ink2);margin-top:6px}
+.legend span{display:flex;align-items:center;gap:5px}
+.sq{width:10px;height:10px;border-radius:2px;display:inline-block}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:12px;color:var(--ink3);font-weight:500;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--line)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tick{font-weight:600}
+.badge{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--chip);color:var(--blue);margin-left:6px;vertical-align:1px}
+.badge.spike{background:rgba(227,73,72,.12);color:var(--red)}
+.up{color:var(--green)}.dn{color:var(--red)}
+.note{font-size:12.5px;color:var(--ink3);margin-top:8px}
+.mov{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px}
+.mov .card{padding:10px 14px}
+.mov .r{font-size:13px;color:var(--ink2)}
+footer{margin-top:44px;font-size:12.5px;color:var(--ink3);border-top:1px solid var(--line);padding-top:14px}
+a{color:var(--blue);text-decoration:none}
+#status{font-size:14px;color:var(--ink3);padding:30px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>WSB 注意力简报</h1>
+    <select id="daySel"></select>
+  </header>
+  <p class="sub" id="meta">加载中…</p>
+  <div id="status">正在读取档案…</div>
+  <div id="app" style="display:none">
+    <div class="cards">
+      <div class="card"><div class="k">今日榜首</div><div class="v" id="cTop">—</div></div>
+      <div class="card"><div class="k">研究篮子进榜(top 300)</div><div class="v" id="cBask">—</div></div>
+      <div class="card"><div class="k">Mention spike(≥3× 20日中位)</div><div class="v" id="cSpk">—</div></div>
+    </div>
+
+    <h2>提及量 Top 15</h2>
+    <div class="chartbox" id="chartWrap"><canvas id="cv" role="img" aria-label="WSB 提及量前 15 横向柱状图"></canvas></div>
+    <div class="legend">
+      <span><span class="sq" style="background:var(--blue)"></span>全市场热门</span>
+      <span><span class="sq" style="background:var(--green)"></span>研究篮子成员</span>
+      <span><span class="sq" style="background:var(--red)"></span>今日 spike</span>
+    </div>
+
+    <div id="spikeSec" style="display:none">
+      <h2>今日 mention spike</h2>
+      <div class="mov" id="spikeList"></div>
+      <p class="note">定义:当日提及 ≥ 30 且 ≥ 3 × 过去 20 个归档日的中位数(近似日历日窗口,与研究中的交易日窗口略有差异)。</p>
+    </div>
+
+    <h2>排名飙升(24h 内爬升 ≥ 15 位进入前 50)</h2>
+    <div class="mov" id="climbers"></div>
+    <p class="note" id="wkNote"></p>
+
+    <h2>研究篮子今日席位</h2>
+    <table id="baskT"><thead><tr><th class="num">榜位</th><th>代码</th><th class="num">提及</th><th class="num">Δ 24h</th><th class="num">点赞</th></tr></thead><tbody></tbody></table>
+  </div>
+  <footer>
+    数据:<a href="https://apewisdom.io" target="_blank" rel="noopener">ApeWisdom</a>(r/wallstreetbets 提及量,24 小时滚动)· 由 <a id="repoLink" href="#" target="_blank" rel="noopener">wsb-attention-archiver</a> 每日两次自动归档 · 档案存满 21 天后自动启用 spike 标注
+  </footer>
+</div>
+<script>
+const OWNER = location.hostname.split('.')[0] || 'fjin5144-netizen';
+const REPO  = (location.pathname.split('/')[1]) || 'wsb-attention-archiver';
+document.getElementById('repoLink').href = `https://github.com/${OWNER}/${REPO}`;
+const BASKET = new Set(["GME","AMC","MSTR","PLTR","RKLB","SOFI","TSLA","NVDA","AMD","INTC","HOOD","COIN","RDDT","SMCI","IONQ","RGTI","QUBT","BBAI","SOUN","AI","CRWV","NBIS","TEM","ACHR","JOBY","LUNR","ASTS","SPCE","OKLO","SMR","MARA","RIOT","CLSK","WULF","DJT","OPEN","CVNA","UPST","AFRM","HIMS","TLRY","RUM","QS","BB","NOK","NIO","RIVN","LCID","PLUG","W","NVAX"]);
+const dark = matchMedia('(prefers-color-scheme:dark)').matches;
+const C = {blue: dark?'#3987e5':'#2a78d6', green: dark?'#199e70':'#1baf7a', red: dark?'#e66767':'#e24b4a', grid: dark?'#2c2c2a':'#e1e0d9', muted:'#898781'};
+let dates = [], cache = {}, chart = null;
+
+async function getJSON(u){ const r = await fetch(u); if(!r.ok) throw 0; return r.json(); }
+async function loadDay(d){ if(!cache[d]) cache[d] = await getJSON(`data/apewisdom/${d}.json`); return cache[d]; }
+
+async function listDates(){
+  try{
+    const j = await getJSON(`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/apewisdom`);
+    return j.map(x=>x.name.replace('.json','')).filter(n=>/^\d{4}-\d{2}-\d{2}$/.test(n)).sort();
+  }catch(e){
+    const out=[], t=new Date();
+    for(let i=0;i<35;i++){
+      const s = t.toISOString().slice(0,10);
+      try{ cache[s] = await getJSON(`data/apewisdom/${s}.json`); out.push(s);}catch(_){}
+      t.setUTCDate(t.getUTCDate()-1);
+    }
+    return out.sort();
+  }
+}
+
+function rowsOf(day){ return (cache[day] && cache[day].filters && cache[day].filters.wallstreetbets) || []; }
+
+async function spikeFlags(day){
+  const i = dates.indexOf(day);
+  if(i < 20) return null;
+  const win = dates.slice(i-20, i);
+  await Promise.all(win.map(loadDay));
+  const hist = win.map(d => { const m={}; rowsOf(d).forEach(r=>m[r.ticker]=r.mentions); return m; });
+  const flags = {};
+  for(const r of rowsOf(day)){
+    const vals = hist.map(h => h[r.ticker]||0).sort((a,b)=>a-b);
+    const med = (vals[9]+vals[10])/2;
+    if(r.mentions >= 30 && r.mentions >= 3*Math.max(med,1)) flags[r.ticker] = {med: Math.round(med*10)/10};
+  }
+  return flags;
+}
+
+function fmtD(n){ return (n>0?'+':'') + n; }
+
+async function render(day){
+  document.getElementById('status').style.display='block';
+  document.getElementById('app').style.display='none';
+  document.getElementById('status').textContent='正在读取 '+day+' …';
+  const snap = await loadDay(day);
+  const rows = rowsOf(day);
+  const flags = await spikeFlags(day);
+
+  document.getElementById('meta').textContent = `快照时间 ${snap.fetched_at.replace('T',' ').slice(0,16)} UTC · 覆盖 ${rows.length} 只 · 档案共 ${dates.length} 天`;
+  document.getElementById('cTop').textContent = rows.length ? `${rows[0].ticker} · ${rows[0].mentions}` : '—';
+  const bask = rows.filter(r=>BASKET.has(r.ticker));
+  document.getElementById('cBask').textContent = `${bask.length} / ${BASKET.size} 只`;
+  document.getElementById('cSpk').textContent = flags===null ? `还差 ${21-dates.indexOf(day)-1} 天解锁` : `${Object.keys(flags).length} 只`;
+
+  const top = rows.slice(0,15);
+  document.getElementById('chartWrap').style.height = (top.length*36+70)+'px';
+  if(chart) chart.destroy();
+  chart = new Chart(document.getElementById('cv'), {
+    type:'bar',
+    data:{ labels: top.map(r=>r.ticker), datasets:[{ data: top.map(r=>r.mentions),
+      backgroundColor: top.map(r=> flags&&flags[r.ticker] ? C.red : BASKET.has(r.ticker) ? C.green : C.blue),
+      borderRadius:{topRight:4,bottomRight:4}, maxBarThickness:22 }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, animation:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.parsed.x+' 次提及'}}},
+      scales:{ x:{grid:{color:C.grid}, ticks:{color:C.muted,precision:0}},
+               y:{grid:{display:false}, ticks:{color:C.muted,font:{weight:'600'}}} }}
+  });
+
+  const spikeSec = document.getElementById('spikeSec');
+  if(flags && Object.keys(flags).length){
+    spikeSec.style.display='block';
+    const list = rows.filter(r=>flags[r.ticker]).slice(0,12);
+    document.getElementById('spikeList').innerHTML = list.map(r=>
+      `<div class="card"><span class="tick">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge">篮子</span>':''}
+       <div class="r">${r.mentions} 提及 · 20日中位 ${flags[r.ticker].med} · 榜位 ${r.rank}</div></div>`).join('');
+  } else spikeSec.style.display='none';
+
+  const cl = rows.filter(r=>r.rank<=50 && r.rank_24h_ago && (r.rank_24h_ago-r.rank)>=15)
+                 .sort((a,b)=>a.rank-b.rank).slice(0,8);
+  document.getElementById('climbers').innerHTML = cl.length ? cl.map(r=>
+    `<div class="card"><span class="tick">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge">篮子</span>':''}
+     <div class="r">${r.rank_24h_ago} → ${r.rank} 位 · 提及 ${r.mentions_24h_ago} → ${r.mentions}</div></div>`).join('')
+    : '<p class="note">今日无满足条件的飙升。</p>';
+  const wd = new Date(day+'T12:00:00Z').getUTCDay();
+  document.getElementById('wkNote').textContent = (wd===1) ? '注:周一的 24h 对照基准是周日的清淡水位,增量普遍虚高,阅读时打折。' : '';
+
+  document.querySelector('#baskT tbody').innerHTML = bask.map(r=>{
+    const d24 = r.mentions - r.mentions_24h_ago;
+    return `<tr><td class="num">${r.rank}</td>
+      <td><span class="tick">${r.ticker}</span>${flags&&flags[r.ticker]?'<span class="badge spike">spike</span>':''}</td>
+      <td class="num">${r.mentions}</td>
+      <td class="num ${d24>=0?'up':'dn'}">${fmtD(d24)}</td>
+      <td class="num">${r.upvotes}</td></tr>`;}).join('')
+    || '<tr><td colspan="5" class="note">今日篮子成员均未进入 top 300。</td></tr>';
+
+  document.getElementById('status').style.display='none';
+  document.getElementById('app').style.display='block';
+}
+
+(async ()=>{
+  try{
+    dates = await listDates();
+    if(!dates.length){ document.getElementById('status').textContent='还没有档案数据——等第一次归档跑完再来。'; return; }
+    const sel = document.getElementById('daySel');
+    sel.innerHTML = dates.slice().reverse().map(d=>`<option value="${d}">${d}</option>`).join('');
+    sel.onchange = ()=>render(sel.value);
+    await render(dates[dates.length-1]);
+  }catch(e){
+    document.getElementById('status').textContent='加载失败:'+e;
+  }
+})();
+</script>
+</body>
+</html>
