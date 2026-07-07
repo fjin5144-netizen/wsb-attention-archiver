@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Daily WSB attention archiver (v3).
+"""Daily WSB attention archiver (v3.1).
 - ApeWisdom: top ~300 (3 pages) for wallstreetbets + all-stocks -> data/apewisdom/{UTC date}.json
   Same UTC day overwrites: the last run of the day (23:45 UTC cron) becomes the daily record;
   the midday run is a fallback so a failed late run still leaves a partial-day snapshot.
 - Tradestie revival probe: if api.tradestie.com ever answers again, capture it automatically
   -> data/tradestie/{UTC date}.json
-- v3: systemic-risk gauges -> data/risk.json
+- v3.1: systemic-risk gauges -> data/risk.json
   * ^SKEW: full 2y daily refresh each run (self-healing; frontend merges with its inline seed)
-  * SPY GEX (naive dealer gamma, first 8 expiries, calls +, puts -): appended per UTC day,
+  * SPY GEX (naive dealer gamma, nearest 8 expiries, calls +, puts -): appended per UTC day,
     same-day runs overwrite so intraday refreshes stay hour-fresh.
-  Yahoo options need the cookie+crumb dance; if it fails, risk.json keeps old values untouched.
+  Sources: CBOE public CDN primary (GitHub-runner friendly), Yahoo fallback
+  (Yahoo rejects Azure/GitHub IPs as of 2026-07). Every run also writes
+  data/risk_status.json with per-source diagnostics for remote debugging.
 Stdlib only. Exit code 0 even on partial failure (Actions should still commit what succeeded).
 """
 import json, time, os, sys, math, datetime as dt
@@ -66,7 +68,91 @@ def probe_tradestie(day_mmddyyyy):
     print("  tradestie: still dead")
     return None
 
-# ---------------- v3: systemic-risk gauges ----------------
+# ---------------- v3.1: systemic-risk gauges ----------------
+CBOE = "https://cdn.cboe.com/api/global"
+STATUS = {"ver": "3.1"}
+
+def get_retry(url, tries=3, timeout=30):
+    last = None
+    for i in range(tries):
+        try:
+            return get(url, timeout=timeout)
+        except Exception as e:
+            last = e; time.sleep(2 + 4 * i)
+    raise last
+
+def cboe_skew_2y():
+    """SKEW daily history CSV from CBOE. Header row located by 'DATE'; last numeric col = value."""
+    raw = get_retry(f"{CBOE}/us_indices/daily_prices/SKEW_History.csv", timeout=40)
+    lines = [l.strip() for l in raw.splitlines() if l.strip()]
+    start = next(i for i, l in enumerate(lines) if l.upper().startswith("DATE"))
+    cutoff = (dt.date.today() - dt.timedelta(days=730)).isoformat()
+    dates, vals = [], []
+    for l in lines[start + 1:]:
+        p = [x.strip() for x in l.split(",")]
+        if len(p) < 2: continue
+        d = p[0]
+        try:
+            if "/" in d:  # MM/DD/YYYY
+                m, dd, y = d.split("/"); d = f"{y}-{int(m):02d}-{int(dd):02d}"
+            v = float(p[-1])
+        except Exception:
+            continue
+        if d >= cutoff:
+            dates.append(d); vals.append(round(v, 2))
+    if len(vals) < 100: raise ValueError(f"cboe skew too short: {len(vals)}")
+    return dates, vals
+
+def _parse_occ(code, root="SPY"):
+    """SPY260717C00620000 -> (expiry_date, 'C'/'P', strike) or None."""
+    s = code.strip().upper()
+    if not s.startswith(root): return None
+    s = s[len(root):]
+    if len(s) < 15: return None
+    try:
+        exp = dt.date(2000 + int(s[0:2]), int(s[2:4]), int(s[4:6]))
+        cp = s[6]
+        strike = int(s[7:15]) / 1000.0
+        if cp not in "CP" or strike <= 0: return None
+        return exp, cp, strike
+    except Exception:
+        return None
+
+def cboe_gex():
+    """Naive SPY GEX from CBOE delayed quotes. Uses provided per-contract gamma when
+    present, else BS gamma from IV. Nearest GEX_EXPIRIES expiries, calls +, puts -."""
+    j = json.loads(get_retry(f"{CBOE}/delayed_quotes/options/SPY.json", timeout=60))
+    data = j.get("data") or {}
+    S = float(data.get("current_price") or data.get("close") or 0)
+    if S <= 0: raise ValueError("cboe: no spot")
+    rows = []
+    for c in data.get("options") or []:
+        p = _parse_occ(c.get("option") or "")
+        if p: rows.append((p, c))
+    if not rows: raise ValueError("cboe: no parsable contracts")
+    today = dt.date.today()
+    expiries = sorted({p[0] for p, _ in rows if p[0] >= today})[:GEX_EXPIRIES]
+    if not expiries: raise ValueError("cboe: no future expiries")
+    keep = set(expiries)
+    gex, n_used = 0.0, 0
+    for (exp, cp, K), c in rows:
+        if exp not in keep: continue
+        oi = c.get("open_interest") or c.get("oi") or 0
+        iv = c.get("iv") or c.get("implied_volatility") or 0
+        if iv > 5: iv = iv / 100.0  # some feeds ship percent
+        gamma = c.get("gamma") or 0
+        if oi <= 0: continue
+        if not gamma or gamma <= 0:
+            if iv < 0.01 or iv > 5: continue
+            T = max((exp - today).days / 365.0, 0.5 / 365.0)
+            d1 = (math.log(S / K) + 0.5 * iv * iv * T) / (iv * math.sqrt(T))
+            gamma = PHI(d1) / (S * iv * math.sqrt(T))
+        gex += (1 if cp == "C" else -1) * oi * gamma * S * S * 0.01 * 100
+        n_used += 1
+    if n_used < 50: raise ValueError(f"cboe: only {n_used} usable contracts")
+    print(f"  gex[cboe]: spot {S:.0f}, {n_used} contracts, {len(expiries)} expiries -> ${gex/1e9:+.2f}B / 1%")
+    return round(gex / 1e9, 2)
+
 
 def fetch_skew_2y():
     """^SKEW daily closes, trailing 2y. Returns (dates, values) or (None, None)."""
@@ -152,17 +238,36 @@ def update_risk(root, day):
         except Exception: old = {}
     R = {"dates": old.get("dates") or [], "skew": old.get("skew") or [],
          "gex_dates": old.get("gex_dates") or [], "gex_bn": old.get("gex_bn") or []}
-    d, v = fetch_skew_2y()
+    d = v = None
+    try:
+        d, v = cboe_skew_2y(); STATUS["skew"] = f"ok cboe ({len(v)}d)"
+    except Exception as e1:
+        try:
+            d, v = fetch_skew_2y()
+            STATUS["skew"] = f"ok yahoo ({len(v)}d); cboe: {e1}" if d else f"FAIL cboe: {e1}; yahoo: none"
+        except Exception as e2:
+            STATUS["skew"] = f"FAIL cboe: {e1}; yahoo: {e2}"
     if d: R["dates"], R["skew"] = d, v            # full self-healing rewrite
-    g = compute_spy_gex()
+    g = None
+    try:
+        g = cboe_gex(); STATUS["gex"] = f"ok cboe ({g:+.2f}B)"
+    except Exception as e1:
+        try:
+            g = compute_spy_gex()
+            STATUS["gex"] = f"ok yahoo ({g:+.2f}B); cboe: {e1}" if g is not None else f"FAIL cboe: {e1}; yahoo: none"
+        except Exception as e2:
+            STATUS["gex"] = f"FAIL cboe: {e1}; yahoo: {e2}"
     if g is not None:
         if R["gex_dates"] and R["gex_dates"][-1] == day:
             R["gex_bn"][-1] = g                    # same-day overwrite (hourly cron)
         else:
             R["gex_dates"].append(day); R["gex_bn"].append(g)
-    if not R["dates"] and g is None:
-        print("  risk: nothing fetched, not writing"); return
     os.makedirs(f"{root}/data", exist_ok=True)
+    STATUS["last_run"] = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    json.dump(STATUS, open(f"{root}/data/risk_status.json", "w"), indent=1)
+    print(f"  status: skew={STATUS.get('skew')} | gex={STATUS.get('gex')}")
+    if not R["dates"] and g is None:
+        print("  risk: nothing fetched, risk.json untouched"); return
     json.dump(R, open(path, "w"), separators=(",", ":"))
     print(f"  risk.json: {len(R['dates'])} skew days, {len(R['gex_dates'])} gex days")
 
