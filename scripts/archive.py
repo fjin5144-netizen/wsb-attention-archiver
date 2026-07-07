@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
-"""Daily WSB attention archiver.
+"""Daily WSB attention archiver (v3).
 - ApeWisdom: top ~300 (3 pages) for wallstreetbets + all-stocks -> data/apewisdom/{UTC date}.json
   Same UTC day overwrites: the last run of the day (23:45 UTC cron) becomes the daily record;
   the midday run is a fallback so a failed late run still leaves a partial-day snapshot.
 - Tradestie revival probe: if api.tradestie.com ever answers again, capture it automatically
   -> data/tradestie/{UTC date}.json
+- v3: systemic-risk gauges -> data/risk.json
+  * ^SKEW: full 2y daily refresh each run (self-healing; frontend merges with its inline seed)
+  * SPY GEX (naive dealer gamma, first 8 expiries, calls +, puts -): appended per UTC day,
+    same-day runs overwrite so intraday refreshes stay hour-fresh.
+  Yahoo options need the cookie+crumb dance; if it fails, risk.json keeps old values untouched.
 Stdlib only. Exit code 0 even on partial failure (Actions should still commit what succeeded).
 """
-import json, time, os, sys, datetime as dt
-import urllib.request
+import json, time, os, sys, math, datetime as dt
+import urllib.request, urllib.parse, http.cookiejar
 
 UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36"}
 AW_API = "https://apewisdom.io/api/v1.0"
 FILTERS = ["wallstreetbets", "all-stocks"]
 PAGES = 3
+Y1 = "https://query1.finance.yahoo.com"
+GEX_EXPIRIES = 8
 
 def get(url, timeout=20):
     req = urllib.request.Request(url, headers=UA)
@@ -59,6 +66,108 @@ def probe_tradestie(day_mmddyyyy):
     print("  tradestie: still dead")
     return None
 
+# ---------------- v3: systemic-risk gauges ----------------
+
+def fetch_skew_2y():
+    """^SKEW daily closes, trailing 2y. Returns (dates, values) or (None, None)."""
+    try:
+        j = json.loads(get(f"{Y1}/v8/finance/chart/%5ESKEW?range=2y&interval=1d"))
+        r = j["chart"]["result"][0]
+        ts = r["timestamp"]
+        cl = r["indicators"]["quote"][0]["close"]
+        dates, vals = [], []
+        for t, c in zip(ts, cl):
+            if c is None: continue
+            dates.append(dt.datetime.fromtimestamp(t, dt.timezone.utc).date().isoformat())
+            vals.append(round(float(c), 2))
+        print(f"  skew: {len(vals)} days, last {dates[-1]} = {vals[-1]}")
+        return dates, vals
+    except Exception as e:
+        print(f"  skew: FAILED ({e})")
+        return None, None
+
+def yahoo_crumb():
+    """Cookie+crumb dance. Tries fc.yahoo.com (GitHub cloud) then query1 (restricted sandboxes)."""
+    cj = http.cookiejar.CookieJar()
+    op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+    op.addheaders = list(UA.items())
+    for seed in ("https://fc.yahoo.com", f"{Y1}/v8/finance/chart/SPY?range=1d"):
+        try: op.open(seed, timeout=20).read()
+        except Exception: pass
+        try:
+            crumb = op.open(f"{Y1}/v1/test/getcrumb", timeout=20).read().decode().strip()
+            if crumb and len(crumb) < 24 and "<" not in crumb:
+                return op, urllib.parse.quote(crumb, safe="")
+        except Exception:
+            continue
+    return None, None
+
+PHI = lambda x: math.exp(-0.5 * x * x) / math.sqrt(2 * math.pi)
+
+def compute_spy_gex():
+    """Naive SPY gamma exposure ($ per 1% move): sum over first GEX_EXPIRIES expiries,
+    BS gamma from quoted IV, calls +, puts - (dealer long calls / short puts assumption)."""
+    op, crumb = yahoo_crumb()
+    if not op:
+        print("  gex: crumb dance failed, skipping"); return None
+    def oget(url):
+        return json.loads(op.open(url, timeout=25).read().decode("utf-8", "replace"))
+    try:
+        base = oget(f"{Y1}/v7/finance/options/SPY?crumb={crumb}")
+        res = base["optionChain"]["result"][0]
+        S = float(res["quote"]["regularMarketPrice"])
+        expiries = res.get("expirationDates", [])[:GEX_EXPIRIES]
+    except Exception as e:
+        print(f"  gex: chain root FAILED ({e})"); return None
+    now = time.time()
+    gex, n_used = 0.0, 0
+    for ets in expiries:
+        try:
+            o = oget(f"{Y1}/v7/finance/options/SPY?date={ets}&crumb={crumb}")["optionChain"]["result"][0]
+        except Exception as e:
+            print(f"  gex: expiry {ets} skipped ({e})"); continue
+        T = max((ets - now) / (365.0 * 86400.0), 0.5 / 365.0)
+        for side, sgn in (("calls", 1), ("puts", -1)):
+            for c in o["options"][0].get(side, []):
+                oi = c.get("openInterest") or 0
+                iv = c.get("impliedVolatility") or 0
+                K = c.get("strike") or 0
+                if oi <= 0 or iv < 0.01 or iv > 5 or K <= 0: continue
+                d1 = (math.log(S / K) + 0.5 * iv * iv * T) / (iv * math.sqrt(T))
+                gamma = PHI(d1) / (S * iv * math.sqrt(T))
+                gex += sgn * oi * gamma * S * S * 0.01 * 100
+                n_used += 1
+        time.sleep(0.4)
+    if n_used == 0:
+        print("  gex: no usable contracts"); return None
+    print(f"  gex: SPY spot {S:.0f}, {n_used} contracts, {len(expiries)} expiries"
+          f" -> ${gex/1e9:+.2f}B / 1% ({'positive gamma: vol suppressed' if gex > 0 else 'NEGATIVE gamma: vol amplified, fragile'})")
+    return round(gex / 1e9, 2)
+
+def update_risk(root, day):
+    path = f"{root}/data/risk.json"
+    old = {}
+    if os.path.exists(path):
+        try: old = json.load(open(path))
+        except Exception: old = {}
+    R = {"dates": old.get("dates") or [], "skew": old.get("skew") or [],
+         "gex_dates": old.get("gex_dates") or [], "gex_bn": old.get("gex_bn") or []}
+    d, v = fetch_skew_2y()
+    if d: R["dates"], R["skew"] = d, v            # full self-healing rewrite
+    g = compute_spy_gex()
+    if g is not None:
+        if R["gex_dates"] and R["gex_dates"][-1] == day:
+            R["gex_bn"][-1] = g                    # same-day overwrite (hourly cron)
+        else:
+            R["gex_dates"].append(day); R["gex_bn"].append(g)
+    if not R["dates"] and g is None:
+        print("  risk: nothing fetched, not writing"); return
+    os.makedirs(f"{root}/data", exist_ok=True)
+    json.dump(R, open(path, "w"), separators=(",", ":"))
+    print(f"  risk.json: {len(R['dates'])} skew days, {len(R['gex_dates'])} gex days")
+
+# -----------------------------------------------------------
+
 def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     now = dt.datetime.now(dt.timezone.utc)
@@ -72,102 +181,13 @@ def main():
     else:
         print("  apewisdom: nothing fetched, not writing")
 
-    # SPY 每日收盘(体温计用):追加进 data/spy.json,保留最近 500 条
-    try:
-        j = json.loads(get("https://query1.finance.yahoo.com/v8/finance/chart/SPY?range=5d&interval=1d"))
-        res = j["chart"]["result"][0]
-        import datetime as _dt
-        pairs = [( _dt.datetime.fromtimestamp(s, _dt.timezone.utc).date().isoformat(), round(c,2) )
-                 for s, c in zip(res["timestamp"], res["indicators"]["quote"][0]["close"]) if c]
-        p = f"{root}/data/spy.json"
-        spy = json.load(open(p)) if os.path.exists(p) else {"dates": [], "close": []}
-        for dd, cc in pairs:
-            if dd in spy["dates"]:
-                spy["close"][spy["dates"].index(dd)] = cc
-            else:
-                spy["dates"].append(dd); spy["close"].append(cc)
-        order = sorted(range(len(spy["dates"])), key=lambda k: spy["dates"][k])[-500:]
-        spy = {"dates": [spy["dates"][k] for k in order], "close": [spy["close"][k] for k in order]}
-        json.dump(spy, open(p, "w"))
-        print(f"  spy: {spy['dates'][-1]} close {spy['close'][-1]}")
-    except Exception as e:
-        print(f"  spy: {e}")
-
-    # 系统性风险仪表:SKEW(Yahoo 直取)+ SPY GEX(期权链自算,朴素口径 calls正/puts负)
-    try:
-        import math, http.cookiejar
-        p = f"{root}/data/risk.json"
-        risk = json.load(open(p)) if os.path.exists(p) else {"dates": [], "skew": [], "gex_dates": [], "gex_bn": []}
-        # SKEW
-        j = json.loads(get("https://query1.finance.yahoo.com/v8/finance/chart/%5ESKEW?range=5d&interval=1d"))
-        res = j["chart"]["result"][0]
-        import datetime as _dt
-        for s, c in zip(res["timestamp"], res["indicators"]["quote"][0]["close"]):
-            if not c: continue
-            dd = _dt.datetime.fromtimestamp(s, _dt.timezone.utc).date().isoformat()
-            if dd in risk["dates"]: risk["skew"][risk["dates"].index(dd)] = round(c, 2)
-            else: risk["dates"].append(dd); risk["skew"].append(round(c, 2))
-        print(f"  skew: {risk['dates'][-1]} = {risk['skew'][-1]}")
-        # GEX(需要 cookie+crumb;失败则跳过,不影响其他数据)
-        try:
-            cj = http.cookiejar.CookieJar()
-            op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
-            def yop(u):
-                return op.open(urllib.request.Request(u, headers=UA), timeout=25).read().decode("utf-8", "replace")
-            try: yop("https://fc.yahoo.com")
-            except Exception: pass                       # 404 正常,cookie 已落袋
-            crumb = yop("https://query1.finance.yahoo.com/v1/test/getcrumb").strip()
-            ob = json.loads(yop(f"https://query1.finance.yahoo.com/v7/finance/options/SPY?crumb={crumb}"))["optionChain"]["result"][0]
-            S = ob["quote"]["regularMarketPrice"]; exps = ob["expirationDates"][:8]
-            PHI = lambda d: math.exp(-d*d/2)/math.sqrt(2*math.pi)
-            gex = 0.0
-            for k, e in enumerate(exps):
-                o = ob if k == 0 else json.loads(yop(f"https://query1.finance.yahoo.com/v7/finance/options/SPY?date={e}&crumb={crumb}"))["optionChain"]["result"][0]
-                T = max((e - time.time())/86400, 0.5)/365
-                for side, sgn in (("calls", 1), ("puts", -1)):
-                    for c in o["options"][0][side]:
-                        oi = c.get("openInterest") or 0; iv = c.get("impliedVolatility") or 0; K = c["strike"]
-                        if oi <= 0 or iv < 0.01 or iv > 5: continue
-                        d1 = (math.log(S/K) + 0.5*iv*iv*T)/(iv*math.sqrt(T))
-                        gex += sgn * oi * (PHI(d1)/(S*iv*math.sqrt(T))) * S*S*0.01*100
-                time.sleep(0.4)
-            dd = now.date().isoformat()
-            if dd in risk["gex_dates"]: risk["gex_bn"][risk["gex_dates"].index(dd)] = round(gex/1e9, 2)
-            else: risk["gex_dates"].append(dd); risk["gex_bn"].append(round(gex/1e9, 2))
-            print(f"  gex: {dd} = {gex/1e9:+.2f}B/1%")
-        except Exception as e:
-            print(f"  gex skipped: {e}")
-        for a, b in (("dates","skew"), ("gex_dates","gex_bn")):
-            risk[a], risk[b] = risk[a][-600:], risk[b][-600:]
-        json.dump(risk, open(p, "w"))
-    except Exception as e:
-        print(f"  risk gauges: {e}")
-
-    # SqueezeMetrics 官方 DIX/GEX 历史文件(免费公开下载),每日整份刷新
-    try:
-        got = None
-        for u in ("https://squeezemetrics.com/monitor/static/DIX.csv",
-                  "https://squeezemetrics.com/monitor/static/dix.csv"):
-            try:
-                body = get(u, timeout=40)
-                if body.startswith("date,price,dix,gex") and len(body) > 100000:
-                    got = (u, body); break
-            except Exception:
-                pass
-        if got:
-            open(f"{root}/data/DIX.csv", "w").write(got[1])
-            last = got[1].strip().splitlines()[-1].split(",")
-            print(f"  dix/gex: {last[0]} dix={float(last[2]):.3f} gex={float(last[3])/1e9:+.2f}B  ({got[0]})")
-        else:
-            print("  dix/gex: 所有候选地址均失败,保留旧文件")
-    except Exception as e:
-        print(f"  dix/gex: {e}")
-
     ts = probe_tradestie(now.strftime("%m-%d-%Y"))
     if ts:
         os.makedirs(f"{root}/data/tradestie", exist_ok=True)
         json.dump({"fetched_at": now.isoformat(), "rows": ts},
                   open(f"{root}/data/tradestie/{day}.json", "w"))
+
+    update_risk(root, day)
     print("done")
 
 if __name__ == "__main__":
