@@ -6,6 +6,10 @@ on:
     - cron: '15 13-21 * * 1-5'  # 美股交易时段(周一至周五)每小时刷新,盘中 spike 小时级可见
     - cron: '45 23 * * *'       # 23:45 UTC 收盘后定格,作为当日档案的最终版本
   workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/archive.yml'
 
 jobs:
   archive:
@@ -20,6 +24,7 @@ jobs:
         run: |
           git config user.name "wsb-archiver-bot"
           git config user.email "bot@users.noreply.github.com"
+          git pull --rebase --autostash || true
           git add data/
           git diff --staged --quiet && echo "no changes" || \
             (git commit -m "snapshot $(date -u +%Y-%m-%dT%H:%MZ)" && git push)
