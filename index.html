@@ -33,6 +33,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .tick{font-weight:600}
 .badge{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--chip);color:var(--blue);margin-left:6px;vertical-align:1px}
 .badge.spike{background:rgba(227,73,72,.12);color:var(--red)}
+.badge.warm{background:rgba(237,161,0,.14);color:var(--amber)}
 .up{color:var(--green)}.dn{color:var(--red)}
 .note{font-size:12px;color:var(--ink3);margin-top:8px}
 .mov{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px}
@@ -72,17 +73,17 @@ a{color:var(--blue);text-decoration:none}
     <div class="cards">
       <div class="scard"><div class="k">今日榜首</div><div class="v" id="cTop">—</div></div>
       <div class="scard"><div class="k">研究篮子进榜(top 300)</div><div class="v" id="cBask">—</div></div>
-      <div class="scard"><div class="k">Mention spike(≥3× 20日中位)</div><div class="v" id="cSpk">—</div></div>
+      <div class="scard"><div class="k">Spike:确认(≥3×且≥30)/ 预警(≥2×且≥15)</div><div class="v" id="cSpk">—</div></div>
     </div>
     <h2>提及量 Top 15</h2>
     <div class="chartbox" id="chartWrap"><canvas id="cv"></canvas></div>
     <div class="legend"><span><span class="sq" style="background:var(--blue)"></span>全市场热门</span>
       <span><span class="sq" style="background:var(--green)"></span>研究篮子成员</span>
-      <span><span class="sq" style="background:var(--red)"></span>今日 spike</span></div>
-    <div id="spikeSec" style="display:none"><h2>今日 mention spike</h2><div class="mov" id="spikeList"></div>
-      <p class="note">定义:当日提及 ≥ 30 且 ≥ 3 × 过去 20 个归档日的中位数。</p></div>
-    <h2>排名飙升(24h 内爬升 ≥ 15 位进入前 50)</h2>
-    <div class="mov" id="climbers"></div><p class="note" id="wkNote"></p>
+      <span><span class="sq" style="background:var(--red)"></span>确认 spike</span><span><span class="sq" style="background:var(--amber)"></span>预警</span></div>
+    <div id="spikeSec" style="display:none"><h2>今日 spike 与预警</h2><div class="mov" id="spikeList"></div>
+      <p class="note">确认级:提及 ≥30 且 ≥3× 前20归档日中位(全站历史统计均按此口径);预警级:≥15 且 ≥2×,更灵敏、更早触发、也更多误报。阈值是页面脚本顶部的四个常量,可自行调整。</p></div>
+    <h2>排名飙升雷达</h2>
+    <div id="climbers"></div><p class="note" id="wkNote"></p>
     <h2>研究篮子今日席位</h2>
     <table id="baskT"><thead><tr><th class="num">榜位</th><th>代码</th><th class="num">提及</th><th class="num">Δ 24h</th><th class="num">点赞</th></tr></thead><tbody></tbody></table>
     <h2>完整榜单 <span id="fullCount" style="font-weight:400;font-size:13px;color:var(--ink3)"></span></h2>
@@ -92,7 +93,7 @@ a{color:var(--blue);text-decoration:none}
 </section>
 
 <section id="tab-lab" style="display:none">
-  <p class="sub">覆盖档案里出现过的<b>全部股票</b>(每日 top300,不限研究篮子;篮子成员带蓝标)。每张卡片 = 一次 mention spike(提及 ≥30 且 ≥3×前20个归档日中位)。蓝线=真实股价(美元,左轴),灰柱=提及量(右轴,<span style="color:var(--red)">红柱=spike日</span>)。点卡片右上角标签给股票分类(未分类→故事股→基本面股,存本机),汇总表实时重算——假说是你的,判断也是你的。<br>每张卡底部是<b>三重过滤规则</b>的机器裁决(你回测的那套:①spike后10日内收盘破位−5% ②入场日SPY低于200日均线=熊市环境):两条全✓才算「规则放行」——这是历史规则的判定,不是投资建议。</p>
+  <p class="sub">覆盖档案里出现过的<b>全部股票</b>(每日 top300,不限研究篮子;篮子成员带蓝标)。每张卡片 = 一次<b>确认级</b> spike(≥30 且 ≥3×前20归档日中位)——实验室只收确认级,与全部历史统计同口径;预警级只在简报页提示。蓝线=真实股价(美元,左轴),灰柱=提及量(右轴,<span style="color:var(--red)">红柱=spike日</span>)。点卡片右上角标签给股票分类(未分类→故事股→基本面股,存本机),汇总表实时重算——假说是你的,判断也是你的。<br>每张卡底部是<b>三重过滤规则</b>的机器裁决(你回测的那套:①spike后10日内收盘破位−5% ②入场日SPY低于200日均线=熊市环境):两条全✓才算「规则放行」——这是历史规则的判定,不是投资建议。</p>
   <div class="rulebar" id="secbar" style="margin-bottom:8px"></div>
   <h2 style="margin-top:6px">按板块 · spike 后 10 日(自动)</h2>
   <table style="margin-bottom:18px"><thead><tr><th>板块</th><th>事件数</th><th>中位</th><th>下跌比例</th><th>最好 / 最坏</th></tr></thead><tbody id="sumSec"></tbody></table>
@@ -126,8 +127,11 @@ MSTR:"加密相关",MARA:"加密相关",RIOT:"加密相关",CLSK:"加密相关",
 QQQ:"ETF/指数",IWM:"ETF/指数",VOO:"ETF/指数",GLD:"ETF/指数",USO:"ETF/指数",SOXL:"ETF/指数",SOXS:"ETF/指数",SPCX:"ETF/指数",ESG:"ETF/指数",
 CAT:"传统蓝筹",UNH:"传统蓝筹",WMT:"传统蓝筹",NKE:"传统蓝筹",LULU:"传统蓝筹",UBS:"传统蓝筹",HP:"传统蓝筹",ET:"传统蓝筹",SPXC:"传统蓝筹",JD:"科技巨头"};
 const SEC=t=>SECTOR[t]||"其他";
+// spike 阈值:确认级(研究口径,勿轻动)与预警级(灵敏档,可自由调)
+const HOT_FLOOR=30, HOT_X=3, WARM_FLOOR=15, WARM_X=2;
+const CHEAP_MAX=100; // 低价飙升雷达的价格上限(美元)
 const dark=matchMedia('(prefers-color-scheme:dark)').matches;
-const C={blue:dark?'#3987e5':'#2a78d6',green:dark?'#199e70':'#1baf7a',red:dark?'#e66767':'#e24b4a',bar:dark?'#3a3a38':'#d5d4cc',grid:dark?'#2c2c2a':'#e1e0d9',mut:'#898781'};
+const C={blue:dark?'#3987e5':'#2a78d6',green:dark?'#199e70':'#1baf7a',red:dark?'#e66767':'#e24b4a',amber:dark?'#eda100':'#ba7517',bar:dark?'#3a3a38':'#d5d4cc',grid:dark?'#2c2c2a':'#e1e0d9',mut:'#898781'};
 let DATES=[],CACHE={},chart=null;
 
 async function gj(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json();}
@@ -160,7 +164,9 @@ async function spikeFlags(day){
   for(const r of rowsOf(day)){
     const vals=win.map(d=>mOf(d,r.ticker));
     const med=median(vals);
-    if(r.mentions>=30&&r.mentions>=3*Math.max(med,1))flags[r.ticker]={med:Math.round(med*10)/10};}
+    const base=Math.max(med,1);
+    if(r.mentions>=HOT_FLOOR&&r.mentions>=HOT_X*base)flags[r.ticker]={med:Math.round(med*10)/10,level:'hot'};
+    else if(r.mentions>=WARM_FLOOR&&r.mentions>=WARM_X*base)flags[r.ticker]={med:Math.round(med*10)/10,level:'warm'};}
   return flags;
 }
 async function renderBrief(day){
@@ -173,13 +179,14 @@ async function renderBrief(day){
   document.getElementById('cTop').textContent=rows.length?`${rows[0].ticker} · ${rows[0].mentions}`:'—';
   const bask=rows.filter(r=>BASKET.has(r.ticker));
   document.getElementById('cBask').textContent=`${bask.length} / ${BASKET.size} 只`;
-  document.getElementById('cSpk').textContent=flags===null?`还差 ${21-DATES.indexOf(day)-1} 天解锁`:`${Object.keys(flags).length} 只`;
+  const nh=flags?Object.values(flags).filter(f=>f.level==='hot').length:0, nw=flags?Object.values(flags).filter(f=>f.level==='warm').length:0;
+  document.getElementById('cSpk').textContent=flags===null?`还差 ${21-DATES.indexOf(day)-1} 天解锁`:`${nh} 确认 · ${nw} 预警`;
   const top=rows.slice(0,15);
   document.getElementById('chartWrap').style.height=(top.length*36+70)+'px';
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById('cv'),{type:'bar',
     data:{labels:top.map(r=>r.ticker),datasets:[{data:top.map(r=>r.mentions),
-      backgroundColor:top.map(r=>flags&&flags[r.ticker]?C.red:BASKET.has(r.ticker)?C.green:C.blue),
+      backgroundColor:top.map(r=>{const f=flags&&flags[r.ticker];return f?(f.level==='hot'?C.red:C.amber):BASKET.has(r.ticker)?C.green:C.blue;}),
       borderRadius:{topRight:4,bottomRight:4},maxBarThickness:22}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+' 次提及'}}},
@@ -187,19 +194,31 @@ async function renderBrief(day){
               y:{grid:{display:false},ticks:{color:C.mut,font:{weight:'600'}}}}}});
   const ss=document.getElementById('spikeSec');
   if(flags&&Object.keys(flags).length){ss.style.display='block';
-    document.getElementById('spikeList').innerHTML=rows.filter(r=>flags[r.ticker]).slice(0,12).map(r=>
-      `<div class="scard"><span class="tick">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge">篮子</span>':''}
-       <div class="r">${r.mentions} 提及 · 20日中位 ${flags[r.ticker].med} · 榜位 ${r.rank}</div></div>`).join('');
+    document.getElementById('spikeList').innerHTML=rows.filter(r=>flags[r.ticker])
+      .sort((a,b)=>(flags[a.ticker].level==='hot'?0:1)-(flags[b.ticker].level==='hot'?0:1)).slice(0,16).map(r=>{
+      const f=flags[r.ticker];
+      return `<div class="scard"><span class="tick">${r.ticker}</span><span class="badge ${f.level==='hot'?'spike':'warm'}">${f.level==='hot'?'spike':'预警'}</span>${BASKET.has(r.ticker)?'<span class="badge">篮子</span>':''}
+       <div class="r">${r.mentions} 提及 = 中位 ${f.med} 的 ×${(r.mentions/Math.max(f.med,1)).toFixed(1)} · 榜位 ${r.rank}</div></div>`;}).join('');
   }else ss.style.display='none';
-  const cl=rows.filter(r=>r.rank<=50&&r.rank_24h_ago&&(r.rank_24h_ago-r.rank)>=15).sort((a,b)=>a.rank-b.rank).slice(0,8);
-  document.getElementById('climbers').innerHTML=cl.length?cl.map(r=>
-    `<div class="scard"><span class="tick">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge">篮子</span>':''}
-     <div class="r">${r.rank_24h_ago} → ${r.rank} 位 · 提及 ${r.mentions_24h_ago} → ${r.mentions}</div></div>`).join('')
-    :'<p class="note">今日无满足条件的飙升。</p>';
+  const lastPx=t=>{const p=PRICES[t];return p&&p.c.length?p.c[p.c.length-1]:null;};
+  const climbCard=r=>{const p=lastPx(r.ticker);
+    return `<div class="scard"><span class="tick">${r.ticker}</span>${p!=null?`<span class="badge" style="background:transparent;border:1px solid var(--line);color:var(--ink2)">$${p<10?p.toFixed(2):p.toFixed(0)}</span>`:''}${BASKET.has(r.ticker)?'<span class="badge">篮子</span>':''}
+     <div class="r">${r.rank_24h_ago} → ${r.rank} 位 · 提及 ${r.mentions_24h_ago} → ${r.mentions}</div></div>`;};
+  const cand=rows.filter(r=>r.rank_24h_ago&&r.rank_24h_ago>r.rank);
+  const seen=new Set();
+  const take=(f,cap=8)=>{const out=cand.filter(r=>!seen.has(r.ticker)&&f(r)).sort((a,b)=>a.rank-b.rank).slice(0,cap);out.forEach(r=>seen.add(r.ticker));return out;};
+  const t15=take(r=>r.rank<=15&&r.rank_24h_ago>15&&(r.rank_24h_ago-r.rank)>=10);
+  const t50=take(r=>r.rank<=50&&(r.rank_24h_ago-r.rank)>=15);
+  const t100=take(r=>r.rank<=100&&r.rank_24h_ago>150,10);
+  const cheap=cand.filter(r=>{const p=lastPx(r.ticker);return p!=null&&p<CHEAP_MAX&&r.rank<=100&&(r.rank_24h_ago-r.rank)>=15;}).sort((a,b)=>(b.rank_24h_ago-b.rank)-(a.rank_24h_ago-a.rank)).slice(0,10);
+  const secs=[["🚀 冲进前 15(爬升≥10位)",t15],["进入前 50(爬升≥15位)",t50],["深水跃升(150名外 → 前100)",t100],[`低价飙升(参考价<$${CHEAP_MAX},爬升≥15位进前100)`,cheap]];
+  document.getElementById('climbers').innerHTML=secs.filter(([_,l])=>l.length).map(([h,l])=>
+    `<div style="font-size:12.5px;color:var(--ink3);margin:12px 0 8px">${h}</div><div class="mov">${l.map(climbCard).join('')}</div>`).join('')
+    ||'<p class="note">今日各层雷达均无满足条件的飙升。</p>';
   const wd=new Date(day+'T12:00:00Z').getUTCDay();
-  document.getElementById('wkNote').textContent=(wd===1)?'注:周一的 24h 对照是周日的清淡水位,增量普遍虚高。':'';
+  document.getElementById('wkNote').textContent=(wd===1)?'注:周一的 24h 对照是周日的清淡水位,增量普遍虚高。低价雷达的"参考价"取自内嵌价格包的最近收盘,非实时。':'';
   document.querySelector('#baskT tbody').innerHTML=bask.map(r=>{const d24=r.mentions-r.mentions_24h_ago;
-    return `<tr><td class="num">${r.rank}</td><td><span class="tick">${r.ticker}</span>${flags&&flags[r.ticker]?'<span class="badge spike">spike</span>':''}</td>
+    return `<tr><td class="num">${r.rank}</td><td><span class="tick">${r.ticker}</span>${flags&&flags[r.ticker]?`<span class="badge ${flags[r.ticker].level==='hot'?'spike':'warm'}">${flags[r.ticker].level==='hot'?'spike':'预警'}</span>`:''}</td>
       <td class="num">${r.mentions}</td><td class="num ${d24>=0?'up':'dn'}">${fmtD(d24)}</td><td class="num">${r.upvotes}</td></tr>`;}).join('')
     ||'<tr><td colspan="5" class="note">今日篮子成员均未进入 top 300。</td></tr>';
   curRows=rows;curFlags=flags;fullN=50;renderFull();
@@ -210,7 +229,7 @@ function renderFull(){
   document.getElementById('fullCount').textContent=`· 显示 ${n} / ${rows.length}`;
   document.querySelector('#fullT tbody').innerHTML=rows.slice(0,n).map(r=>{
     const d24=r.mentions-r.mentions_24h_ago,nm=String(r.name||'').replace(/"/g,'&quot;');
-    return `<tr><td class="num">${r.rank}</td><td><span class="tick" title="${nm}">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge">篮子</span>':''}${flags&&flags[r.ticker]?'<span class="badge spike">spike</span>':''}</td>
+    return `<tr><td class="num">${r.rank}</td><td><span class="tick" title="${nm}">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge">篮子</span>':''}${flags&&flags[r.ticker]?`<span class="badge ${flags[r.ticker].level==='hot'?'spike':'warm'}">${flags[r.ticker].level==='hot'?'spike':'预警'}</span>`:''}</td>
       <td class="num">${r.mentions}</td><td class="num ${d24>=0?'up':'dn'}">${fmtD(d24)}</td><td class="num">${r.upvotes}</td></tr>`;}).join('');
   const btn=document.getElementById('moreBtn');
   btn.style.display=rows.length>50?'':'none';
@@ -233,7 +252,7 @@ async function initLab(){
     for(let i=20;i<DATES.length;i++){
       const m=mOf(DATES[i],tk);
       const med=median(DATES.slice(i-20,i).map(d=>mOf(d,tk)));
-      if(m>=30&&m>=3*Math.max(med,1)&&i-last>5){EPS.push({tk,d:DATES[i],m,med});last=i;}}}
+      if(m>=HOT_FLOOR&&m>=HOT_X*Math.max(med,1)&&i-last>5){EPS.push({tk,d:DATES[i],m,med});last=i;}}}
   EPS.sort((a,b)=>b.d.localeCompare(a.d));
   ls.style.display='none';
   const grid=document.getElementById('epgrid');
