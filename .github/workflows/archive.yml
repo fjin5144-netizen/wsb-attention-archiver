@@ -2,8 +2,9 @@ name: Archive WSB attention data
 
 on:
   schedule:
-    - cron: '45 11 * * *'   # 11:45 UTC fallback snapshot
-    - cron: '45 23 * * *'   # 23:45 UTC canonical end-of-day snapshot (overwrites the day file)
+    - cron: '45 11 * * *'       # 11:45 UTC 早间保底快照
+    - cron: '15 13-21 * * 1-5'  # 美股交易时段(周一至周五)每小时刷新,盘中 spike 小时级可见
+    - cron: '45 23 * * *'       # 23:45 UTC 收盘后定格,作为当日档案的最终版本
   workflow_dispatch:
 
 jobs:
