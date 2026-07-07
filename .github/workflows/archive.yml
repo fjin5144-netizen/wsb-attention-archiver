@@ -3,13 +3,18 @@ name: Archive WSB attention data
 on:
   schedule:
     - cron: '45 11 * * *'       # 11:45 UTC 早间保底快照
-    - cron: '15 13-21 * * 1-5'  # 美股交易时段(周一至周五)每小时刷新,盘中 spike 小时级可见
-    - cron: '45 23 * * *'       # 23:45 UTC 收盘后定格,作为当日档案的最终版本
+    - cron: '15 13-21 * * 1-5'  # 美股交易时段(周一至周五)每小时刷新
+    - cron: '45 23 * * *'       # 23:45 UTC 收盘后定格为当日档案
   workflow_dispatch:
   push:
     paths:
       - 'scripts/**'
       - '.github/workflows/archive.yml'
+
+# 关键:同组运行串行排队,从根上消灭并发写数据的竞态
+concurrency:
+  group: wsb-archive
+  cancel-in-progress: false
 
 jobs:
   archive:
@@ -24,7 +29,10 @@ jobs:
         run: |
           git config user.name "wsb-archiver-bot"
           git config user.email "bot@users.noreply.github.com"
-          git pull --rebase --autostash || true
           git add data/
-          git diff --staged --quiet && echo "no changes" || \
-            (git commit -m "snapshot $(date -u +%Y-%m-%dT%H:%MZ)" && git push)
+          if git diff --staged --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+          # 先提交后变基:工作区永远干净,冲突标记不可能进文件;
+          # 万一上游恰有新提交,-X theirs 让本次快照数据获胜;失败则响亮报错,绝不静默吞掉
+          git pull --rebase -X theirs
+          git push
