@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Daily WSB attention archiver (v3.1).
+"""Daily WSB attention archiver (v3.2).
 - ApeWisdom: top ~300 (3 pages) for wallstreetbets + all-stocks -> data/apewisdom/{UTC date}.json
   Same UTC day overwrites: the last run of the day (23:45 UTC cron) becomes the daily record;
   the midday run is a fallback so a failed late run still leaves a partial-day snapshot.
@@ -9,6 +9,11 @@
   * ^SKEW: full 2y daily refresh each run (self-healing; frontend merges with its inline seed)
   * SPY GEX (naive dealer gamma, nearest 8 expiries, calls +, puts -): appended per UTC day,
     same-day runs overwrite so intraday refreshes stay hour-fresh.
+- v3.2: daily refresh of data/DIX.csv from SqueezeMetrics (official DIX/GEX history,
+  2011->present); on fetch failure, promotes a locally committed copy
+  (data/apewisdom/DIX.csv) once, else keeps the existing file untouched.
+  Also refreshes data/spy.json (SPY daily closes; stooq primary, Yahoo fallback)
+  for the dashboard's SPY-vs-200dma regime gate.
   Sources: CBOE public CDN primary (GitHub-runner friendly), Yahoo fallback
   (Yahoo rejects Azure/GitHub IPs as of 2026-07). Every run also writes
   data/risk_status.json with per-source diagnostics for remote debugging.
@@ -70,7 +75,7 @@ def probe_tradestie(day_mmddyyyy):
 
 # ---------------- v3.1: systemic-risk gauges ----------------
 CBOE = "https://cdn.cboe.com/api/global"
-STATUS = {"ver": "3.1"}
+STATUS = {"ver": "3.2"}
 
 def get_retry(url, tries=3, timeout=30):
     last = None
@@ -230,7 +235,90 @@ def compute_spy_gex():
           f" -> ${gex/1e9:+.2f}B / 1% ({'positive gamma: vol suppressed' if gex > 0 else 'NEGATIVE gamma: vol amplified, fragile'})")
     return round(gex / 1e9, 2)
 
+
+SM_URL = "https://squeezemetrics.com/monitor/static/DIX.csv"
+
+def refresh_dix(root):
+    """Keep data/DIX.csv fresh. Frontend reads it directly for the 2y GEX/DIX charts."""
+    dst = f"{root}/data/DIX.csv"
+    try:
+        txt = get_retry(SM_URL, timeout=40)
+        lines = txt.strip().splitlines()
+        if not lines or not lines[0].lower().startswith("date,price,dix,gex") or len(lines) < 1000:
+            raise ValueError(f"unexpected payload ({len(lines)} lines)")
+        last = lines[-1].split(",")[0]
+        if (dt.date.today() - dt.date.fromisoformat(last)).days > 14:
+            raise ValueError(f"stale feed, last {last}")
+        os.makedirs(f"{root}/data", exist_ok=True)
+        open(dst, "w", newline="").write(txt if txt.endswith("\n") else txt + "\n")
+        STATUS["dix"] = f"ok squeezemetrics ({len(lines)-1} rows, last {last})"
+        print(f"  dix: refreshed from squeezemetrics, last {last}")
+    except Exception as e1:
+        alt = f"{root}/data/apewisdom/DIX.csv"
+        if not os.path.exists(dst) and os.path.exists(alt):
+            os.makedirs(f"{root}/data", exist_ok=True)
+            open(dst, "w", newline="").write(open(alt).read())
+            STATUS["dix"] = f"promoted local seed; fetch: {e1}"
+            print("  dix: fetch failed, promoted data/apewisdom/DIX.csv -> data/DIX.csv")
+        else:
+            STATUS["dix"] = f"kept existing; fetch: {e1}"
+            print(f"  dix: fetch failed ({e1}), keeping existing file")
+
+def refresh_spy(root):
+    """data/spy.json <- SPY daily closes {dates, close}. stooq primary, Yahoo fallback.
+    Feeds the dashboard's SPY-vs-200dma regime gate (merged over its inline seed)."""
+    dates = closes = None
+    try:
+        raw = get_retry("https://stooq.com/q/d/l/?s=spy.us&i=d", timeout=40)
+        rows = [l.split(",") for l in raw.strip().splitlines()[1:] if l.count(",") >= 4]
+        rows = [(r[0], float(r[4])) for r in rows[-520:]]
+        assert len(rows) > 300 and rows[-1][1] > 0, f"thin stooq payload ({len(rows)})"
+        dates, closes = [r[0] for r in rows], [round(r[1], 2) for r in rows]
+        STATUS["spy"] = f"ok stooq ({len(dates)}d, last {dates[-1]} = {closes[-1]:.0f})"
+    except Exception as e1:
+        try:
+            j = json.loads(get_retry(f"{Y1}/v8/finance/chart/SPY?range=2y&interval=1d"))
+            r = j["chart"]["result"][0]
+            dates, closes = [], []
+            for t, c in zip(r["timestamp"], r["indicators"]["quote"][0]["close"]):
+                if c is None: continue
+                dates.append(dt.datetime.fromtimestamp(t, dt.timezone.utc).date().isoformat())
+                closes.append(round(float(c), 2))
+            if len(dates) <= 300: raise ValueError(f"thin yahoo payload ({len(dates)})")
+            STATUS["spy"] = f"ok yahoo ({len(dates)}d); stooq: {e1}"
+        except Exception as e2:
+            try:
+                j = json.loads(get_retry(f"{CBOE}/delayed_quotes/quotes/SPY.json", timeout=30))
+                dd = j.get("data") or {}
+                px = float(dd.get("current_price") or dd.get("close") or 0)
+                if px <= 0: raise ValueError("cboe: no spot")
+                p = f"{root}/data/spy.json"
+                cur = {"dates": [], "close": []}
+                if os.path.exists(p):
+                    try: cur = json.load(open(p))
+                    except Exception: pass
+                today = dt.date.today().isoformat()
+                if cur["dates"] and cur["dates"][-1] == today:
+                    cur["close"][-1] = round(px, 2)
+                else:
+                    cur["dates"].append(today); cur["close"].append(round(px, 2))
+                os.makedirs(f"{root}/data", exist_ok=True)
+                json.dump(cur, open(p, "w"), separators=(",", ":"))
+                STATUS["spy"] = f"ok cboe spot-append ({today} = {px:.0f}); stooq: {str(e1)[:60]}; yahoo: {str(e2)[:60]}"
+                print(f"  spy: {STATUS['spy']}")
+                return
+            except Exception as e3:
+                dates = None
+                STATUS["spy"] = f"FAIL stooq: {str(e1)[:60]}; yahoo: {str(e2)[:60]}; cboe: {str(e3)[:60]}"
+    if dates:
+        os.makedirs(f"{root}/data", exist_ok=True)
+        json.dump({"dates": dates, "close": closes}, open(f"{root}/data/spy.json", "w"),
+                  separators=(",", ":"))
+    print(f"  spy: {STATUS['spy']}")
+
 def update_risk(root, day):
+    refresh_dix(root)
+    refresh_spy(root)
     path = f"{root}/data/risk.json"
     old = {}
     if os.path.exists(path):
