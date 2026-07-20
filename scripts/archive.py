@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Daily WSB attention archiver (v3.2).
+"""Daily WSB attention archiver (v3.3).
 - ApeWisdom: top ~300 (3 pages) for wallstreetbets + all-stocks -> data/apewisdom/{UTC date}.json
   Same UTC day overwrites: the last run of the day (23:45 UTC cron) becomes the daily record;
   the midday run is a fallback so a failed late run still leaves a partial-day snapshot.
@@ -25,7 +25,7 @@ import urllib.request, urllib.parse, http.cookiejar
 UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36"}
 AW_API = "https://apewisdom.io/api/v1.0"
 FILTERS = ["wallstreetbets", "all-stocks"]
-PAGES = 3
+PAGES = 5   # top-500: mania periods raise the rank-300 mention floor; wider net avoids censoring (empty pages break gracefully)
 Y1 = "https://query1.finance.yahoo.com"
 GEX_EXPIRIES = 8
 
@@ -75,7 +75,7 @@ def probe_tradestie(day_mmddyyyy):
 
 # ---------------- v3.1: systemic-risk gauges ----------------
 CBOE = "https://cdn.cboe.com/api/global"
-STATUS = {"ver": "3.2"}
+STATUS = {"ver": "3.3"}
 
 def get_retry(url, tries=3, timeout=30):
     last = None
