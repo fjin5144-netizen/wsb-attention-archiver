@@ -199,6 +199,13 @@ footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
 .fchip span{opacity:.62;font-size:14px;line-height:1}
 .fchip.clearall{background:transparent;color:var(--ink3);border-style:dashed}
 .fchip.clearall:hover{color:var(--ink);border-color:var(--ink3)}
+.rangeset{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--sunk)}
+.rgb{font:600 12px/1 var(--sans);padding:7px 13px;border:0;border-right:1px solid var(--line);
+  background:transparent;color:var(--ink3);cursor:pointer;transition:.12s;letter-spacing:.02em}
+.rgb:last-child{border-right:0}
+.rgb:hover{color:var(--ink);background:var(--raise)}
+.rgb.sel{background:var(--acc);color:#fff}
+.rgb:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
 .tagset{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--sunk)}
 .tagb{font:550 12px/1 var(--sans);padding:6px 11px;border:0;border-right:1px solid var(--line);
   background:transparent;color:var(--ink3);cursor:pointer;transition:.12s}
@@ -335,7 +342,7 @@ footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
     <button class="chipb" id="exportCsv">Export CSV</button>
   </div>
   <div id="activeFilters" class="chipsrow"></div>
-  <div id="sortbar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px"><span class="meta">Sort:</span><button class="chipb sel" data-o="res" aria-pressed="true" title="Newest first, but events whose 10-day window has closed come before the ones still pending">Newest resolved</button><button class="chipb" data-o="new">Newest</button><button class="chipb" data-o="old">Oldest</button><button class="chipb" data-o="best">Best 10d</button><button class="chipb" data-o="worst">Worst 10d</button><span class="meta" style="margin-left:10px">Chart window:</span><button class="chipb sel" data-w="ev" aria-pressed="true" title="5 archive days before the spike, 15 after">Spike window −5d / +15d</button><button class="chipb" data-w="full">Full history</button></div>
+  <div id="sortbar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px"><span class="meta">Sort:</span><button class="chipb sel" data-o="res" aria-pressed="true" title="Newest first, but events whose 10-day window has closed come before the ones still pending">Newest resolved</button><button class="chipb" data-o="new">Newest</button><button class="chipb" data-o="old">Oldest</button><button class="chipb" data-o="best">Best 10d</button><button class="chipb" data-o="worst">Worst 10d</button><span class="meta" style="margin-left:10px">Range</span><span class="rangeset" role="group" aria-label="Chart range after the spike"><button class="rgb" data-w="1W" aria-pressed="false">1W</button><button class="rgb" data-w="2W" aria-pressed="false">2W</button><button class="rgb sel" data-w="1M" aria-pressed="true">1M</button><button class="rgb" data-w="3M" aria-pressed="false">3M</button><button class="rgb" data-w="ALL" aria-pressed="false">ALL</button></span></div>
   <div class="epgrid" id="epgrid"></div>
   <p class="note" id="gridEmpty" style="display:none">No event matches these filters. <button class="chipb" id="clearFilt">Clear all filters</button></p>
 </section>
@@ -716,7 +723,13 @@ async function initLab(){
   // ---- render: 按当前排序重建网格 ----
   /* Filter state is declared up here because renderEPS() reads it and runs before
      the control wiring further down would otherwise have initialised it. */
-  let LABCH=[],SORT='res',WIN='ev',applyF=null;
+  let LABCH=[],SORT='res',WIN='1M',applyF=null;
+  /* Ranges anchor on the SPIKE, not on today — a two-month-old event has no
+     "last week". Trading-day counts, with a short run-up so the spike never sits
+     flat against the left edge. 1M is the default because the card quotes a 20-day
+     return and the old +15d window could not even show it. */
+  const WINS={'1W':5,'2W':10,'1M':22,'3M':66,'ALL':null};
+  const winPre=n=>Math.max(3,Math.round(n/3));
   let secSel='',dFrom='',dTo='';
   const PAGE=30; let shown=PAGE;
   /* Plain "Newest" put every pending event first - the most recent spikes are
@@ -812,7 +825,7 @@ async function initLab(){
     for(const ep of list.slice(0,shown)){
       const card=document.createElement('div');card.className='ep';
       const cls=CLS[ep.tk]||'';
-      card.dataset.pass=ep.pass?'1':'0';card.dataset.sec=SEC(ep.tk);card._ep=ep;card._full=(WIN==='full');
+      card.dataset.pass=ep.pass?'1':'0';card.dataset.sec=SEC(ep.tk);card._ep=ep;
       card.dataset.d=ep.d;card.dataset.has=(ep.r10!=null)?'1':'0';card.dataset.open='0';
       const r10=ep.r10;
       const num=(r10==null)
@@ -867,24 +880,25 @@ async function initLab(){
         <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           ${verdict}<span class="pill ${ep.brkOff?'ok':'no'}">${ep.brkTxt}</span><span class="pill ${ep.bearTxt.includes('✓')?'ok':'no'}">${ep.bearTxt}</span>
           <span style="flex:1"></span>
-          <button class="winb chipb">${card._full?'−5d/+15d':'Full history'}</button>
           <span class="tagset" role="group" aria-label="Classify ${ep.tk}">${['','story','fund'].map(g=>`<button class="tagb${(cls===g)?' on':''}" data-t="${ep.tk}" data-g="${g}" aria-pressed="${cls===g}">${LBL[g]}</button>`).join('')}</span>
         </div>`;
       card._built=true;
     }
-    buildEpChart(card,ep,card._full);
+    buildEpChart(card,ep,WIN);
   }
   grid.addEventListener('click',e=>{
     const b=e.target.closest('.epsum');if(!b)return;
     const card=b.closest('.ep');
     openCard(card,card.dataset.open!=='1');
   });
-  function buildEpChart(card,ep,full){
+  function buildEpChart(card,ep,win){
   if(!canChart())return;
     if(card._ch)card._ch.destroy();
     const px=ep.px,pi=ep.pi;
     const di=DATES.indexOf(ep.d);
-    const wd=full?DATES.slice():DATES.slice(Math.max(0,di-5),di+16);
+    const after=WINS[win];
+    const wd=(after==null)?DATES.slice()
+             :DATES.slice(Math.max(0,di-winPre(after)),di+after+1);
     const mm=wd.map(d=>mOf(d,ep.tk));
     let pline=null;
     if(px)pline=wd.map(d=>{const k=px.d.indexOf(d);return k>=0?+px.c[k].toFixed(2):null;});
@@ -895,16 +909,17 @@ async function initLab(){
     const note=card.querySelector('.cvnote');
     if(note){
       const after=DATES.length-(di+16);
-      note.textContent=full
+      const left=DATES.length-(DATES.indexOf(wd[wd.length-1])+1);
+      note.textContent=(after==null)
         ? `Full archive · ${wd[0]} → ${wd[wd.length-1]}`
-        : `${wd[0]} → ${wd[wd.length-1]}`+(after>0
-            ? ` · ${after} more archive day${after===1?'':'s'} after this — switch to Full history`
+        : `${wd[0]} → ${wd[wd.length-1]}`+(left>0
+            ? ` · ${left} more archive day${left===1?'':'s'} after this — widen the range`
             : '');
     }
     const mine=new Set(EPS.filter(e=>e.tk===ep.tk).map(e=>e.d));
     const spikeIdx=wd.indexOf(ep.d);
     card._ch=new Chart(card.querySelector('canvas'),{data:{labels:wd.map(d=>d.slice(5)),datasets:[
-      {type:'bar',data:mm,yAxisID:'y1',backgroundColor:wd.map(d=>(full?mine.has(d):d===ep.d)?C.red:C.bar),maxBarThickness:8,minBarLength:3,order:2},
+      {type:'bar',data:mm,yAxisID:'y1',backgroundColor:wd.map(d=>((after==null)?mine.has(d):d===ep.d)?C.red:C.bar),maxBarThickness:8,minBarLength:3,order:2},
       ...(pline?[{type:'line',data:pline,yAxisID:'y',borderColor:C.blue,borderWidth:2,pointRadius:0,tension:.25,spanGaps:true,order:1}]:[])]},
       options:{responsive:true,maintainAspectRatio:false,animation:false,
         plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{
@@ -922,15 +937,17 @@ async function initLab(){
     LABCH.push(card._ch);
   }
   const stb=document.getElementById('sortbar');
-  stb.addEventListener('click',e=>{const b=e.target.closest('.chipb');if(!b)return;
+  stb.addEventListener('click',e=>{const b=e.target.closest('.chipb,.rgb');if(!b)return;
     if(b.dataset.o){SORT=b.dataset.o;
       stb.querySelectorAll('[data-o]').forEach(x=>{x.classList.toggle('sel',x===b);x.setAttribute('aria-pressed',String(x===b));});}
     else if(b.dataset.w){WIN=b.dataset.w;
-      stb.querySelectorAll('[data-w]').forEach(x=>{x.classList.toggle('sel',x===b);x.setAttribute('aria-pressed',String(x===b));});}
+      stb.querySelectorAll('[data-w]').forEach(x=>{x.classList.toggle('sel',x===b);x.setAttribute('aria-pressed',String(x===b));});
+      /* only open cards hold a chart; re-draw those in place instead of rebuilding
+         the grid, so a range change never collapses what you were reading */
+      document.querySelectorAll('.ep[data-open="1"]').forEach(c=>buildEpChart(c,c._ep,WIN));
+      return;}
     renderEPS();});
-  grid.addEventListener('click',e=>{const b=e.target.closest('.winb');if(!b)return;
-    const card=b.closest('.ep'),ep=card._ep,f=!card._full;card._full=f;
-    b.textContent=f?'±15d':'Full';buildEpChart(card,ep,f);});
+
   /* The first render is deferred to the priming call at the end of initLab: it
      reads span/date state that is declared below this point. */
   grid.addEventListener('click',e=>{const b=e.target.closest('.tagb');if(!b)return;
@@ -1051,10 +1068,14 @@ async function initLab(){
   /* Lets the URL serialiser reach state that lives in this closure, so a shared
      link restores the sector, the dates and the sort as well as the DOM controls. */
   window.__labState={
-    read:()=>({sec:secSel,df:dFrom,dt:dTo,sort:SORT==='res'?'':SORT}),
+    read:()=>({sec:secSel,df:dFrom,dt:dTo,sort:SORT==='res'?'':SORT,w:WIN==='1M'?'':WIN}),
     write:sp=>{
       secSel=sp.get('sec')||'';dFrom=sp.get('df')||'';dTo=sp.get('dt')||'';
       const so=sp.get('sort')||'res';if(ORD[so])SORT=so;
+      const wv=sp.get('w')||'1M';if(wv in WINS)WIN=wv;
+      document.querySelectorAll('#sortbar [data-w]').forEach(x=>{
+        const on=x.dataset.w===WIN;
+        x.classList.toggle('sel',on);x.setAttribute('aria-pressed',String(on));});
       document.querySelectorAll('#secbar .chipb').forEach(x=>{
         const on=(x.dataset.s||'')===secSel;
         x.classList.toggle('sel',on);x.setAttribute('aria-pressed',String(on));});
