@@ -335,7 +335,7 @@ footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
     <button class="chipb" id="exportCsv">Export CSV</button>
   </div>
   <div id="activeFilters" class="chipsrow"></div>
-  <div id="sortbar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px"><span class="meta">Sort:</span><button class="chipb sel" data-o="res" aria-pressed="true" title="Newest first, but events whose 10-day window has closed come before the ones still pending">Newest resolved</button><button class="chipb" data-o="new">Newest</button><button class="chipb" data-o="old">Oldest</button><button class="chipb" data-o="best">Best 10d</button><button class="chipb" data-o="worst">Worst 10d</button><span class="meta" style="margin-left:10px">Chart window:</span><button class="chipb sel" data-w="ev" aria-pressed="true">Event ±15d</button><button class="chipb" data-w="full">Full history</button></div>
+  <div id="sortbar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px"><span class="meta">Sort:</span><button class="chipb sel" data-o="res" aria-pressed="true" title="Newest first, but events whose 10-day window has closed come before the ones still pending">Newest resolved</button><button class="chipb" data-o="new">Newest</button><button class="chipb" data-o="old">Oldest</button><button class="chipb" data-o="best">Best 10d</button><button class="chipb" data-o="worst">Worst 10d</button><span class="meta" style="margin-left:10px">Chart window:</span><button class="chipb sel" data-w="ev" aria-pressed="true" title="5 archive days before the spike, 15 after">Spike window −5d / +15d</button><button class="chipb" data-w="full">Full history</button></div>
   <div class="epgrid" id="epgrid"></div>
   <p class="note" id="gridEmpty" style="display:none">No event matches these filters. <button class="chipb" id="clearFilt">Clear all filters</button></p>
 </section>
@@ -863,10 +863,11 @@ async function initLab(){
         :'<span class="pill no" title="The ruleset gates on a bear regime; in a non-bear tape it blocks every event by design.">Blocked by regime</span>';
       det.innerHTML=`${outcomeDetail(ep)}
         <div class="cv"><canvas></canvas></div>
+        <p class="hint cvnote" style="margin:5px 0 0"></p>
         <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           ${verdict}<span class="pill ${ep.brkOff?'ok':'no'}">${ep.brkTxt}</span><span class="pill ${ep.bearTxt.includes('✓')?'ok':'no'}">${ep.bearTxt}</span>
           <span style="flex:1"></span>
-          <button class="winb chipb">${card._full?'±15d':'Full'}</button>
+          <button class="winb chipb">${card._full?'−5d/+15d':'Full history'}</button>
           <span class="tagset" role="group" aria-label="Classify ${ep.tk}">${['','story','fund'].map(g=>`<button class="tagb${(cls===g)?' on':''}" data-t="${ep.tk}" data-g="${g}" aria-pressed="${cls===g}">${LBL[g]}</button>`).join('')}</span>
         </div>`;
       card._built=true;
@@ -888,6 +889,18 @@ async function initLab(){
     let pline=null;
     if(px)pline=wd.map(d=>{const k=px.d.indexOf(d);return k>=0?+px.c[k].toFixed(2):null;});
     if(pline&&!pline.some(v=>v!=null))pline=null;
+    /* "Where did the rest go?" was asked twice about this chart. The window is
+       deliberately asymmetric — you care about what follows a spike — but nothing
+       said so, and nothing said more archive days existed past its right edge. */
+    const note=card.querySelector('.cvnote');
+    if(note){
+      const after=DATES.length-(di+16);
+      note.textContent=full
+        ? `Full archive · ${wd[0]} → ${wd[wd.length-1]}`
+        : `${wd[0]} → ${wd[wd.length-1]}`+(after>0
+            ? ` · ${after} more archive day${after===1?'':'s'} after this — switch to Full history`
+            : '');
+    }
     const mine=new Set(EPS.filter(e=>e.tk===ep.tk).map(e=>e.d));
     const spikeIdx=wd.indexOf(ep.d);
     card._ch=new Chart(card.querySelector('canvas'),{data:{labels:wd.map(d=>d.slice(5)),datasets:[
