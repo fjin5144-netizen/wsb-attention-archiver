@@ -3,139 +3,367 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WSB Attention Brief</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script defer id="chartjs" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-:root{--bg:#faf9f5;--card:#fff;--ink:#141413;--ink2:#5f5e5a;--ink3:#898781;--line:#e1e0d9;--blue:#2a78d6;--green:#1baf7a;--amber:#ba7517;--red:#a32d2d;--chip:#eef4fc}
-@media (prefers-color-scheme:dark){:root{--bg:#161615;--card:#1f1f1e;--ink:#f2f1ec;--ink2:#c3c2b7;--ink3:#898781;--line:#2c2c2a;--blue:#3987e5;--green:#199e70;--amber:#eda100;--red:#e66767;--chip:#12233a}}
+:root{
+  --bg:#0E1014; --card:#161A21; --sunk:#0A0C10; --raise:#1D222B;
+  --ink:#EDF0F5; --ink2:#9BA5B4; --ink3:#646F7F; --line:#232936;
+  --acc:#8B7CF6; --acc-soft:rgba(139,124,246,.14);
+  --blue:#8B7CF6; --green:#31C48D; --amber:#F0A93B; --red:#F2685C; --chip:#1E2130;
+  --c-line:#8B7CF6; --c-up:#31C48D; --c-dn:#F2685C; --c-warn:#F0A93B;
+  --c-bar:#2A3140; --c-grid:#1C222C; --c-mut:#646F7F;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI Variable","Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:9px;
+}
+@media (prefers-color-scheme:light){:root{
+  --bg:#F7F8FA; --card:#FFFFFF; --sunk:#EDEFF3; --raise:#FFFFFF;
+  --ink:#12151C; --ink2:#525C6B; --ink3:#8791A1; --line:#E1E5EB;
+  --acc:#6D5AE0; --acc-soft:rgba(109,90,224,.1);
+  --blue:#6D5AE0; --green:#12855C; --amber:#B4770F; --red:#C6382C; --chip:#EEEBFC;
+  --c-line:#6D5AE0; --c-up:#12855C; --c-dn:#C6382C; --c-warn:#B4770F;
+  --c-bar:#D7DBE2; --c-grid:#E6E9EE; --c-mut:#8791A1;}}
+:root[data-theme="light"]{
+  --bg:#F7F8FA; --card:#FFFFFF; --sunk:#EDEFF3; --raise:#FFFFFF;
+  --ink:#12151C; --ink2:#525C6B; --ink3:#8791A1; --line:#E1E5EB;
+  --acc:#6D5AE0; --acc-soft:rgba(109,90,224,.1);
+  --blue:#6D5AE0; --green:#12855C; --amber:#B4770F; --red:#C6382C; --chip:#EEEBFC;
+  --c-line:#6D5AE0; --c-up:#12855C; --c-dn:#C6382C; --c-warn:#B4770F;
+  --c-bar:#D7DBE2; --c-grid:#E6E9EE; --c-mut:#8791A1;}
+:root[data-theme="dark"]{
+  --bg:#0E1014; --card:#161A21; --sunk:#0A0C10; --raise:#1D222B;
+  --ink:#EDF0F5; --ink2:#9BA5B4; --ink3:#646F7F; --line:#232936;
+  --acc:#8B7CF6; --acc-soft:rgba(139,124,246,.14);
+  --blue:#8B7CF6; --green:#31C48D; --amber:#F0A93B; --red:#F2685C; --chip:#1E2130;
+  --c-line:#8B7CF6; --c-up:#31C48D; --c-dn:#F2685C; --c-warn:#F0A93B;
+  --c-bar:#2A3140; --c-grid:#1C222C; --c-mut:#646F7F;}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
-.wrap{max-width:1100px;margin:0 auto;padding:24px 18px 60px}
-h1{font-size:21px;font-weight:600;margin:0}
-.tabbar{display:flex;gap:8px;margin:14px 0 18px}
-.tab{font:inherit;font-size:14px;padding:7px 16px;border:1px solid var(--line);border-radius:99px;background:transparent;color:var(--ink2);cursor:pointer}
-.tab.on{background:var(--card);color:var(--ink);font-weight:600;border-color:var(--ink3)}
-.sub{font-size:12.5px;color:var(--ink3);margin:0 0 16px}
-#pvbanner{display:none;background:rgba(237,161,0,.12);color:var(--amber);font-size:12.5px;padding:7px 12px;border-radius:8px;margin:0 0 14px}
-select{font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
-.scard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-.scard .k{font-size:12px;color:var(--ink3);margin-bottom:2px}
-.scard .v{font-size:20px;font-weight:600}
-h2{font-size:16px;font-weight:600;margin:26px 0 10px}
-.chartbox{position:relative;width:100%}
-.legend{display:flex;gap:16px;font-size:12px;color:var(--ink2);margin-top:6px;flex-wrap:wrap}
-.legend span{display:flex;align-items:center;gap:5px}
-.sq{width:10px;height:10px;border-radius:2px;display:inline-block}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th{font-size:12px;color:var(--ink3);font-weight:500;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
-td{padding:7px 8px;border-bottom:1px solid var(--line)}
-td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
-.tick{font-weight:600}
-.badge{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--chip);color:var(--blue);margin-left:6px;vertical-align:1px}
-.badge.spike{background:rgba(227,73,72,.12);color:var(--red)}
-.badge.warm{background:rgba(237,161,0,.14);color:var(--amber)}
-.up{color:var(--green)}.dn{color:var(--red)}
-.note{font-size:12px;color:var(--ink3);margin-top:8px}
-.mov{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px}
-.mov .scard{padding:10px 14px}
-.mov .r{font-size:13px;color:var(--ink2)}
-.epgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:16px}
-.ep{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px}
-.ep .hd{display:flex;justify-content:space-between;align-items:baseline}
-.ep .meta{font-size:11.5px;color:var(--ink3)}
-.chipb{font-size:11.5px;padding:2px 10px;border-radius:99px;border:1px solid var(--line);cursor:pointer;user-select:none;background:transparent;color:var(--ink2);font-family:inherit}
-.chipb.story{background:rgba(227,75,74,.12);color:var(--red);border-color:transparent}
-.chipb.fund{background:rgba(27,175,122,.14);color:var(--green);border-color:transparent}
-.rets{display:flex;gap:14px;font-size:12.5px;margin-top:7px;font-variant-numeric:tabular-nums}
-.cv{position:relative;height:310px}
-.pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:99px;margin-right:6px}
-.pill.ok{background:rgba(27,175,122,.15);color:var(--green)}
-.pill.no{background:rgba(137,135,129,.15);color:var(--ink3)}
-.pill.blk{background:rgba(227,75,74,.12);color:var(--red)}
-.rulebar{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink2);margin:0 0 14px;flex-wrap:wrap}
-.status{color:var(--ink3);padding:22px 0}
-button.more{margin-top:10px;font:inherit;font-size:13px;padding:7px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer}
-footer{margin-top:44px;font-size:12.5px;color:var(--ink3);border-top:1px solid var(--line);padding-top:14px}
-a{color:var(--blue);text-decoration:none}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:14.5px/1.55 var(--sans);-webkit-font-smoothing:antialiased;letter-spacing:-.003em}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px 96px}
+a{color:var(--acc);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+h1{font:650 24px/1.2 var(--sans);letter-spacing:-.021em;margin:0;padding:26px 0 0}
+h2{font:640 18.5px/1.3 var(--sans);letter-spacing:-.016em;margin:38px 0 0;padding:0}
+h2 .h2sub{display:block;font:400 13.5px/1.5 var(--sans);color:var(--ink3);margin-top:5px;letter-spacing:0}
+h3{font:600 13px/1.3 var(--sans);letter-spacing:.01em;color:var(--ink2);margin:22px 0 9px}
+.sub{font-size:13px;color:var(--ink3);margin:7px 0 0}
+.note{font-size:13px;color:var(--ink3);line-height:1.6;margin:9px 0 0;max-width:74ch}
+.hint,.meta,.status{font-size:13px;color:var(--ink3)}
+
+/* sticky chrome: the view switcher and the Lab filter bar never scroll away */
+.tabbar{position:sticky;top:0;z-index:20;display:flex;gap:4px;margin:16px 0 6px;
+  padding:8px 0;background:var(--bg)}
+.tab{font:550 13.5px/1 var(--sans);padding:8px 14px;border:0;border-radius:7px;
+  background:transparent;color:var(--ink2);cursor:pointer;transition:background .13s,color .13s}
+.tab:hover{background:var(--card);color:var(--ink)}
+.tab.on{background:var(--acc-soft);color:var(--acc);font-weight:650}
+select,.filterbar input[type=search]{font:inherit;font-size:13.5px;padding:7px 11px;
+  border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)}
+select:hover,.filterbar input:hover{border-color:var(--ink3)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:11px;margin:16px 0 4px}
+.scard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;
+  transition:border-color .14s,transform .14s}
+.scard:hover{border-color:var(--ink3)}
+.scard .k{font:500 11.5px/1.4 var(--sans);letter-spacing:.01em;color:var(--ink3);margin-bottom:6px}
+.scard .v{font:650 22px/1.2 var(--sans);letter-spacing:-.022em;font-variant-numeric:tabular-nums}
+.cards.primary .scard{background:linear-gradient(180deg,var(--raise),var(--card));padding:17px 18px}
+.cards.primary .scard .v{font-size:29px}
+.cards.secondary .scard .v{font-size:17px}
+
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;font-variant-numeric:tabular-nums}
+th{font:550 11.5px/1.4 var(--sans);letter-spacing:.02em;color:var(--ink3);text-align:left;
+  padding:9px 12px;border-bottom:1px solid var(--line)}
+td{padding:9px 12px;border-bottom:1px solid var(--line)}
+tbody tr:hover td{background:var(--card)}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right}
+.tick{font-weight:640;letter-spacing:-.01em}
+.up{color:var(--green)}.dn{color:var(--red)}.flat{color:var(--ink3)}
+
+.badge{display:inline-block;font:550 11px/1.5 var(--sans);padding:1px 7px;border-radius:5px;
+  background:var(--chip);color:var(--acc);margin-left:7px}
+.badge.spike{background:rgba(242,104,92,.15);color:var(--red)}
+.badge.warm{background:rgba(240,169,59,.16);color:var(--amber)}
+.dup{font-size:11px;padding:1px 7px;border-radius:5px;background:var(--sunk);color:var(--ink3);margin-left:6px}
+.pill{display:inline-block;font-size:12px;padding:3px 9px;border-radius:6px;margin-right:6px;
+  background:var(--sunk);color:var(--ink2)}
+.pill.ok{background:rgba(49,196,141,.14);color:var(--green)}
+.pill.no{background:var(--sunk);color:var(--ink3)}
+.chipb{font:550 13px/1 var(--sans);padding:7px 13px;border:1px solid var(--line);border-radius:7px;
+  background:var(--card);color:var(--ink2);cursor:pointer;transition:.13s}
+.chipb:hover{border-color:var(--ink3);color:var(--ink)}
+.chipb.sel{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:650}
+.chipb.story{background:rgba(242,104,92,.15);color:var(--red);border-color:transparent}
+.chipb.fund{background:rgba(49,196,141,.14);color:var(--green);border-color:transparent}
+
+.rulebar,.filterbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13px;
+  color:var(--ink2);margin:10px 0}
+.filterbar{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:9px 12px}
+.filterbar label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.statline{display:flex;gap:9px;flex-wrap:wrap;font-size:13px;margin:14px 0 6px}
+.statline span{background:var(--card);border:1px solid var(--line);border-radius:7px;
+  padding:7px 12px;color:var(--ink3)}
+.statline b{color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
+.statline .warnpart{color:var(--amber);border-color:rgba(240,169,59,.35);background:rgba(240,169,59,.08)}
+
+.mov{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.mov .scard{padding:11px 14px}
+.mov .r{font-size:12.5px;color:var(--ink3);margin-top:4px}
+
+.epgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px}
+.ep{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0;
+  overflow:hidden;transition:border-color .14s,transform .14s}
+.ep:hover{border-color:var(--ink3)}
+.ep[data-open="1"]{grid-column:1/-1;border-color:var(--acc)}
+.ep .epsum{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:13px;
+  width:100%;padding:13px 15px;background:none;border:0;color:inherit;font:inherit;
+  text-align:left;cursor:pointer}
+.ep .epsum:hover{background:var(--raise)}
+.ep .epid{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ep .epline1{display:flex;align-items:baseline;gap:8px}
+.ep .epline1 .tick{font-size:15px}
+.ep .epline2{font-size:12px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ep .epnum{font:650 22px/1 var(--sans);letter-spacing:-.025em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ep .epnum.up{color:var(--green)}.ep .epnum.dn{color:var(--red)}
+.ep .epnum.na{font-size:12px;font-weight:500;color:var(--ink3);letter-spacing:0}
+.ep .epchev{color:var(--ink3);font-size:11px;transition:transform .16s}
+.ep[data-open="1"] .epchev{transform:rotate(90deg);color:var(--acc)}
+.ep .epdet{padding:0 15px 14px;border-top:1px solid var(--line);padding-top:13px}
+.ep .cv{height:180px}
+.ep .oside{display:flex;gap:16px;font-size:13.5px;color:var(--ink2);align-items:baseline;margin-bottom:11px}
+.ep .oside b{font-weight:650}
+.ep .olab{font-size:11.5px;color:var(--ink3)}
+.ep .pending{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink3);
+  background:var(--sunk);border-radius:7px;padding:8px 12px;margin:0 0 11px}
+.ep.nodata{opacity:.7}.ep.nodata:hover{opacity:1}
+.showmore{display:block;width:100%;margin:14px 0 0;padding:12px;font:550 13.5px/1 var(--sans);
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);color:var(--ink2);cursor:pointer}
+.showmore:hover{border-color:var(--acc);color:var(--acc)}
+
+.tl{display:flex;align-items:flex-end;gap:2px;height:46px;margin:6px 0 6px}
+.tl button{flex:1;min-width:3px;background:var(--line);border:0;padding:0;cursor:pointer;
+  border-radius:3px 3px 0 0;transition:background .12s}
+.tl button[data-in="1"]{background:var(--acc)}
+.tl button[data-wk="1"]{background:var(--line2,var(--line));opacity:.4}
+.tl button:hover{background:var(--ink2)}
+.tlwrap{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:11px 13px 9px;margin-bottom:11px}
+.tlscale{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink3)}
+
+details.explain{margin:11px 0;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+details.explain>summary{cursor:pointer;padding:11px 14px;font:500 13.5px/1.4 var(--sans);
+  color:var(--ink2);list-style:none;display:flex;align-items:center;gap:8px}
+details.explain>summary::-webkit-details-marker{display:none}
+details.explain>summary::before{content:"›";color:var(--ink3);font-size:16px;transition:transform .16s;display:inline-block}
+details.explain[open]>summary::before{transform:rotate(90deg);color:var(--acc)}
+details.explain>summary:hover{color:var(--ink)}
+details.explain .body{padding:0 14px 13px;font-size:13px;color:var(--ink3);line-height:1.6}
+
+.legend{display:flex;gap:15px;font-size:12.5px;color:var(--ink2);margin-top:8px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:6px}
+.sq{width:9px;height:9px;border-radius:3px;display:inline-block}
+.chartbox,.cv{position:relative;width:100%}
+.cv{height:310px}
+.emptystate{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 16px;font-size:13px;color:var(--ink2)}
+.status{padding:24px 0;color:var(--ink3)}
+#pvbanner{display:none}
+footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--ink3);line-height:1.8}
+
+/* ── sticky control band ───────────────────────────────────────────────────── */
+.topbar{position:sticky;top:0;z-index:30;background:var(--bg);
+  padding-bottom:10px;margin-bottom:14px;box-shadow:0 1px 0 var(--line)}
+.topbar h1{padding-top:22px}
+.topbar .tabbar{position:static;margin:14px 0 10px;padding:0}
+.topbar .globalbar{margin:0}
+@media (max-width:720px){
+  .topbar{position:static;box-shadow:none}
+  .globalbar{flex-direction:row;flex-wrap:wrap}
+}
+/* controls added after this palette was first written */
+.chipsrow{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 11px}
+.chipsrow:empty{margin:0}
+.fchip{font:550 12.5px/1 var(--sans);padding:6px 11px;border:1px solid var(--line);border-radius:99px;
+  background:var(--acc-soft);color:var(--acc);cursor:pointer;display:inline-flex;align-items:center;
+  gap:8px;transition:border-color .13s}
+.fchip:hover{border-color:var(--acc)}
+.fchip span{opacity:.62;font-size:14px;line-height:1}
+.fchip.clearall{background:transparent;color:var(--ink3);border-style:dashed}
+.fchip.clearall:hover{color:var(--ink);border-color:var(--ink3)}
+.tagset{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--sunk)}
+.tagb{font:550 12px/1 var(--sans);padding:6px 11px;border:0;border-right:1px solid var(--line);
+  background:transparent;color:var(--ink3);cursor:pointer;transition:.12s}
+.tagb:last-child{border-right:0}
+.tagb:hover{color:var(--ink);background:var(--raise)}
+.tagb.on{background:var(--acc);color:#fff;font-weight:650}
+.tagb.on[data-g="story"]{background:var(--red)}
+.tagb.on[data-g="fund"]{background:var(--green)}
+
+/* global focus band */
+.globalbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;
+  padding:10px 13px;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.globalbar input[type=search]{font:inherit;font-size:13.5px;padding:7px 11px;
+  border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);
+  min-width:160px;text-transform:uppercase;letter-spacing:.02em}
+.globalbar input[type=search]:focus{border-color:var(--acc);outline:none}
+.globalbar input[type=search]::placeholder{text-transform:none;color:var(--ink3)}
+.globalbar .hint{white-space:nowrap}
 </style></head>
 <body><div class="wrap">
-<h1>WSB Attention Brief</h1>
-<p class="sub" id="meta">Loading... <select id="daySel" style="margin-left:8px"></select></p>
-<div class="tabbar">
-  <button class="tab on" data-tab="brief">Overview</button>
-  <button class="tab" data-tab="board">Board</button>
-  <button class="tab" data-tab="radar">radar</button>
-  <button class="tab" data-tab="lab">Hype Lab</button>
+<div class="topbar"><h1>WSB Attention Brief</h1>
+<p class="sub" id="meta">Loading... <label for="daySel" style="margin-left:8px">Archive date</label> <select id="daySel" style="margin-left:6px"></select></p>
+<div class="tabbar" role="tablist" aria-label="Views">
+  <button class="tab on" data-tab="today" role="tab" id="tabbtn-today" aria-controls="tab-today" aria-selected="true" title="What the board looks like on this archive day.">Today</button>
+  <button class="tab" data-tab="aftermath" role="tab" id="tabbtn-aftermath" aria-controls="tab-aftermath" aria-selected="false" tabindex="-1" title="Every past spike and what the price did next.">Aftermath</button>
+  <button class="tab" data-tab="market" role="tab" id="tabbtn-market" aria-controls="tab-market" aria-selected="false" tabindex="-1" title="Systemic gauges. Deliberately not about WSB attention.">Market</button>
 </div>
+<div class="globalbar">
+  <label for="focusTk" class="hint">Focus</label>
+  <input type="search" id="focusTk" placeholder="any ticker" aria-label="Focus every view on one ticker" autocomplete="off">
+  <span class="hint" id="focusStat" role="status" aria-live="polite"></span>
+  <span style="flex:1"></span>
+  <button class="chipb" id="copyView" title="Copy a link that reproduces this exact view">Copy view link</button>
+</div></div>
 <div id="pvbanner">Local preview mode · data pulled live from your GitHub repo · this banner disappears once deployed</div>
 
     <div class="status" id="bstatus">Loading archives...</div>
 
-<section id="tab-brief" style="display:none">
-<div class="cards" id="thermo">
+<section id="tab-today" role="tabpanel" aria-labelledby="tabbtn-today" tabindex="0" style="display:none">
+<div class="cards primary" id="thermo">
       <div class="scard"><div class="k">Index gate (SPY vs 200-day MA)</div><div class="v" id="tGate">...</div><div class="k" id="tGateSub"></div></div>
       <div class="scard"><div class="k">Heat density (confirmed spikes, last 7 archive days)</div><div class="v" id="tDens">...</div><div class="k" id="tDensSub"></div></div>
       <div class="scard"><div class="k">Aftermath shape (median 10d return, spikes 10-40d ago)</div><div class="v" id="tShape">...</div><div class="k" id="tShapeSub"></div></div>
     </div>
     <p class="note" id="tVerdict" style="margin:-10px 0 20px"></p>
-    <h2 style="margin-top:4px">Systemic risk reference (market-wide gauges, independent of WSB attention)</h2>
+    
+    <div class="cards">
+      <div class="scard"><div class="k">No.1 today</div><div class="v" id="cTop">-</div></div>
+      <div class="scard"><div class="k">Research basket on the board (top 300)</div><div class="v" id="cBask">-</div></div>
+      <div class="scard"><div class="k">Spike: confirmed (>=3x & >=30) / warning (>=2x & >=15)</div><div class="v" id="cSpk">-</div></div>
+    </div>
+    <div id="spikeSec" style="display:none"><h2>Spikes &amp; warnings<span class="h2sub">Names crossing the confirmed or early-warning threshold on this archive day.</span></h2><div class="mov" id="spikeList"></div>
+      <p class="note">Confirmed tier: mentions >=30 and >=3x the prior-20-archive-day median (all site-wide historical stats use this definition). Early-warning tier: >=15 and >=2x - more sensitive, fires earlier, more false positives. Thresholds are four constants at the top of the page script; tune freely.</p></div>
+    
+
+<h2>Today’s top 15<span class="h2sub">Colour marks basket members and spike tiers — see the legend below.</span></h2>
+    <div class="chartbox" id="chartWrap"><canvas id="cv"></canvas></div>
+    <div class="legend"><span><span class="sq" style="background:var(--blue)"></span>Market-wide hot</span>
+      <span><span class="sq" style="background:var(--green)"></span>Research-basket member</span>
+      <span><span class="sq" style="background:var(--red)"></span>confirmed spike</span><span><span class="sq" style="background:var(--amber)"></span>warning</span></div>
+    <h2>Your research basket<span class="h2sub">Which of the 51 tracked names are on today’s board.</span></h2>
+    <table id="baskT"><thead><tr><th class="num">rank</th><th>Ticker</th><th class="num">mentions</th><th class="num">Δ 24h</th><th class="num">Upvotes</th></tr></thead><tbody></tbody></table>
+    <h2>Full board <span id="fullCount" style="font-weight:400;font-size:13px;color:var(--ink3)"></span></h2>
+    <div class="filterbar">
+      <label for="fullQ" class="hint">Find</label>
+      <input type="search" id="fullQ" placeholder="Ticker or company name" aria-label="Filter the board by ticker or company name">
+      <label><input type="checkbox" id="hideNoise"> Hide single-mention rows</label>
+      <span class="hint" id="fullFiltered" role="status" aria-live="polite"></span>
+    </div>
+    <table id="fullT"><thead><tr><th class="num">rank</th><th>Ticker</th><th class="num">mentions</th><th class="num">Δ 24h</th><th class="num">Upvotes</th></tr></thead><tbody></tbody></table>
+    <button class="more" id="moreBtn">Expand all</button>
+
+
+<div id="newFaces" style="display:none"><h2>New faces<span class="h2sub">Into the top 100 after at least 10 days absent.</span></h2><div class="mov" id="nfList"></div>
+    <p class="note">Historically these (new_entry) events are scarce and direction is unsettled - the value is "seeing them first"; not a trading basis.</p></div>
+    <h2>Rank surges<span class="h2sub">Biggest climbs since yesterday, grouped by how far they came.</span></h2>
+    <div id="climbers"></div><p class="note" id="wkNote"></p>
+    </section>
+<section id="tab-aftermath" role="tabpanel" aria-labelledby="tabbtn-aftermath" tabindex="0" style="display:none">
+  <details class="explain"><summary>What a card is, how tiers are defined, and what the Triple-filter verdict means</summary><div class="body">covering all archive-seen tickers - <b>All stocks</b> (daily top-300, not limited to the research basket; basket members carry a blue badge). Each card = one <b>Confirmed tier</b>  spike (>=30 and >=3x the prior-20-archive-day median) - the Lab admits confirmed-tier only, same definition as all historical stats; early warnings show on the Brief page only. Blue line = actual price (USD, left axis), gray bars = mentions (right axis, <span style="color:var(--red)">red bars = spike days</span>). Click the tag at a card's top-right to classify it (Unclassified -> Story -> Fundamental, saved locally); summary tables recompute live - the hypothesis is yours, and so is the judgment.<br>The footer of each card is the <b>Triple-filter rules</b> machine verdict (your backtested ruleset: 1) close breaks -5% within 10 days post-spike 2) SPY below its 200-day MA on entry day = bear regime): both must be ✓ for a "rule pass" - a historical-rule judgment, not investment advice.</div></details>
+  <div class="status" id="lstatus" style="display:none">Loading all archives...</div>
+  <p class="statline" id="labStat" role="status" aria-live="polite"></p>
+
+  <h2>What happened after the spike<span class="h2sub">Median 10-day return, grouped. Aggregates use only events whose 10-day window has closed.</span></h2>
+  <h3>By sector</h3>
+  <table style="margin-bottom:18px"><thead><tr><th>Sector</th><th>Events</th><th>median</th><th>Down ratio</th><th>best / worst</th></tr></thead><tbody id="sumSec"></tbody></table>
+  <details class="explain" id="tagsBox" style="margin:14px 0 0"><summary id="tagsSum">By your tags</summary><div class="body">
+  <p class="note" id="ruleStat" style="margin:0 0 8px">Computing rule verdicts...</p>
+  <table><thead><tr><th>group</th><th>Events</th><th>10d post-spike · median</th><th>% down after 10d</th><th>best / worst</th></tr></thead><tbody id="sumB"></tbody></table></div></details>
+  <p class="note">10-day figures are raw unadjusted returns; weekend spikes snap to the next trading day. The sample grows daily with the archiver.</p>
+
+  <h2>Every event<span class="h2sub">One card per confirmed spike. Filter by date, sector or outcome availability.</span></h2>
+  <div class="tlwrap">
+    <div class="tl" id="tl" role="group" aria-label="Events per day — click a bar to isolate that day"></div>
+    <div class="tlscale"><span id="tlFrom"></span><span id="tlSel"></span><span id="tlTo"></span></div>
+    <p class="hint" style="margin:6px 0 0">Short ticks are weekends — WSB volume drops to about a third of a
+      weekday's, so no name can clear both thresholds. Medium ticks are trading days where nothing
+      qualified. The archive itself has no missing days.</p>
+  </div>
+  <div class="filterbar" id="datebar">
+    <span class="hint">Dates</span>
+    <button class="chipb sel" data-d="all" aria-pressed="true">All</button>
+    <button class="chipb" data-d="7" aria-pressed="false">Last 7d</button>
+    <button class="chipb" data-d="14" aria-pressed="false">Last 14d</button>
+    <button class="chipb" data-d="30" aria-pressed="false">Last 30d</button>
+    <label for="dFrom" class="hint" style="margin-left:6px">from</label><select id="dFrom"></select>
+    <label for="dTo" class="hint">to</label><select id="dTo"></select>
+  </div>
+  <div class="rulebar" id="secbar" style="margin-bottom:8px"></div>
+  <div class="filterbar">
+    <label for="evP" class="hint">Price</label>
+    <select id="evP" aria-label="Filter by the ticker's latest close">
+      <option value="">any</option><option value="lt10">under $10</option><option value="10-50">$10 – $50</option>
+      <option value="50-200">$50 – $200</option><option value="gt200">over $200</option>
+    </select>
+    <label for="evX" class="hint">Spike</label>
+    <select id="evX" aria-label="Minimum spike multiple">
+      <option value="0">any ×</option><option value="5">≥5×</option><option value="10">≥10×</option><option value="20">≥20×</option><option value="40">≥40×</option>
+    </select>
+    <label for="evM" class="hint">Mentions</label>
+    <select id="evM" aria-label="Minimum mentions on the spike day">
+      <option value="0">any</option><option value="100">≥100</option><option value="250">≥250</option><option value="500">≥500</option>
+    </select>
+    <label for="evO" class="hint">Outcome</label>
+    <select id="evO" aria-label="Filter by what happened after 10 days">
+      <option value="">any</option><option value="up">up after 10d</option><option value="dn">down after 10d</option>
+      <option value="big">moved ≥10%</option><option value="huge">moved ≥25%</option>
+    </select>
+    <label><input type="checkbox" id="onlyBasket"> Basket only</label>
+    <label><input type="checkbox" id="onlyOutcome"> Closed 10d window</label>
+    <label><input type="checkbox" id="onlyPass"> Rule-passed</label>
+    <span class="hint" id="filtStat" role="status" aria-live="polite"></span>
+    <span style="flex:1"></span>
+    <button class="chipb" id="exportCsv">Export CSV</button>
+  </div>
+  <div id="activeFilters" class="chipsrow"></div>
+  <div id="sortbar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px"><span class="meta">Sort:</span><button class="chipb sel" data-o="res" aria-pressed="true" title="Newest first, but events whose 10-day window has closed come before the ones still pending">Newest resolved</button><button class="chipb" data-o="new">Newest</button><button class="chipb" data-o="old">Oldest</button><button class="chipb" data-o="best">Best 10d</button><button class="chipb" data-o="worst">Worst 10d</button><span class="meta" style="margin-left:10px">Chart window:</span><button class="chipb sel" data-w="ev" aria-pressed="true">Event ±15d</button><button class="chipb" data-w="full">Full history</button></div>
+  <div class="epgrid" id="epgrid"></div>
+  <p class="note" id="gridEmpty" style="display:none">No event matches these filters. <button class="chipb" id="clearFilt">Clear all filters</button></p>
+</section>
+<section id="tab-market" role="tabpanel" aria-labelledby="tabbtn-market" tabindex="0" style="display:none"><h2 style="margin-top:4px">Systemic risk reference (market-wide gauges, independent of WSB attention)</h2>
     <div class="cards">
       <div class="scard"><div class="k">GEX (SqueezeMetrics official)</div><div class="v" id="rkGexO">...</div><div class="k" id="rkGexOSub"></div></div>
       <div class="scard"><div class="k">DIX dark-pool index (official)</div><div class="v" id="rkDix">...</div><div class="k" id="rkDixSub"></div></div>
       <div class="scard"><div class="k">SKEW black-swan index</div><div class="v" id="rkSkew">...</div><div class="k" id="rkSkewSub"></div></div>
       <div class="scard"><div class="k">SKEW last 90 days</div><div style="position:relative;height:58px;margin-top:4px"><canvas id="rkSpark"></canvas></div></div>
     </div>
-    <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+    <details class="explain"><summary>Two years of GEX and DIX history</summary><div class="body">
+      <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-bottom:4px">
       <div class="scard"><div class="k">GEX · past 2 years (zero line = damper / amplifier divide)</div><div style="position:relative;height:180px;margin-top:6px"><canvas id="gexTrend"></canvas></div></div>
       <div class="scard"><div class="k">DIX · past 2 years (dashed 0.45 / 0.40)</div><div style="position:relative;height:180px;margin-top:6px"><canvas id="dixTrend"></canvas></div></div>
-    </div>
-    <p class="note" style="margin:-8px 0 20px">SKEW = the premium the options market "crash-style declines" pays for crash insurance; long-run center is about 120, >=140 means crowded tail-hedge demand. It measures the <b>price</b> of panic insurance; its predictive power for forward returns has always been weak - treat it as an environment gauge, not a timing signal. GEX/DIX come from the  <a href='https://squeezemetrics.com/monitor/dix' target='_blank' rel='noopener'>SqueezeMetrics</a>  official free history file (refreshed daily by the archiver; if the official source dies it falls back to this site's self-computed naive GEX). Positive GEX = hedging flows dampen volatility; negative = they amplify it, fragile regime. DIX is dark-pool buying intensity (0-1); per its authors' historical research, >=0.45 has typically preceded market strength while <0.40 weakness - their statistical observation, not this site's endorsement. Data cited for personal research with attribution; environment gauges only, not investment advice.</p>
-    <div class="cards">
-      <div class="scard"><div class="k">No.1 today</div><div class="v" id="cTop">-</div></div>
-      <div class="scard"><div class="k">Research basket on the board (top 300)</div><div class="v" id="cBask">-</div></div>
-      <div class="scard"><div class="k">Spike: confirmed (>=3x & >=30) / warning (>=2x & >=15)</div><div class="v" id="cSpk">-</div></div>
-    </div>
-    <div id="spikeSec" style="display:none"><h2>Spikes & warnings today</h2><div class="mov" id="spikeList"></div>
-      <p class="note">Confirmed tier: mentions >=30 and >=3x the prior-20-archive-day median (all site-wide historical stats use this definition). Early-warning tier: >=15 and >=2x - more sensitive, fires earlier, more false positives. Thresholds are four constants at the top of the page script; tune freely.</p></div>
+      </div></div></details>
+    <details class="explain"><summary>How to read GEX, DIX and SKEW (and what they cannot tell you)</summary><div class="body">SKEW = the premium the options market "crash-style declines" pays for crash insurance; long-run center is about 120, >=140 means crowded tail-hedge demand. It measures the <b>price</b> of panic insurance; its predictive power for forward returns has always been weak - treat it as an environment gauge, not a timing signal. GEX/DIX come from the  <a href='https://squeezemetrics.com/monitor/dix' target='_blank' rel='noopener'>SqueezeMetrics</a>  official free history file (refreshed daily by the archiver; if the official source dies it falls back to this site's self-computed naive GEX). Positive GEX = hedging flows dampen volatility; negative = they amplify it, fragile regime. DIX is dark-pool buying intensity (0-1); per its authors' historical research, >=0.45 has typically preceded market strength while <0.40 weakness - their statistical observation, not this site's endorsement. Data cited for personal research with attribution; environment gauges only, not investment advice.</div></details>
     </section>
-
-<section id="tab-board" style="display:none">
-<h2>Mentions Top 15</h2>
-    <div class="chartbox" id="chartWrap"><canvas id="cv"></canvas></div>
-    <div class="legend"><span><span class="sq" style="background:var(--blue)"></span>Market-wide hot</span>
-      <span><span class="sq" style="background:var(--green)"></span>Research-basket member</span>
-      <span><span class="sq" style="background:var(--red)"></span>confirmed spike</span><span><span class="sq" style="background:var(--amber)"></span>warning</span></div>
-    <h2>Research-basket seats today</h2>
-    <table id="baskT"><thead><tr><th class="num">rank</th><th>Ticker</th><th class="num">mentions</th><th class="num">Δ 24h</th><th class="num">Upvotes</th></tr></thead><tbody></tbody></table>
-    <h2>Full board <span id="fullCount" style="font-weight:400;font-size:13px;color:var(--ink3)"></span></h2>
-    <table id="fullT"><thead><tr><th class="num">rank</th><th>Ticker</th><th class="num">mentions</th><th class="num">Δ 24h</th><th class="num">Upvotes</th></tr></thead><tbody></tbody></table>
-    <button class="more" id="moreBtn">Expand all</button>
-</section>
-
-<section id="tab-radar" style="display:none">
-<div id="newFaces" style="display:none"><h2>New faces (into top 100 after >=10d absent)</h2><div class="mov" id="nfList"></div>
-    <p class="note">Historically these (new_entry) events are scarce and direction is unsettled - the value is "seeing them first"; not a trading basis.</p></div>
-    <h2>Rank-surge radar</h2>
-    <div id="climbers"></div><p class="note" id="wkNote"></p>
-    </section>
-
-<section id="tab-lab" style="display:none">
-  <p class="sub">covering all archive-seen tickers - <b>All stocks</b> (daily top-300, not limited to the research basket; basket members carry a blue badge). Each card = one <b>Confirmed tier</b>  spike (>=30 and >=3x the prior-20-archive-day median) - the Lab admits confirmed-tier only, same definition as all historical stats; early warnings show on the Brief page only. Blue line = actual price (USD, left axis), gray bars = mentions (right axis, <span style="color:var(--red)">red bars = spike days</span>). Click the tag at a card's top-right to classify it (Unclassified -> Story -> Fundamental, saved locally); summary tables recompute live - the hypothesis is yours, and so is the judgment.<br>The footer of each card is the <b>Triple-filter rules</b> machine verdict (your backtested ruleset: 1) close breaks -5% within 10 days post-spike 2) SPY below its 200-day MA on entry day = bear regime): both must be ✓ for a "rule pass" - a historical-rule judgment, not investment advice.</p>
-  <div class="rulebar" id="secbar" style="margin-bottom:8px"></div>
-  <h2 style="margin-top:6px">By sector · 10 days post-spike (auto)</h2>
-  <table style="margin-bottom:18px"><thead><tr><th>Sector</th><th>Events</th><th>median</th><th>Down ratio</th><th>best / worst</th></tr></thead><tbody id="sumSec"></tbody></table>
-  <h2>By your tags (click card labels)</h2>
-  <div class="rulebar"><span id="ruleStat">Computing rule verdicts...</span><label style="cursor:pointer"><input type="checkbox" id="onlyPass"> Rule-passed events only</label></div>
-  <table><thead><tr><th>group</th><th>Events</th><th>10d post-spike · median</th><th>% down after 10d</th><th>best / worst</th></tr></thead><tbody id="sumB"></tbody></table>
-  <p class="note">10-day figures are raw unadjusted returns; prices cover all current event tickers (134) through the latest close; weekend spikes snap to the next trading day. Brand-new tickers may briefly show mentions only until the next price refresh. The sample grows daily with the archiver.</p>
-  <div class="status" id="lstatus" style="display:none">Loading all archives...</div>
-  <div id="sortbar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 10px"><span class="meta">Sort:</span><button class="chipb story" data-o="new">Newest</button><button class="chipb" data-o="old">Oldest</button><button class="chipb" data-o="best">Best 10d</button><button class="chipb" data-o="worst">Worst 10d</button><span class="meta" style="margin-left:10px">Range:</span><button class="chipb story" data-w="ev">Event ±15d</button><button class="chipb" data-w="full">Full history</button></div>
-  <div class="epgrid" id="epgrid"></div>
-</section>
 
 <footer>Data: <a href="https://apewisdom.io" target="_blank" rel="noopener">ApeWisdom</a>(r/wallstreetbets, rolling 24h) · <a id="repoLink" href="#" target="_blank" rel="noopener">wsb-attention-archiver</a> Automated daily archiving · Brief spike tags share the Lab's source and definition</footer>
 </div>
 <script>
+/* Chart.js was a render-blocking <script> in <head>: until the CDN answered, the
+   page showed nothing but "Loading...". It is deferred now, so the shell paints
+   immediately - which means every draw site must wait for the library itself. */
+const chartReady=window.Chart?Promise.resolve():new Promise(res=>{
+  const t=document.getElementById('chartjs');
+  if(!t)return res();
+  t.addEventListener('load',res,{once:true});
+  t.addEventListener('error',()=>{console.warn('Chart.js failed to load - charts will be skipped');res();},{once:true});
+});
+const canChart=()=>typeof Chart!=='undefined';
+
 const OWNER='fjin5144-netizen', REPO='wsb-attention-archiver';
 const LOCAL = location.protocol==='file:';
 const BASE = LOCAL ? `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/` : '';
@@ -161,7 +389,10 @@ const SEC=t=>SECTOR[t]||"Other";
 const HOT_FLOOR=30, HOT_X=3, WARM_FLOOR=15, WARM_X=2;
 const CHEAP_MAX=100; // price ceiling (USD) for the cheap-surge radar
 const dark=matchMedia('(prefers-color-scheme:dark)').matches;
-const C={blue:dark?'#3987e5':'#2a78d6',green:dark?'#199e70':'#1baf7a',red:dark?'#e66767':'#e24b4a',amber:dark?'#eda100':'#ba7517',bar:dark?'#3a3a38':'#d5d4cc',grid:dark?'#2c2c2a':'#e1e0d9',mut:'#898781'};
+const _cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C={blue:_cv('--c-line')||'#3987e5',green:_cv('--c-up')||'#199e70',red:_cv('--c-dn')||'#e66767',
+         amber:_cv('--c-warn')||'#eda100',bar:_cv('--c-bar')||'#3a3a38',
+         grid:_cv('--c-grid')||'#2c2c2a',mut:_cv('--c-mut')||'#898781'};
 let DATES=[],CACHE={},chart=null;
 
 async function gj(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json();}
@@ -180,7 +411,20 @@ async function ensureDays(list){
 }
 const rowsOf=d=>((CACHE[d]||{}).filters||{}).wallstreetbets||[];
 const MAPS={};
-const mapOf=d=>MAPS[d]||(MAPS[d]=Object.fromEntries(rowsOf(d).map(r=>[r.ticker,r.mentions])));
+/* This memo used to be `MAPS[d] || (MAPS[d] = build(d))`. If any code path asked for
+   a day BEFORE its fetch landed, rowsOf() returned [] and the empty object was
+   memoised — and `{}` is truthy, so the day stayed empty for the rest of the session
+   no matter how much data arrived later. It silently zeroed mention history in the
+   charts (MU showed nothing after 2026-06-23 while the archive had 2302 the next day)
+   and, worse, fed zeros into spike detection: 231 events found instead of 238.
+   Cache only once the fetch has SETTLED — `d in CACHE` is true for a real result and
+   for a failure, but false while the request is still in flight. */
+const mapOf=d=>{
+  if(d in MAPS)return MAPS[d];
+  const m=Object.fromEntries(rowsOf(d).map(r=>[r.ticker,r.mentions]));
+  if(d in CACHE)MAPS[d]=m;
+  return m;
+};
 const mOf=(d,tk)=>mapOf(d)[tk]||0;
 function median(a){const s=[...a].sort((x,y)=>x-y),n=s.length;return n?(n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2):0;}
 const fmtD=n=>(n>0?'+':'')+n;
@@ -200,6 +444,7 @@ async function spikeFlags(day){
   return flags;
 }
 async function renderBrief(day){
+  await chartReady;
   const bs=document.getElementById('bstatus');
   bs.style.display='block';bs.textContent='Loading  '+day+' ...';
   await ensureDays([day]);
@@ -231,26 +476,57 @@ async function renderBrief(day){
        <div class="r">${r.mentions} mentions: median ${f.med}  at x${(r.mentions/Math.max(f.med,1)).toFixed(1)}  · rank ${r.rank}</div></div>`;}).join('');
   }else ss.style.display='none';
   const lastPx=t=>{const p=PRICES[t];return p&&p.c.length?p.c[p.c.length-1]:null;};
-  const climbCard=r=>{const p=lastPx(r.ticker);
-    return `<div class="scard"><span class="tick">${r.ticker}</span>${p!=null?`<span class="badge" style="background:transparent;border:1px solid var(--line);color:var(--ink2)">$${p<10?p.toFixed(2):p.toFixed(0)}</span>`:''}${BASKET.has(r.ticker)?'<span class="badge">Basket</span>':''}
-     <div class="r">${r.rank_24h_ago} → ${r.rank}  · mentions ${r.mentions_24h_ago} → ${r.mentions}</div></div>`;};
+  /* `rank` was the only unlabelled pair on the card - "44 → 5" read as a mystery until
+     you noticed the neighbouring pair said "mentions". Label both. */
+  const climbCard=(r,dup)=>{const p=lastPx(r.ticker);
+    return `<div class="scard"><span class="tick">${r.ticker}</span>${p!=null?`<span class="badge" style="background:transparent;border:1px solid var(--line);color:var(--ink2)">$${p<10?p.toFixed(2):p.toFixed(0)}</span>`:''}${BASKET.has(r.ticker)?'<span class="badge">Basket</span>':''}${dup?'<span class="dup" title="Already shown in a tier above - same event, different lens">also above</span>':''}
+     <div class="r">rank ${r.rank_24h_ago} → ${r.rank}  · mentions ${r.mentions_24h_ago} → ${r.mentions}</div></div>`;};
   const cand=rows.filter(r=>r.rank_24h_ago&&r.rank_24h_ago>r.rank);
   const seen=new Set();
   const take=(f,cap=8)=>{const out=cand.filter(r=>!seen.has(r.ticker)&&f(r)).sort((a,b)=>a.rank-b.rank).slice(0,cap);out.forEach(r=>seen.add(r.ticker));return out;};
   const t15=take(r=>r.rank<=15&&r.rank_24h_ago>15&&(r.rank_24h_ago-r.rank)>=10);
   const t50=take(r=>r.rank<=50&&(r.rank_24h_ago-r.rank)>=15);
   const t100=take(r=>r.rank<=100&&r.rank_24h_ago>150,10);
+  /* The three tiers above share `seen`, so they are mutually exclusive. `cheap` is a
+     price lens over the same pool and deliberately does not consume `seen` - which is
+     why the same ticker could appear twice with no indication. Snapshot `seen` before
+     computing it, and badge the repeats. */
+  const seenAbove=new Set(seen);
   const cheap=cand.filter(r=>{const p=lastPx(r.ticker);return p!=null&&p<CHEAP_MAX&&r.rank<=100&&(r.rank_24h_ago-r.rank)>=15;}).sort((a,b)=>(b.rank_24h_ago-b.rank)-(a.rank_24h_ago-a.rank)).slice(0,10);
-  const secs=[["🚀 Into top 15 (climbed >=10 spots)",t15],["Into top 50 (climbed >=15 spots)",t50],["Deep risers (beyond #150 -> top 100)",t100],[`Cheap surges (ref price<$${CHEAP_MAX}, climbed >=15 spots into top 100)`,cheap]];
-  document.getElementById('climbers').innerHTML=secs.filter(([_,l])=>l.length).map(([h,l])=>
-    `<div style="font-size:12.5px;color:var(--ink3);margin:12px 0 8px">${h}</div><div class="mov">${l.map(climbCard).join('')}</div>`).join('')
-    ||'<p class="note">No qualifying surges on any radar tier today.</p>';
+  /* Only the cheap tier can repeat a ticker - the first three consume `seen`.
+     Badging every tier would mark all of them, which is how this first went wrong. */
+  /* Progressive disclosure: the top two tiers are the headline - a name breaking
+     into the top 15 or 50 is the event. The deep-riser and cheap-price lenses are
+     follow-up questions, so they open on request with their count on the label. */
+  const secs=[["Into top 15 (climbed ≥10 spots)",t15,false,true],["Into top 50 (climbed ≥15 spots)",t50,false,true],["Deep risers (beyond #150 → top 100)",t100,false,false],[`Cheap surges (ref price under $${CHEAP_MAX}, climbed ≥15 spots into top 100)`,cheap,true,false]];
+  document.getElementById('climbers').innerHTML=secs.filter(([_,l])=>l.length).map(([h,l,mark,openByDefault])=>{
+    const body=`<div class="mov">${l.map(r=>climbCard(r,mark&&seenAbove.has(r.ticker))).join('')}</div>`;
+    return openByDefault
+      ? `<h3 style="font-size:13px;font-weight:600;color:var(--ink2);margin:16px 0 8px">${h}</h3>${body}`
+      : `<details class="explain" style="margin:10px 0 0"><summary>${h} · ${l.length}</summary><div class="body">${body}</div></details>`;
+  }).join('')||'<p class="note">No qualifying surges on any radar tier today.</p>';
   const wd=new Date(day+'T12:00:00Z').getUTCDay();
   document.getElementById('wkNote').textContent=(wd===1)?'Note: the Monday 24h baseline is the thin Sunday tape, so deltas run hot. The cheap radar "ref price" comes from the bundled price pack latest close, not real-time.':'';
-  document.querySelector('#baskT tbody').innerHTML=bask.map(r=>{const d24=r.mentions-r.mentions_24h_ago;
+  /* Two thirds of the basket sits at 1 mention around rank 400 - indistinguishable from
+     not being on the board at all, but rendered with the same weight as a real seat.
+     Show the ones that mean something; fold the tail into one summary row. */
+  const baskRow=r=>{const d24=r.mentions-r.mentions_24h_ago;
     return `<tr><td class="num">${r.rank}</td><td><span class="tick">${r.ticker}</span>${flags&&flags[r.ticker]?`<span class="badge ${flags[r.ticker].level==='hot'?'spike':'warm'}">${flags[r.ticker].level==='hot'?'spike':'warning'}</span>`:''}</td>
-      <td class="num">${r.mentions}</td><td class="num ${d24>=0?'up':'dn'}">${fmtD(d24)}</td><td class="num">${r.upvotes}</td></tr>`;}).join('')
-    ||'<tr><td colspan="5" class="note">No basket member made the top 300 today.</td></tr>';
+      <td class="num">${r.mentions}</td><td class="num ${d24>0?'up':d24<0?'dn':'flat'}">${fmtD(d24)}</td><td class="num">${r.upvotes}</td></tr>`;};
+  const baskReal=bask.filter(r=>r.mentions>1), baskTail=bask.filter(r=>r.mentions<=1);
+  let baskOpen=false;
+  const paintBask=()=>{
+    const tb=document.querySelector('#baskT tbody');
+    if(!bask.length){tb.innerHTML='<tr><td colspan="5" class="note">No basket member made the top 300 today.</td></tr>';return;}
+    const tail=baskTail.length?`<tr><td colspan="5" style="padding:10px 8px">
+        <button class="chipb" id="baskTailBtn" aria-expanded="${baskOpen}">${baskOpen
+          ?`− hide the ${baskTail.length} single-mention rows`
+          :`+ ${baskTail.length} more at 1 mention (rank ${Math.min(...baskTail.map(r=>r.rank))}–${Math.max(...baskTail.map(r=>r.rank))})`}</button></td></tr>`:'';
+    tb.innerHTML=baskReal.map(baskRow).join('')+(baskOpen?baskTail.map(baskRow).join(''):'')+tail;
+    const b=document.getElementById('baskTailBtn');
+    if(b)b.onclick=()=>{baskOpen=!baskOpen;paintBask();document.getElementById('baskTailBtn')?.focus();};
+  };
+  paintBask();
   // --- New faces: top-100 today, absent from all prior 10 archive days ---
   const di0=DATES.indexOf(day);
   if(di0>=10){
@@ -258,9 +534,12 @@ async function renderBrief(day){
     const nf=rows.filter(r=>r.rank<=100&&prior.every(d=>!(r.ticker in mapOf(d))));
     const box=document.getElementById('newFaces');
     if(nf.length){box.style.display='block';
-      document.getElementById('nfList').innerHTML=nf.slice(0,8).map(r=>
-        `<div class="scard"><span class="tick">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge">Basket</span>':''}
-         <div class="r">debuts at #${r.rank}  · ${r.mentions} mentions</div></div>`).join('');
+      /* Rank order buried the two debuts with real volume among six at 1 mention.
+         Lead with volume, and mute the single-mention tail so the eye skips it. */
+      const nfSorted=nf.slice().sort((a,b)=>b.mentions-a.mentions||a.rank-b.rank);
+      document.getElementById('nfList').innerHTML=nfSorted.slice(0,8).map(r=>
+        `<div class="scard"${r.mentions<=1?' style="opacity:.62"':''}><span class="tick">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge">Basket</span>':''}
+         <div class="r">debuts at #${r.rank}  · <span class="${r.mentions<=1?'flat':''}">${r.mentions} ${r.mentions===1?'mention':'mentions'}</span></div></div>`).join('');
     } else box.style.display='none';
   }
   // --- Thermometer ---
@@ -307,19 +586,56 @@ async function renderBrief(day){
 
   curRows=rows;curFlags=flags;fullN=50;renderFull();
   bs.style.display='none';window.dataReady=true;applyTab();
+document.getElementById('focusTk').addEventListener('input',onFocusInput);
+document.getElementById('copyView').onclick=async()=>{
+  writeView();
+  const btn=document.getElementById('copyView'),old=btn.textContent;
+  try{await navigator.clipboard.writeText(location.href);btn.textContent='Copied';}
+  catch{btn.textContent=location.href;}
+  setTimeout(()=>{btn.textContent=old;},1600);
+};
+applyView();
+}
+/* 500 rows with no way to look anything up, and a long tail of rank-400 names sitting
+   at 1 mention that read as findings. Filter first, then paginate. */
+function boardFilter(rows){
+  const q=(document.getElementById('fullQ')?.value||'').trim().toUpperCase();
+  const noise=document.getElementById('hideNoise')?.checked;
+  return rows.filter(r=>{
+    if(noise&&r.mentions<=1)return false;
+    if(!matchFocus(r.ticker))return false;
+    if(!q)return true;
+    return r.ticker.toUpperCase().includes(q)||String(r.name||'').toUpperCase().includes(q);
+  });
 }
 function renderFull(){
-  const rows=curRows,flags=curFlags,n=Math.min(fullN,rows.length);
+  const flags=curFlags;
+  const rows=boardFilter(curRows), n=Math.min(fullN,rows.length);
+  const total=curRows.length;
   document.getElementById('fullCount').textContent=` · showing ${n} / ${rows.length}`;
+  const fx=document.getElementById('fullFiltered');
+  if(fx)fx.textContent=(rows.length===total)?'':`filtered from ${total}`;
   document.querySelector('#fullT tbody').innerHTML=rows.slice(0,n).map(r=>{
     const d24=r.mentions-r.mentions_24h_ago,nm=String(r.name||'').replace(/"/g,'&quot;');
     return `<tr><td class="num">${r.rank}</td><td><span class="tick" title="${nm}">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge">Basket</span>':''}${flags&&flags[r.ticker]?`<span class="badge ${flags[r.ticker].level==='hot'?'spike':'warm'}">${flags[r.ticker].level==='hot'?'spike':'warning'}</span>`:''}</td>
-      <td class="num">${r.mentions}</td><td class="num ${d24>=0?'up':'dn'}">${fmtD(d24)}</td><td class="num">${r.upvotes}</td></tr>`;}).join('');
+      <td class="num">${r.mentions}</td><td class="num ${d24>0?'up':d24<0?'dn':'flat'}">${fmtD(d24)}</td><td class="num">${r.upvotes}</td></tr>`;}).join('');
+  if(!rows.length){
+    document.querySelector('#fullT tbody').innerHTML=
+      `<tr><td colspan="5" style="padding:18px 8px;color:var(--ink3)">No ticker matches that filter on this archive day.</td></tr>`;
+  }
   const btn=document.getElementById('moreBtn');
   btn.style.display=rows.length>50?'':'none';
   btn.textContent=fullN>=rows.length?'Collapse to Top 50':`Expand all ${rows.length}`;
 }
-document.getElementById('moreBtn').onclick=()=>{fullN=(fullN>=curRows.length)?50:curRows.length;renderFull();};
+/* paginate against the FILTERED length, not the raw 500 */
+document.getElementById('moreBtn').onclick=()=>{
+  const len=boardFilter(curRows).length;
+  fullN=(fullN>=len)?50:len;renderFull();
+};
+['fullQ','hideNoise'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('input',()=>{fullN=50;renderFull();});
+});
 
 /* ---------- Lab ---------- */
 const CLS=JSON.parse(localStorage.getItem('wsb-lab-cls')||'{}');
@@ -327,7 +643,10 @@ const CYCLE={'':'story','story':'fund','fund':''};
 const LBL={'':'Unclassified','story':'Story','fund':'Fundamental'};
 let EPS=[],labReady=false;
 async function initLab(){
-  if(labReady)return;labReady=true;
+  /* applyTab() now runs once at boot so a deep link highlights the right tab
+     immediately - which can reach here before DATES is fetched. Latching
+     labReady on that empty pass left the Lab permanently showing 0 events. */
+  if(labReady||!DATES.length)return;labReady=true;
   const ls=document.getElementById('lstatus');ls.style.display='block';
   ls.textContent=`Load all ${DATES.length}  days of archives...`;
   await ensureDays(DATES);
@@ -360,30 +679,203 @@ async function initLab(){
     }
     ep.pass=pass;ep.brkTxt=brkTxt;ep.bearTxt=bearTxt;ep.brkOff=brkOff;
   }
+  /* Computed before the first render: the cards' pending copy names this date. */
+  const PX_END=Object.values(PRICES).reduce((a,p)=>{
+    const l=p&&p.d&&p.d.length?p.d[p.d.length-1]:'';return l>a?l:a;},'');
+  window.__PX_END=PX_END;
+
+  /* The card's whole reason to exist is what the price did afterwards, so that is
+     the element that gets the size. A missing 10-day figure is now a stated status
+     ("the window has not closed yet") rather than three bare dashes that looked
+     identical to a genuine flat return. */
+  const pct=v=>`${v>0?'+':''}${v.toFixed(1)}%`;
+  const sgn=v=>v>0?'up':v<0?'dn':'flat';
+  /* The headline number lives in the collapsed summary now; this is the second
+     layer - the other horizons, or why there is nothing to show. */
+  function outcomeDetail(ep){
+    const {r5,r10,r20}=ep;
+    if(r10==null){
+      const px=window.__PX_END||'';
+      const why = ep.brkTxt==='price pending next session'
+        ? (px?`spike is after the price cutoff (${px})`:'the 10-day window has not closed yet')
+        : (ep.brkTxt==='outside price data' ? 'no price history for this ticker yet'
+                                           : 'the 10-day window has not closed yet');
+      return `<div class="pending">Outcome pending — ${why}</div>`;
+    }
+    const side=[['5d',r5],['10d',r10],['20d',r20]].map(([l,v])=>v==null
+      ? `<span class="flat">${l} —</span>`
+      : `<span>${l} <b class="${sgn(v)}">${pct(v)}</b></span>`).join('');
+    return `<div class="oside" style="margin:0 0 10px">${side}
+      <span class="olab" style="margin-left:auto">post-spike, raw return</span></div>`;
+  }
+
   // ---- render: 按当前排序重建网格 ----
-  let LABCH=[],SORT='new',WIN='ev',applyF=null;
-  const ORD={new:(x,y)=>y.d.localeCompare(x.d),old:(x,y)=>x.d.localeCompare(y.d),
+  /* Filter state is declared up here because renderEPS() reads it and runs before
+     the control wiring further down would otherwise have initialised it. */
+  let LABCH=[],SORT='res',WIN='ev',applyF=null;
+  let secSel='',dFrom='',dTo='';
+  const PAGE=30; let shown=PAGE;
+  /* Plain "Newest" put every pending event first - the most recent spikes are
+     precisely the ones whose 10-day window has not closed - so the opening screen
+     was 92 cards that said nothing. Default now leads with resolved events. */
+  const hasR=e=>e.r10!=null?1:0;
+  const ORD={res:(x,y)=>(hasR(y)-hasR(x))||y.d.localeCompare(x.d),
+             new:(x,y)=>y.d.localeCompare(x.d),old:(x,y)=>x.d.localeCompare(y.d),
              best:(x,y)=>((y.r10??-1e9)-(x.r10??-1e9)),worst:(x,y)=>((x.r10??1e9)-(y.r10??1e9))};
+  /* Filtering used to render all 224 cards and then hide the non-matching ones with
+     display:none - every filter still paid for 224 Chart instances. Now the filter
+     decides what gets built at all, and only a page at a time. */
+  const gv=id=>document.getElementById(id);
+  const xOf=e=>e.m/Math.max(e.med,1);
+  /* Outcome filters only ever apply to resolved events — an unresolved one is not
+     "not up", it is unknown, and folding those together would quietly bias any
+     count the reader takes off this screen. */
+  const outMatch=(e,m)=>{
+    if(!m)return true;
+    if(e.r10==null)return false;
+    if(m==='up')return e.r10>0;
+    if(m==='dn')return e.r10<0;
+    if(m==='big')return Math.abs(e.r10)>=10;
+    if(m==='huge')return Math.abs(e.r10)>=25;
+    return true;
+  };
+  /* Price bands generalise what the radar had hard-coded as "cheap = under $100".
+     A ticker with no price pack entry is excluded rather than silently kept - the
+     band is a claim about price, and we do not have one. */
+  const lastClose=t=>{const p=PRICES[t];return p&&p.c&&p.c.length?p.c[p.c.length-1]:null;};
+  const priceMatch=(e,b)=>{
+    if(!b)return true;
+    const v=lastClose(e.tk);if(v==null)return false;
+    if(b==='lt10')return v<10;
+    if(b==='10-50')return v>=10&&v<50;
+    if(b==='50-200')return v>=50&&v<200;
+    if(b==='gt200')return v>=200;
+    return true;
+  };
+  function visibleEPS(){
+    const op=gv('onlyPass').checked, oo=gv('onlyOutcome').checked;
+    const bo=gv('onlyBasket')?.checked;
+    const mx=+(gv('evX')?.value||0), mm=+(gv('evM')?.value||0);
+    const om=gv('evO')?.value||'', pb=gv('evP')?.value||'';
+    return EPS.filter(e=>
+        (!op||e.pass)
+      &&(!secSel||SEC(e.tk)===secSel)
+      &&(!oo||e.r10!=null)
+      &&(!dFrom||e.d>=dFrom)&&(!dTo||e.d<=dTo)
+      &&(!bo||BASKET.has(e.tk))
+      &&matchFocus(e.tk)
+      &&(!mx||xOf(e)>=mx)
+      &&(!mm||e.m>=mm)
+      &&priceMatch(e,pb)
+      &&outMatch(e,om)
+    ).sort(ORD[SORT]);
+  }
+  /* Eight controls spread across two rows is how a filter state becomes invisible.
+     Every active constraint gets a chip that says what it is and clears itself. */
+  function paintActiveFilters(){
+    const box=gv('activeFilters');if(!box)return;
+    const OUTL={up:'up after 10d',dn:'down after 10d',big:'moved ≥10%',huge:'moved ≥25%'};
+    const items=[];
+    const PBL={lt10:'under $10','10-50':'$10 – $50','50-200':'$50 – $200',gt200:'over $200'};
+    if(FOCUS)items.push(['focus · '+FOCUS,()=>{const f=document.getElementById('focusTk');
+      if(f){f.value='';}FOCUS='';const st=document.getElementById('focusStat');if(st)st.textContent='';}]);
+    if(gv('evP').value)items.push([PBL[gv('evP').value],()=>gv('evP').value='']);
+    if(secSel)items.push(['sector · '+secSel,()=>{secSel='';
+      document.querySelectorAll('#secbar .chipb').forEach((x,i)=>{
+        x.classList.toggle('sel',i===0);x.setAttribute('aria-pressed',String(i===0));});}]);
+    if(dFrom||dTo)items.push([`dates · ${dFrom||'…'} → ${dTo||'…'}`,()=>{dFrom=dTo='';syncDateUI();}]);
+    if(+gv('evX').value)items.push(['spike ≥'+gv('evX').value+'×',()=>gv('evX').value='0']);
+    if(+gv('evM').value)items.push(['mentions ≥'+gv('evM').value,()=>gv('evM').value='0']);
+    if(gv('evO').value)items.push([OUTL[gv('evO').value],()=>gv('evO').value='']);
+    if(gv('onlyBasket').checked)items.push(['basket only',()=>gv('onlyBasket').checked=false]);
+    if(gv('onlyOutcome').checked)items.push(['closed 10d window',()=>gv('onlyOutcome').checked=false]);
+    if(gv('onlyPass').checked)items.push(['rule-passed',()=>gv('onlyPass').checked=false]);
+    box.innerHTML=items.length
+      ? items.map((_,i)=>`<button class="fchip" data-i="${i}">${items[i][0]}<span aria-hidden="true">×</span></button>`).join('')
+        +`<button class="fchip clearall">Clear all</button>`
+      : '';
+    box.querySelectorAll('.fchip').forEach(b=>{
+      b.onclick=()=>{
+        if(b.classList.contains('clearall'))items.forEach(([,fn])=>fn());
+        else items[+b.dataset.i][1]();
+        applyF();
+      };
+    });
+  }
   function renderEPS(){
     LABCH.forEach(c=>c.destroy());LABCH=[];grid.innerHTML='';
-    for(const ep of EPS.slice().sort(ORD[SORT])){
+    const list=visibleEPS();
+    for(const ep of list.slice(0,shown)){
       const card=document.createElement('div');card.className='ep';
-      const px=ep.px,pi=ep.pi,r5=ep.r5,r10=ep.r10,r20=ep.r20,brkOff=ep.brkOff,brkTxt=ep.brkTxt,bearTxt=ep.bearTxt,pass=ep.pass;
       const cls=CLS[ep.tk]||'';
-      const verdict = pass?'<span class="pill ok">✅ Rule pass</span>':'<span class="pill blk">🚫 Blocked</span>';
-      card.dataset.pass=pass?'1':'0';card.dataset.sec=SEC(ep.tk);card._ep=ep;card._full=(WIN==='full');
-      card.innerHTML=`<div class="hd"><span><span class="tick">${ep.tk}</span>${BASKET.has(ep.tk)?'<span class="badge">Basket</span>':''} <span class="meta">${ep.d} burst</span></span>
-      <span style="display:flex;gap:6px"><button class="winb chipb" style="opacity:.75">${WIN==='full'?'±15d':'Full'}</button><button class="chipb ${cls}" data-t="${ep.tk}">${LBL[cls]}</button></span></div>
-      <div class="meta" style="margin:3px 0 6px"><b style="color:var(--ink2)">${SEC(ep.tk)}</b>  · that day ${ep.m} mentions at x${(ep.m/Math.max(ep.med,1)).toFixed(0)}(prior-20d median ${ep.med.toFixed(0)})</div>
-      <div class="cv"><canvas></canvas></div>
-      <div class="rets"><span style="color:var(--ink3)">post-spike: </span>${[['5d',r5],['10d',r10],['20d',r20]].map(([l,v])=>v==null?`<span style="color:var(--ink3)">${l} –</span>`:`<span class="${v>=0?'up':'dn'}">${l} ${v>0?'+':''}${v.toFixed(1)}%</span>`).join('')}</div>
-      <div style="margin-top:8px">${verdict}<span class="pill ${brkOff?'ok':'no'}">${brkTxt}</span><span class="pill ${bearTxt.includes('✓')?'ok':'no'}">${bearTxt}</span></div>`;
+      card.dataset.pass=ep.pass?'1':'0';card.dataset.sec=SEC(ep.tk);card._ep=ep;card._full=(WIN==='full');
+      card.dataset.d=ep.d;card.dataset.has=(ep.r10!=null)?'1':'0';card.dataset.open='0';
+      const r10=ep.r10;
+      const num=(r10==null)
+        ? `<span class="epnum na">pending</span>`
+        : `<span class="epnum ${sgn(r10)}">${pct(r10)}</span>`;
+      /* Collapsed: identity + when + what the price did. That is the whole answer
+         for a reader who is scanning. Everything else is one click away. */
+      card.innerHTML=`<button class="epsum" aria-expanded="false">
+          <span class="epid">
+            <span class="epline1"><span class="tick">${ep.tk}</span>${BASKET.has(ep.tk)?'<span class="badge">Basket</span>':''}<span class="meta">${ep.d}</span></span>
+            <span class="epline2">${SEC(ep.tk)} · ${ep.m} mentions ×${(ep.m/Math.max(ep.med,1)).toFixed(0)}</span>
+          </span>
+          ${num}
+          <span class="epchev" aria-hidden="true">▶</span>
+        </button>
+        <div class="epdet" hidden></div>`;
+      card.classList.toggle('nodata',r10==null);
       grid.appendChild(card);
-      buildEpChart(card,ep,WIN==='full');
     }
-    if(applyF)applyF();
+    const more=list.length-Math.min(shown,list.length);
+    const btn=document.getElementById('showMore');
+    if(btn)btn.remove();
+    if(more>0){
+      const b=document.createElement('button');
+      b.className='showmore';b.id='showMore';
+      b.textContent=`Show ${Math.min(PAGE,more)} more · ${more} remaining`;
+      b.onclick=()=>{shown+=PAGE;renderEPS();};
+      grid.parentNode.insertBefore(b,grid.nextSibling);
+    }
+    document.getElementById('filtStat').textContent=
+      `${Math.min(shown,list.length)} of ${list.length} shown`+(list.length!==EPS.length?` · filtered from ${EPS.length}`:'');
+    document.getElementById('gridEmpty').style.display=list.length?'none':'';
+    paintTimeline();paintActiveFilters();
+    if(window.__labState)writeView();
   }
+  /* Detail is built on first open - including the chart, which is why 224 events no
+     longer mean 224 live Chart instances. */
+  function openCard(card,open){
+    const ep=card._ep,det=card.querySelector('.epdet'),btn=card.querySelector('.epsum');
+    card.dataset.open=open?'1':'0';
+    btn.setAttribute('aria-expanded',String(open));
+    det.hidden=!open;
+    if(!open)return;
+    if(!card._built){
+      const cls=CLS[ep.tk]||'';
+      const verdict=ep.pass
+        ?'<span class="pill ok">✅ Rule pass</span>'
+        :'<span class="pill no" title="The ruleset gates on a bear regime; in a non-bear tape it blocks every event by design.">Blocked by regime</span>';
+      det.innerHTML=`${outcomeDetail(ep)}
+        <div class="cv"><canvas></canvas></div>
+        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          ${verdict}<span class="pill ${ep.brkOff?'ok':'no'}">${ep.brkTxt}</span><span class="pill ${ep.bearTxt.includes('✓')?'ok':'no'}">${ep.bearTxt}</span>
+          <span style="flex:1"></span>
+          <button class="winb chipb">${card._full?'±15d':'Full'}</button>
+          <span class="tagset" role="group" aria-label="Classify ${ep.tk}">${['','story','fund'].map(g=>`<button class="tagb${(cls===g)?' on':''}" data-t="${ep.tk}" data-g="${g}" aria-pressed="${cls===g}">${LBL[g]}</button>`).join('')}</span>
+        </div>`;
+      card._built=true;
+    }
+    buildEpChart(card,ep,card._full);
+  }
+  grid.addEventListener('click',e=>{
+    const b=e.target.closest('.epsum');if(!b)return;
+    const card=b.closest('.ep');
+    openCard(card,card.dataset.open!=='1');
+  });
   function buildEpChart(card,ep,full){
+  if(!canChart())return;
     if(card._ch)card._ch.destroy();
     const px=ep.px,pi=ep.pi;
     const di=DATES.indexOf(ep.d);
@@ -415,47 +907,202 @@ async function initLab(){
   const stb=document.getElementById('sortbar');
   stb.addEventListener('click',e=>{const b=e.target.closest('.chipb');if(!b)return;
     if(b.dataset.o){SORT=b.dataset.o;
-      stb.querySelectorAll('[data-o]').forEach(x=>x.classList.toggle('story',x===b));}
+      stb.querySelectorAll('[data-o]').forEach(x=>{x.classList.toggle('sel',x===b);x.setAttribute('aria-pressed',String(x===b));});}
     else if(b.dataset.w){WIN=b.dataset.w;
-      stb.querySelectorAll('[data-w]').forEach(x=>x.classList.toggle('story',x===b));}
+      stb.querySelectorAll('[data-w]').forEach(x=>{x.classList.toggle('sel',x===b);x.setAttribute('aria-pressed',String(x===b));});}
     renderEPS();});
   grid.addEventListener('click',e=>{const b=e.target.closest('.winb');if(!b)return;
     const card=b.closest('.ep'),ep=card._ep,f=!card._full;card._full=f;
     b.textContent=f?'±15d':'Full';buildEpChart(card,ep,f);});
-  renderEPS();
-  grid.addEventListener('click',e=>{const b=e.target.closest('.chipb');if(!b||!b.dataset.t)return;
-    const t=b.dataset.t;CLS[t]=CYCLE[CLS[t]||''];if(!CLS[t])delete CLS[t];
+  /* The first render is deferred to the priming call at the end of initLab: it
+     reads span/date state that is declared below this point. */
+  grid.addEventListener('click',e=>{const b=e.target.closest('.tagb');if(!b)return;
+    const t=b.dataset.t,g=b.dataset.g||'';
+    if(g)CLS[t]=g; else delete CLS[t];
     localStorage.setItem('wsb-lab-cls',JSON.stringify(CLS));
-    document.querySelectorAll(`.chipb[data-t="${t}"]`).forEach(x=>{x.className='chipb '+(CLS[t]||'');x.textContent=LBL[CLS[t]||''];});
+    document.querySelectorAll(`.tagb[data-t="${t}"]`).forEach(x=>{
+      const on=(x.dataset.g||'')===(CLS[t]||'');
+      x.classList.toggle('on',on);x.setAttribute('aria-pressed',String(on));});
     summarize();});
   const nPass=EPS.filter(e=>e.pass).length;
   document.getElementById('ruleStat').innerHTML=`Triple-filter verdict: <b class="up">Pass ${nPass}</b> · <b style="color:var(--red)">Blocked ${EPS.length-nPass}</b>`+(nPass===0?'(non-bear regime - rules block everything by design)':'');
-  let secSel='';
-  applyF=()=>{const op=document.getElementById('onlyPass').checked;
-    document.querySelectorAll('.ep').forEach(c=>{c.style.display=((!op||c.dataset.pass==='1')&&(!secSel||c.dataset.sec===secSel))?'':'none';});};
-  document.getElementById('onlyPass').onchange=applyF;
+  const EDATES=[...new Set(EPS.map(e=>e.d))].sort();
+  const spanFrom=EDATES[0]||'', spanTo=EDATES[EDATES.length-1]||'';
+
+  /* Any filter change resets to the first page and rebuilds - so a filtered view
+     never carries over cards (or Charts) that no longer match. */
+  applyF=()=>{shown=PAGE;renderEPS();};
+  ['onlyPass','onlyOutcome','onlyBasket','evX','evM','evO','evP'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.onchange=applyF;});
+
+  /* Event-density strip. It answers "when did things actually happen" before you
+     filter, and clicking a bar isolates that day - the overview IS the control. */
+  /* A flat stretch on this strip reads as "data is missing", and that was wrong:
+     the archive has no gaps at all. Weekend mention volume collapses to about a
+     third of a weekday's, so the handful of names still clearing 30 mentions are
+     the perennials whose trailing median is already high - they cannot also clear
+     3x it. A Saturday therefore CANNOT produce an event. Three states now, so an
+     empty column never means the same thing as a missing one. */
+  const isWknd=d=>{const w=new Date(d+'T12:00:00Z').getUTCDay();return w===0||w===6;};
+  function paintTimeline(){
+    const perDay={};EPS.forEach(e=>{perDay[e.d]=(perDay[e.d]||0)+1;});
+    const days=DATES.filter(d=>d>=spanFrom&&d<=spanTo);
+    const max=Math.max(1,...Object.values(perDay));
+    document.getElementById('tl').innerHTML=days.map(d=>{
+      const n=perDay[d]||0, wk=isWknd(d);
+      const inRange=(!dFrom||d>=dFrom)&&(!dTo||d<=dTo);
+      const note=wk?'weekend — too little volume for a spike to qualify'
+                   :(n?`${n} event${n===1?'':'s'}`:'no qualifying spike');
+      return `<button type="button" data-day="${d}" data-in="${inRange&&n?1:0}"
+        data-wk="${wk?1:0}"
+        style="height:${n?Math.max(4,n/max*40):(wk?3:6)}px"
+        title="${d} · ${note}" aria-label="${d}, ${note}"></button>`;
+    }).join('');
+    document.getElementById('tlFrom').textContent=days[0]||'';
+    document.getElementById('tlTo').textContent=days[days.length-1]||'';
+    document.getElementById('tlSel').textContent=
+      (dFrom||dTo)?`${dFrom||days[0]} → ${dTo||days[days.length-1]}`:'';
+  }
+  document.getElementById('tl').addEventListener('click',e=>{
+    const b=e.target.closest('button[data-day]');if(!b)return;
+    const d=b.dataset.day;
+    if(dFrom===d&&dTo===d){dFrom=dTo='';}else{dFrom=dTo=d;}
+    syncDateUI();applyF();
+  });
+
+  function syncDateUI(){
+    document.getElementById('dFrom').value=dFrom||'';
+    document.getElementById('dTo').value=dTo||'';
+    document.querySelectorAll('#datebar .chipb').forEach(x=>{
+      const on=(x.dataset.d==='all')&&!dFrom&&!dTo;
+      x.classList.toggle('sel',on);x.setAttribute('aria-pressed',String(on));
+    });
+  }
+  const opts=v=>`<option value="">any</option>`+EDATES.map(d=>`<option value="${d}"${d===v?' selected':''}>${d}</option>`).join('');
+  document.getElementById('dFrom').innerHTML=opts('');
+  document.getElementById('dTo').innerHTML=opts('');
+  document.getElementById('dFrom').onchange=e=>{dFrom=e.target.value;syncDateUI();applyF();};
+  document.getElementById('dTo').onchange=e=>{dTo=e.target.value;syncDateUI();applyF();};
+  document.getElementById('datebar').addEventListener('click',e=>{
+    const b=e.target.closest('.chipb');if(!b)return;
+    if(b.dataset.d==='all'){dFrom=dTo='';}
+    else{
+      const n=+b.dataset.d;
+      const idx=Math.max(0,EDATES.length-1);
+      const end=EDATES[idx];
+      const cut=new Date(end+'T00:00:00Z');cut.setUTCDate(cut.getUTCDate()-n+1);
+      dFrom=cut.toISOString().slice(0,10);dTo=end;
+    }
+    syncDateUI();
+    document.querySelectorAll('#datebar .chipb').forEach(x=>{
+      const on=x===b;x.classList.toggle('sel',on);x.setAttribute('aria-pressed',String(on));});
+    applyF();
+  });
+  document.getElementById('clearFilt').onclick=()=>{
+    dFrom=dTo='';secSel='';
+    ['onlyPass','onlyOutcome','onlyBasket'].forEach(id=>{const e=document.getElementById(id);if(e)e.checked=false;});
+    ['evX','evM'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='0';});
+    ['evO','evP'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    document.querySelectorAll('#secbar .chipb').forEach((x,i)=>{
+      x.classList.toggle('sel',i===0);x.setAttribute('aria-pressed',String(i===0));});
+    syncDateUI();applyF();
+  };
+
+  /* Completeness, stated up front: how much of this sample can actually answer
+     the question, and how much is still waiting on price. */
+  const nHas=EPS.filter(e=>e.r10!=null).length;
+  /* The attention archive refreshes daily via the workflow; the PRICES blob is
+     embedded by hand and does not. When it drifts behind, outcomes silently stop
+     appearing - so state the price cutoff and the size of the gap rather than
+     leaving the reader to wonder why the newest cards are all blank. */
+  const pxEnd=PX_END;
+  const gapDays=(pxEnd&&spanTo)
+    ? Math.round((Date.parse(spanTo)-Date.parse(pxEnd))/864e5) : 0;
+  document.getElementById('labStat').innerHTML=
+    `<span><b>${EPS.length}</b> spike events</span>`
+   +`<span><b>${EDATES.length}</b> days · ${spanFrom} → ${spanTo}</span>`
+   +`<span><b>${nHas}</b> with a closed 10-day window</span>`
+   +(EPS.length-nHas?`<span class="warnpart"><b>${EPS.length-nHas}</b> awaiting price</span>`:'')
+   +(pxEnd?`<span class="${gapDays>3?'warnpart':''}" title="Attention data is archived daily by the workflow; the price pack is embedded in the page and refreshed by hand.">prices through <b>${pxEnd}</b>${gapDays>3?` · ${gapDays} days behind the archive`:''}</span>`:'');
   const cnt={};EPS.forEach(e=>{const s=SEC(e.tk);cnt[s]=(cnt[s]||0)+1;});
   const sb=document.getElementById('secbar');
-  sb.innerHTML=`<button class="chipb story" data-s="">All ${EPS.length}</button>`+Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`<button class="chipb" data-s="${s}">${s} ${n}</button>`).join('');
+  sb.innerHTML=`<button class="chipb sel" data-s="" aria-pressed="true">All ${EPS.length}</button>`+Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`<button class="chipb" data-s="${s}">${s} ${n}</button>`).join('');
   sb.addEventListener('click',e=>{const b=e.target.closest('.chipb');if(!b)return;secSel=b.dataset.s;
-    sb.querySelectorAll('.chipb').forEach(x=>x.classList.toggle('story',x===b));applyF();});
+    sb.querySelectorAll('.chipb').forEach(x=>{x.classList.toggle('sel',x===b);x.setAttribute('aria-pressed',String(x===b));});applyF();});
+  /* renderEPS() ran before applyF existed, so nothing had painted the timeline or
+     the counts yet. Prime them once now that every control is wired. */
+  /* Lets the URL serialiser reach state that lives in this closure, so a shared
+     link restores the sector, the dates and the sort as well as the DOM controls. */
+  window.__labState={
+    read:()=>({sec:secSel,df:dFrom,dt:dTo,sort:SORT==='res'?'':SORT}),
+    write:sp=>{
+      secSel=sp.get('sec')||'';dFrom=sp.get('df')||'';dTo=sp.get('dt')||'';
+      const so=sp.get('sort')||'res';if(ORD[so])SORT=so;
+      document.querySelectorAll('#secbar .chipb').forEach(x=>{
+        const on=(x.dataset.s||'')===secSel;
+        x.classList.toggle('sel',on);x.setAttribute('aria-pressed',String(on));});
+      document.querySelectorAll('#sortbar [data-o]').forEach(x=>{
+        const on=x.dataset.o===SORT;
+        x.classList.toggle('sel',on);x.setAttribute('aria-pressed',String(on));});
+      syncDateUI();shown=PAGE;renderEPS();
+    },
+    refresh:()=>{shown=PAGE;renderEPS();}
+  };
+
+  /* Export exactly what is on screen, filters included - a screenshot of a filtered
+     table is not something you can check someone else's arithmetic against. */
+  const CSVCOLS=[['date',e=>e.d],['ticker',e=>e.tk],['sector',e=>SEC(e.tk)],
+    ['in_basket',e=>BASKET.has(e.tk)?'yes':'no'],['mentions',e=>e.m],
+    ['prior_20d_median',e=>e.med.toFixed(1)],['multiple',e=>xOf(e).toFixed(1)],
+    ['last_close',e=>{const v=lastClose(e.tk);return v==null?'':v.toFixed(2);}],
+    ['ret_5d_pct',e=>e.r5==null?'':e.r5.toFixed(2)],
+    ['ret_10d_pct',e=>e.r10==null?'':e.r10.toFixed(2)],
+    ['ret_20d_pct',e=>e.r20==null?'':e.r20.toFixed(2)],
+    ['outcome_status',e=>e.r10==null?'pending':'closed'],
+    ['rule_pass',e=>e.pass?'yes':'no'],['breakdown',e=>e.brkTxt],['regime',e=>e.bearTxt],
+    ['your_tag',e=>LBL[CLS[e.tk]||'']]];
+  const csvCell=v=>{const t=String(v??'');return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t;};
+  document.getElementById('exportCsv').onclick=()=>{
+    const list=visibleEPS();
+    if(!list.length){alert('Nothing to export with these filters.');return;}
+    const rows=[CSVCOLS.map(c=>c[0]).join(',')]
+      .concat(list.map(e=>CSVCOLS.map(c=>csvCell(c[1](e))).join(',')));
+    const stamp=(DATES[DATES.length-1]||'').replace(/-/g,'');
+    const blob=new Blob([rows.join('\n')+'\n'],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`wsb-events-${stamp}-${list.length}.csv`;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  };
+
+  syncDateUI();applyView();applyF();
   summarize();
 }
 function summarize(){
+  /* The tag breakdown is empty until you have actually tagged something, so its
+     disclosure label carries the state - no need to open an all-dashes table to
+     discover there is nothing in it. */
+  const tagged=EPS.filter(e=>CLS[e.tk]).length;
+  const sum=document.getElementById('tagsSum');
+  if(sum)sum.textContent=tagged
+    ? `By your tags · ${tagged} classified`
+    : 'By your tags · nothing classified yet — click a card’s label to start';
   const secs={};EPS.forEach(e=>{if(e.r10==null)return;const s=SEC(e.tk);(secs[s]=secs[s]||[]).push(e.r10);});
   document.getElementById('sumSec').innerHTML=Object.entries(secs).sort((a,b)=>b[1].length-a[1].length).map(([s,rs])=>{
     const md=median(rs),dn=rs.filter(x=>x<0).length/rs.length;
-    return `<tr><td>${s}</td><td>${rs.length}</td><td class="${md>=0?'up':'dn'}">${md>0?'+':''}${md.toFixed(1)}%</td><td>${(dn*100).toFixed(0)}%</td><td>${Math.max(...rs).toFixed(0)}% / ${Math.min(...rs).toFixed(0)}%</td></tr>`;}).join('');
+    return `<tr><td>${s}</td><td>${rs.length}</td><td class="${md>0?'up':md<0?'dn':'flat'}">${md>0?'+':''}${md.toFixed(1)}%</td><td>${(dn*100).toFixed(0)}%</td><td>${Math.max(...rs).toFixed(0)}% / ${Math.min(...rs).toFixed(0)}%</td></tr>`;}).join('');
   document.getElementById('sumB').innerHTML=['story','fund',''].map(g=>{
     const es=EPS.filter(e=>(CLS[e.tk]||'')===g&&e.r10!=null);
     if(!es.length)return `<tr><td>${LBL[g]}</td><td>0</td><td>–</td><td>–</td><td>–</td></tr>`;
     const rs=es.map(e=>e.r10),md=median(rs),dn=rs.filter(x=>x<0).length/rs.length;
-    return `<tr><td>${LBL[g]}</td><td>${es.length}</td><td class="${md>=0?'up':'dn'}">${md>0?'+':''}${md.toFixed(1)}%</td><td>${(dn*100).toFixed(0)}%</td><td>${Math.max(...rs).toFixed(0)}% / ${Math.min(...rs).toFixed(0)}%</td></tr>`;}).join('');
+    return `<tr><td>${LBL[g]}</td><td>${es.length}</td><td class="${md>0?'up':md<0?'dn':'flat'}">${md>0?'+':''}${md.toFixed(1)}%</td><td>${(dn*100).toFixed(0)}%</td><td>${Math.max(...rs).toFixed(0)}% / ${Math.min(...rs).toFixed(0)}%</td></tr>`;}).join('');
 }
 
 
 let RKCH={}, _DIXROWS=null, _RISKD=null;
 async function renderRisk(selDay){
+  await chartReady;
   const mk=(id,cfg)=>{if(RKCH[id])RKCH[id].destroy();RKCH[id]=new Chart(document.getElementById(id),cfg);};
   const cutI=(dts)=>{if(!selDay)return dts.length-1;let x=-1;for(let k=0;k<dts.length;k++){if(dts[k]<=selDay)x=k;else break;}return x;};
   let officialOK=false;
@@ -472,8 +1119,11 @@ async function renderRisk(selDay){
       document.getElementById('rkGexO').innerHTML=`<span class="${g>=0?'up':'dn'}">${g>0?'+':''}${g.toFixed(1)}B</span>`;
       document.getElementById('rkGexOSub').textContent=(g>=0?'positive gamma · volatility suppressed':'negative gamma · volatility amplified, fragile')+` · ${d[d.length-1]}`;
       const zone=dv>=0.45?['strong (dark-pool accumulation)','up']:dv<0.40?['weak','dn']:['neutral',''];
-      document.getElementById('rkDix').innerHTML=`<span class="${zone[1]}">${dv.toFixed(3)} · ${zone[0]}</span>`;
-      document.getElementById('rkDixSub').textContent=`2y range [${Math.min(...dx).toFixed(2)}, ${Math.max(...dx).toFixed(2)}] · as of ${d[d.length-1]}`;
+      /* The reading and its interpretation were one 27px string, so the card wrapped
+         onto three lines. Number stays headline; the words drop to the sub-label. */
+      document.getElementById('rkDix').innerHTML=`<span class="${zone[1]}">${dv.toFixed(3)}</span>`;
+      window.__dixZone=zone[0];
+      document.getElementById('rkDixSub').textContent=`${window.__dixZone?window.__dixZone+' · ':''}2y range [${Math.min(...dx).toFixed(2)}, ${Math.max(...dx).toFixed(2)}] · as of ${d[d.length-1]}`;
       const lbl=d.map(x=>x.slice(2,7));
       mk('gexTrend',{type:'line',
         data:{labels:lbl,datasets:[{data:gx,borderWidth:1.6,pointRadius:0,tension:.2,
@@ -541,20 +1191,128 @@ async function renderRisk(selDay){
   }
 }
 
+/* ---------- global focus + shareable view state ---------- */
+/* One ticker box in the masthead instead of a separate one per tab: typing AMD once
+   narrows the board, the radar and the event ledger together. */
+let FOCUS='';
+const matchFocus=t=>!FOCUS||String(t).toUpperCase().includes(FOCUS);
+
+/* The hash already carried the tab; it now carries the whole view, so a filtered
+   screen is a link you can send. `?` after the tab keeps it readable: #lab?tk=AMD&x=10 */
+const DOMKEYS={p:'evP',x:'evX',m:'evM',o:'evO',bk:'onlyBasket',cw:'onlyOutcome',
+               rp:'onlyPass',q:'fullQ',hn:'hideNoise'};
+function readView(){
+  const sp=new URLSearchParams();
+  if(FOCUS)sp.set('tk',FOCUS);
+  for(const [k,id] of Object.entries(DOMKEYS)){
+    const el=document.getElementById(id);if(!el)continue;
+    const v=(el.type==='checkbox')?(el.checked?'1':''):el.value;
+    if(v&&v!=='0')sp.set(k,v);
+  }
+  const L=window.__labState&&window.__labState.read();
+  if(L){for(const [k,v] of Object.entries(L))if(v)sp.set(k,v);}
+  return sp;
+}
+function writeView(){
+  const sp=readView(), q=sp.toString();
+  const h='#'+currentTab()+(q?'?'+q:'');
+  if(location.hash!==h)history.replaceState(null,'',h);
+}
+function applyView(){
+  const raw=location.hash.replace(/^#/,'');
+  const qi=raw.indexOf('?');
+  const sp=new URLSearchParams(qi<0?'':raw.slice(qi+1));
+  FOCUS=(sp.get('tk')||'').toUpperCase();
+  const fEl=document.getElementById('focusTk');if(fEl)fEl.value=FOCUS;
+  for(const [k,id] of Object.entries(DOMKEYS)){
+    const el=document.getElementById(id);if(!el)continue;
+    const v=sp.get(k)||'';
+    if(el.type==='checkbox')el.checked=(v==='1');
+    else el.value=v||(el.tagName==='SELECT'&&el.querySelector('option[value="0"]')?'0':'');
+  }
+  if(window.__labState)window.__labState.write(sp);
+}
+function onFocusInput(){
+  FOCUS=(document.getElementById('focusTk').value||'').trim().toUpperCase();
+  const s=document.getElementById('focusStat');
+  if(s)s.textContent=FOCUS?`every view limited to “${FOCUS}”`:'';
+  if(window.curRows)renderFull();
+  if(window.__labState)window.__labState.refresh();
+  if(window.renderRadar)window.renderRadar();
+  writeView();
+}
+
 /* ---------- tabs & boot ---------- */
-const TABS=['brief','board','radar','lab'];
+const TABS=['today','aftermath','market'];
+/* Tab state lives in the URL hash so a view can be linked, bookmarked and reached
+   with the back button. localStorage is kept only as the fallback for a bare URL. */
+function currentTab(){
+  const h=location.hash.replace(/^#/,'').split('?')[0];
+  if(TABS.includes(h))return h;
+  const s=localStorage.getItem('wsb-tab');
+  return TABS.includes(s)?s:'brief';
+}
 function applyTab(){
-  let t=localStorage.getItem('wsb-tab')||'brief';if(!TABS.includes(t))t='brief';
-  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===t));
+  const t=currentTab();
+  document.querySelectorAll('.tab').forEach(x=>{
+    const on=x.dataset.tab===t;
+    x.classList.toggle('on',on);
+    x.setAttribute('aria-selected',String(on));
+    x.tabIndex=on?0:-1;
+  });
   TABS.forEach(k=>{const el=document.getElementById('tab-'+k);
-    if(el)el.style.display=(k===t&&(k==='lab'||window.dataReady))?'':'none';});
-  document.getElementById('meta').style.display=(t==='lab')?'none':'';
-  if(t==='lab')initLab();
+    if(el)el.style.display=(k===t&&(k==='aftermath'||window.dataReady))?'':'none';});
+  document.getElementById('meta').style.display=(t==='aftermath')?'none':'';
+  if(t==='aftermath')initLab();
+}
+function goTab(t){
+  if(!TABS.includes(t))return;
+  localStorage.setItem('wsb-tab',t);
+  /* switching view keeps the filters you already set */
+  const q=readView().toString();
+  const h='#'+t+(q?'?'+q:'');
+  if(location.hash===h)applyTab(); else location.hash=h;
 }
 document.querySelector('.tabbar').addEventListener('click',e=>{
   const b=e.target.closest('.tab');if(!b)return;
-  localStorage.setItem('wsb-tab',b.dataset.tab);applyTab();
+  goTab(b.dataset.tab);
 });
+/* Arrow-key navigation is what makes role="tablist" mean anything to a screen reader. */
+document.querySelector('.tabbar').addEventListener('keydown',e=>{
+  const keys={ArrowRight:1,ArrowLeft:-1,Home:'first',End:'last'};
+  if(!(e.key in keys))return;
+  e.preventDefault();
+  const i=TABS.indexOf(currentTab());
+  const k=keys[e.key];
+  const n=k==='first'?0:k==='last'?TABS.length-1:(i+k+TABS.length)%TABS.length;
+  goTab(TABS[n]);
+  document.getElementById('tabbtn-'+TABS[n]).focus();
+});
+/* A canvas inside a closed <details> has no box, so Chart.js sizes it from whatever
+   it measured mid-transition. Re-measure once the disclosure is actually open. */
+document.addEventListener('toggle',e=>{
+  const d=e.target;
+  if(!(d instanceof HTMLDetailsElement)||!d.open||typeof Chart==='undefined')return;
+  d.querySelectorAll('canvas').forEach(cv=>{const c=Chart.getChart(cv);if(c)c.resize();});
+},true);
+
+/* Radar cards are cheap to re-filter in place; no need to rebuild the day. */
+window.renderRadar=()=>{
+  ['climbers','nfList'].forEach(id=>{
+    const box=document.getElementById(id);if(!box)return;
+    box.querySelectorAll('.scard').forEach(c=>{
+      const t=c.querySelector('.tick');
+      c.style.display=(!t||matchFocus(t.textContent))?'':'none';});
+  });
+};
+addEventListener('hashchange',()=>{applyView();applyTab();
+  if(window.curRows)renderFull();
+  if(window.__labState)window.__labState.refresh();
+  window.renderRadar();});
+/* `hashchange` does not fire for the hash a page is *opened* with, and the first
+   applyTab() otherwise waits on the archive load - so a deep link sat on the wrong
+   highlighted tab for the whole fetch. Apply it once up front. */
+applyTab();
 (async()=>{
   try{
     DATES=await listDates();
@@ -562,9 +1320,33 @@ document.querySelector('.tabbar').addEventListener('click',e=>{
     const sel=document.getElementById('daySel');
     sel.innerHTML=DATES.slice().reverse().map(d=>`<option value="${d}">${d}</option>`).join('');
     sel.onchange=()=>{renderBrief(sel.value);renderRisk(sel.value);};
-    await renderBrief(DATES[DATES.length-1]);
+    /* The newest archived date is not automatically the newest date with DATA in it:
+       a run can commit before the fetch returns anything, and served locally the date
+       list comes from the API while the files come from the checkout. Landing on an
+       empty day blanks the whole page, so fall back to the most recent day that has
+       rows and say so rather than showing an empty board. */
+    let day=DATES[DATES.length-1];
+    await ensureDays([day]);
+    if(!rowsOf(day).length){
+      const probe=DATES.slice(-8).reverse();
+      await ensureDays(probe);
+      const ok=probe.find(d=>rowsOf(d).length);
+      if(ok){
+        day=ok;
+        const m=document.getElementById('meta');
+        m.dataset.stale=DATES[DATES.length-1];
+      }
+    }
+    sel.value=day;
+    await renderBrief(day);
+    if(document.getElementById('meta').dataset.stale){
+      const b=document.createElement('span');
+      b.className='hint';b.style.color='var(--amber)';
+      b.textContent=` · ${document.getElementById('meta').dataset.stale} has no rows yet — showing ${day}`;
+      document.getElementById('meta').appendChild(b);
+    }
     applyTab();
-    renderRisk(DATES[DATES.length-1]);
+    renderRisk(day);
   }catch(e){document.getElementById('bstatus').textContent='Load failed: '+e;}
 })();
 </script></body></html>
