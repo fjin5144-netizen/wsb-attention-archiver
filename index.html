@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>WSB Attention Brief</title>
+<title>Salience</title>
 <script defer id="chartjs" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root{
@@ -178,7 +178,11 @@ footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
 /* ── sticky control band ───────────────────────────────────────────────────── */
 .topbar{position:sticky;top:0;z-index:30;background:var(--bg);
   padding-bottom:10px;margin-bottom:14px;box-shadow:0 1px 0 var(--line)}
-.topbar h1{padding-top:22px}
+.topbar h1{padding-top:22px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+/* A one-word name needs a line that says what the thing is; kept on the baseline so
+   it reads as a subtitle rather than a second heading. */
+.wordmark-sub{font:400 13px/1.4 var(--sans);letter-spacing:0;color:var(--ink3)}
+@media (max-width:720px){.topbar h1{gap:4px}.wordmark-sub{flex-basis:100%}}
 .topbar .tabbar{position:static;margin:14px 0 10px;padding:0}
 .topbar .globalbar{margin:0}
 @media (max-width:720px){
@@ -215,7 +219,7 @@ footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
 .globalbar .hint{white-space:nowrap}
 </style></head>
 <body><div class="wrap">
-<div class="topbar"><h1>WSB Attention Brief</h1>
+<div class="topbar"><h1>Salience<span class="wordmark-sub">Retail attention on r/wallstreetbets — and what the price did next.</span></h1>
 <p class="sub" id="meta">Loading... <label for="daySel" style="margin-left:8px">Archive date</label> <select id="daySel" style="margin-left:6px"></select></p>
 <div class="tabbar" role="tablist" aria-label="Views">
   <button class="tab on" data-tab="today" role="tab" id="tabbtn-today" aria-controls="tab-today" aria-selected="true" title="What the board looks like on this archive day.">Today</button>
