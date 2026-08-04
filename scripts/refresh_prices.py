@@ -1,55 +1,67 @@
 #!/usr/bin/env python3
-"""Refresh the PRICES block embedded in index.html.
-
-The attention archive grows every day through the workflow. The price pack did not:
-it was pasted into index.html by hand, so it silently fell behind — 17 days by the
-time anyone noticed, which is why event charts drew mention bars to the right edge
-while the price line stopped short. This closes that gap and is meant to run on the
-same schedule as the archiver, so it cannot reopen.
+"""Refresh the historical prices -> data/prices.json.
 
 Universe is derived, not hard-coded: every ticker that has ever produced a confirmed
 spike, plus the research basket. A newly-spiking name therefore gets prices without
 anyone editing a list.
 
 Failure policy is conservative. A ticker whose fetch fails keeps whatever history is
-already embedded rather than being dropped — a stale series is worth more than a
-missing one, and the page already reports how far behind prices are.
+already saved rather than being dropped.
 
-    python3 scripts/refresh_prices.py            # rewrite index.html in place
+Fetches primarily from stockanalysis, failing over to Yahoo Finance via cookie dance.
+
+    python3 scripts/refresh_prices.py            # rewrite data/prices.json
     python3 scripts/refresh_prices.py --dry-run  # report only
 """
 import json, os, re, subprocess, sys, time, datetime as dt
 import statistics as stats
+import urllib.request, urllib.parse, http.cookiejar
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INDEX = os.path.join(ROOT, "index.html")
 ARCHIVE = os.path.join(ROOT, "data", "apewisdom")
+PRICES_FILE = os.path.join(ROOT, "data", "prices.json")
 
 HOT_FLOOR, HOT_X = 30, 3          # must match the thresholds in index.html
 START = "2026-04-01"              # ~20 trading days of run-up before the archive opens
-UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-      "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+Y1 = "https://query1.finance.yahoo.com"
 
 
-def read_index():
+def read_prices():
+    if os.path.exists(PRICES_FILE):
+        try:
+            with open(PRICES_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def get_basket():
+    if not os.path.exists(INDEX): return set()
     with open(INDEX) as f:
-        s = f.read()
-    i = s.find("const PRICES=")
-    if i < 0:
-        sys.exit("PRICES block not found in index.html")
-    j = s.find("};", i) + 1
-    return s, i, j, json.loads(s[i + len("const PRICES="):j])
+        src = f.read()
+    m = re.search(r"const BASKET=new Set\(\[([^\]]*)\]", src)
+    if m:
+        return set(re.findall(r"[A-Z]{1,5}", m.group(1)))
+    return set()
 
 
 def spike_universe():
     """Tickers that have ever crossed the confirmed tier, from the archive itself."""
     days, maps = [], {}
+    if not os.path.exists(ARCHIVE):
+        return set(), ""
     for name in sorted(os.listdir(ARCHIVE)):
         if not name.endswith(".json"):
             continue
         d = name[:-5]
-        with open(os.path.join(ARCHIVE, name)) as f:
-            snap = json.load(f)
+        try:
+            with open(os.path.join(ARCHIVE, name)) as f:
+                snap = json.load(f)
+        except Exception:
+            continue
         rows = (snap.get("filters") or {}).get("wallstreetbets") or []
         if not rows:
             continue
@@ -71,7 +83,7 @@ def spike_universe():
     return hot, (days[-1] if days else "")
 
 
-def fetch(tk):
+def fetch_sa(tk):
     url = f"https://stockanalysis.com/api/symbol/s/{tk}/history?range=5Y&period=Daily"
     r = subprocess.run(["curl", "-s", "--max-time", "30", "-H", f"User-Agent: {UA}", url],
                        capture_output=True, text=True)
@@ -87,13 +99,49 @@ def fetch(tk):
     return {"d": d, "c": c} if len(d) > 20 else None
 
 
+def yahoo_crumb():
+    cj = http.cookiejar.CookieJar()
+    op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+    op.addheaders = [("User-Agent", UA)]
+    for seed in ("https://fc.yahoo.com", f"{Y1}/v8/finance/chart/SPY?range=1d"):
+        try: op.open(seed, timeout=20).read()
+        except Exception: pass
+        try:
+            crumb = op.open(f"{Y1}/v1/test/getcrumb", timeout=20).read().decode().strip()
+            if crumb and len(crumb) < 24 and "<" not in crumb:
+                return op, urllib.parse.quote(crumb, safe="")
+        except Exception:
+            continue
+    return None, None
+
+
+def fetch_yahoo(tk, op, crumb):
+    if not op or not crumb:
+        return None
+    url = f"{Y1}/v8/finance/chart/{tk}?range=5y&interval=1d&crumb={crumb}"
+    try:
+        j = json.loads(op.open(url, timeout=20).read().decode())
+        r = j["chart"]["result"][0]
+        ts = r["timestamp"]
+        cl = r["indicators"]["quote"][0]["close"]
+        d, c = [], []
+        for t, px in zip(ts, cl):
+            if px is None: continue
+            date_str = dt.datetime.fromtimestamp(t, dt.timezone.utc).date().isoformat()
+            if date_str < START: continue
+            d.append(date_str)
+            c.append(round(float(px), 2))
+        return {"d": d, "c": c} if len(d) > 20 else None
+    except Exception:
+        return None
+
+
 def main():
     dry = "--dry-run" in sys.argv
-    src, i, j, old = read_index()
+    old = read_prices()
+    basket = get_basket()
     hot, last_archive = spike_universe()
 
-    basket = set(re.findall(r"[A-Z]{1,5}", (re.search(r"const BASKET=new Set\(\[([^\]]*)\]",
-                 src) or type("", (), {"group": lambda *_: ""})()).group(1) or ""))
     want = sorted((hot | basket | set(old)) - {""})
     print(f"universe: {len(hot)} ever-spiked + {len(basket)} basket + "
           f"{len(old)} already embedded -> {len(want)} tickers")
@@ -102,35 +150,47 @@ def main():
     if dry:
         ends = {}
         for t, v in old.items():
-            ends[v["d"][-1]] = ends.get(v["d"][-1], 0) + 1
+            if v and "d" in v and v["d"]:
+                ends[v["d"][-1]] = ends.get(v["d"][-1], 0) + 1
         print("current price cutoffs:", dict(sorted(ends.items())))
         return
 
+    op, crumb = yahoo_crumb()
+    if op and crumb:
+        print("yahoo crumb acquired for failover")
+    else:
+        print("yahoo crumb failed, failover unavailable")
+
     fresh, kept, failed = {}, [], []
     for n, tk in enumerate(want, 1):
-        got = fetch(tk)
+        got = fetch_sa(tk)
+        if not got:
+            got = fetch_yahoo(tk, op, crumb)
+            
         if got:
             fresh[tk] = got
         elif tk in old:
             fresh[tk] = old[tk]; kept.append(tk)
         else:
             failed.append(tk)
+            
         if n % 25 == 0:
             print(f"  {n}/{len(want)}", flush=True)
         time.sleep(0.6)
 
     ends = {}
     for v in fresh.values():
-        ends[v["d"][-1]] = ends.get(v["d"][-1], 0) + 1
+        if v and "d" in v and v["d"]:
+            ends[v["d"][-1]] = ends.get(v["d"][-1], 0) + 1
     newest = max(ends) if ends else "?"
     print(f"fetched {len(fresh) - len(kept)} fresh, kept {len(kept)} stale, "
           f"{len(failed)} unavailable{': ' + ', '.join(failed) if failed else ''}")
     print(f"price cutoffs now: {dict(sorted(ends.items()))}")
 
-    blob = "const PRICES=" + json.dumps(fresh, separators=(",", ":")) + ";"
-    with open(INDEX, "w") as f:
-        f.write(src[:i] + blob + src[j + 1:])
-    print(f"index.html updated · prices through {newest} · archive through {last_archive}")
+    os.makedirs(os.path.dirname(PRICES_FILE), exist_ok=True)
+    with open(PRICES_FILE, "w") as f:
+        json.dump(fresh, f, separators=(",", ":"))
+    print(f"data/prices.json updated · prices through {newest} · archive through {last_archive}")
 
 
 if __name__ == "__main__":

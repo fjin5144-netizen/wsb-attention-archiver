@@ -367,12 +367,16 @@ def main():
     day = now.date().isoformat()
 
     aw = fetch_apewisdom()
-    if any(aw.values()):
-        os.makedirs(f"{root}/data/apewisdom", exist_ok=True)
-        json.dump({"fetched_at": now.isoformat(), "filters": aw},
-                  open(f"{root}/data/apewisdom/{day}.json", "w"))
-    else:
-        print("  apewisdom: nothing fetched, not writing")
+    wsb_rows = aw.get("wallstreetbets") or []
+    if not wsb_rows:
+        sys.exit("FATAL: ApeWisdom payload is empty. API may be down or schema changed. Aborting.")
+    
+    if wsb_rows[0].get("mentions", 0) == 0:
+        sys.exit("FATAL: ApeWisdom top rank has 0 mentions. Data is poisoned. Aborting.")
+
+    os.makedirs(f"{root}/data/apewisdom", exist_ok=True)
+    json.dump({"fetched_at": now.isoformat(), "filters": aw},
+              open(f"{root}/data/apewisdom/{day}.json", "w"))
 
     ts = probe_tradestie(now.strftime("%m-%d-%Y"))
     if ts:

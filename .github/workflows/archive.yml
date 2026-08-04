@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
     steps:
       - uses: actions/checkout@v4
       - name: Fetch snapshots
@@ -42,3 +43,16 @@ jobs:
           # 万一上游恰有新提交,-X theirs 让本次快照数据获胜;失败则响亮报错,绝不静默吞掉
           git pull --rebase -X theirs
           git push
+
+      - name: Update secondary backup branch
+        if: success()
+        run: |
+          git checkout -B backup
+          git push origin backup --force
+
+      - name: Alert on failure
+        if: failure()
+        run: |
+          gh issue create --title "🚨 Archive Cron Failed" --body "The data collection cron job failed on \`$(date -u +%Y-%m-%d)\`. Data may be missing.<br><br>See the [workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) to debug."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
