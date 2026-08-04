@@ -32,6 +32,16 @@ jobs:
       - name: Refresh price pack (daily, after the close)
         if: github.event.schedule == '45 23 * * *' || github.event_name == 'workflow_dispatch'
         run: python3 scripts/refresh_prices.py
+      # 顺序有讲究:先验数据本身,再从它派生,最后在提交前把派生结果对着归档重算一遍。
+      # 一个算少了 29% 的 events.json 不会报错、看起来也正常 —— 只有独立重算能拦住它。
+      - name: Validate snapshot integrity
+        run: python3 scripts/validate.py
+      - name: Precompute events
+        run: python3 scripts/precompute_events.py
+      - name: Golden-value tests
+        run: |
+          python3 -m pip install --quiet pytest
+          python3 -m pytest tests/ -q
       - name: Commit & push
         run: |
           git config user.name "wsb-archiver-bot"
