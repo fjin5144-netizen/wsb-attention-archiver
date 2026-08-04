@@ -1,0 +1,11 @@
+# Design exploration from the Console redesign — kept locally for reference,
+# not part of the site. Regenerate with tools/ if ever needed again.
+design-*.html
+design.html
+tools/
+
+# Backups written by tools/adopt_console.py
+index.html.bak-*
+
+# Local scratch
+_*.html
