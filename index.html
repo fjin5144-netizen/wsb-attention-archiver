@@ -128,6 +128,10 @@ td.num,th.num{text-align:right}
 .ep .epline1{display:flex;align-items:baseline;gap:8px}
 .ep .epline1 .tick{font-size:15px}
 .ep .epline2{font-size:12px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* The range total sits next to a spike-day count that looks just like it. Weight and
+   a dotted underline mark it as the one that answers the filter, and as the one with
+   a caveat attached. */
+.ep .epline2 .rngm{color:var(--ink2);font-weight:550;border-bottom:1px dotted var(--c-grid);cursor:help}
 .ep .epnum{font:650 22px/1 var(--sans);letter-spacing:-.025em;font-variant-numeric:tabular-nums;white-space:nowrap}
 .ep .epnum.up{color:var(--green)}.ep .epnum.dn{color:var(--red)}
 .ep .epnum.na{font-size:12px;font-weight:500;color:var(--ink3);letter-spacing:0}
@@ -289,7 +293,7 @@ footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
     <div id="climbers"></div><p class="note" id="wkNote"></p>
     </section>
 <section id="tab-aftermath" role="tabpanel" aria-labelledby="tabbtn-aftermath" tabindex="0" style="display:none">
-  <details class="explain"><summary>What a card is, how tiers are defined, and what the Triple-filter verdict means</summary><div class="body">covering all archive-seen tickers - <b>All stocks</b> (daily top-300, not limited to the research basket; basket members carry a blue badge). Each card = one <b>Confirmed tier</b>  spike (>=30 and >=3x the prior-20-archive-day median) - the Lab admits confirmed-tier only, same definition as all historical stats; early warnings show on the Brief page only. Blue line = actual price (USD, left axis), gray bars = mentions (right axis, <span style="color:var(--red)">red bars = spike days</span>). Click the tag at a card's top-right to classify it (Unclassified -> Story -> Fundamental, saved locally); summary tables recompute live - the hypothesis is yours, and so is the judgment.<br>The footer of each card is the <b>Triple-filter rules</b> machine verdict (your backtested ruleset: 1) close breaks -5% within 10 days post-spike 2) SPY below its 200-day MA on entry day = bear regime): both must be ✓ for a "rule pass" - a historical-rule judgment, not investment advice.</div></details>
+  <details class="explain"><summary>What a card is, how tiers are defined, and what the Triple-filter verdict means</summary><div class="body">covering all archive-seen tickers - <b>All stocks</b> (daily top-300, not limited to the research basket; basket members carry a blue badge). Each card = one <b>Confirmed tier</b>  spike (>=30 and >=3x the prior-20-archive-day median) - the Lab admits confirmed-tier only, same definition as all historical stats; early warnings show on the Brief page only. Blue line = actual price (USD, left axis), gray bars = mentions (right axis, <span style="color:var(--red)">red bars = spike days</span>).<br>The <b>dates</b> filter picks which spikes are listed; it does not change what a card is. Each card stays one spike on one day, so a ticker that crossed twice inside the range gets two cards, and the <b>N mentions ×N</b> pair always describes that one day - the multiple is spike-day mentions over the prior-20-archive-day median, which is what the tier is defined on. With a range set, each card also carries that ticker's mentions <b>added up across the range</b>, and "Most discussed in range" sorts by it. Two things to know before comparing those sums. It adds daily rolling-24h counts read once a day at an hour that drifts, so consecutive reads overlap and the overlap is counted twice - read it as scale, not as an exact total. And the range is calendar days, weekends included: a weekend day carries about a quarter of a weekday's volume (median 1,109 against 4,597 across this archive), so a 14-day range is roughly 10 weekdays plus 4 thin ones. The line under the cards states the span and how many archive days it actually covers. Click the tag at a card's top-right to classify it (Unclassified -> Story -> Fundamental, saved locally); summary tables recompute live - the hypothesis is yours, and so is the judgment.<br>The footer of each card is the <b>Triple-filter rules</b> machine verdict (your backtested ruleset: 1) close breaks -5% within 10 days post-spike 2) SPY below its 200-day MA on entry day = bear regime): both must be ✓ for a "rule pass" - a historical-rule judgment, not investment advice.</div></details>
   <div class="status" id="lstatus" style="display:none">Loading all archives...</div>
   <p class="statline" id="labStat" role="status" aria-live="polite"></p>
 
@@ -346,7 +350,7 @@ footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
     <button class="chipb" id="exportCsv">Export CSV</button>
   </div>
   <div id="activeFilters" class="chipsrow"></div>
-  <div id="sortbar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px"><span class="meta">Sort:</span><button class="chipb sel" data-o="res" aria-pressed="true" title="Newest first, but events whose 10-day window has closed come before the ones still pending">Newest resolved</button><button class="chipb" data-o="new">Newest</button><button class="chipb" data-o="old">Oldest</button><button class="chipb" data-o="best">Best 10d</button><button class="chipb" data-o="worst">Worst 10d</button></div>
+  <div id="sortbar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px"><span class="meta">Sort:</span><button class="chipb sel" data-o="res" aria-pressed="true" title="Newest first, but events whose 10-day window has closed come before the ones still pending">Newest resolved</button><button class="chipb" data-o="new">Newest</button><button class="chipb" data-o="old">Oldest</button><button class="chipb" data-o="best">Best 10d</button><button class="chipb" data-o="worst">Worst 10d</button><button class="chipb" data-o="sum" title="Ranks by each ticker's mentions added up across the selected date range - the whole archive when no range is set">Most discussed in range</button></div>
   <div class="epgrid" id="epgrid"></div>
   <p class="note" id="gridEmpty" style="display:none">No event matches these filters. <button class="chipb" id="clearFilt">Clear all filters</button></p>
 </section>
@@ -764,12 +768,41 @@ async function initLab(){
   const hasR=e=>e.r10!=null?1:0;
   const ORD={res:(x,y)=>(hasR(y)-hasR(x))||y.d.localeCompare(x.d),
              new:(x,y)=>y.d.localeCompare(x.d),old:(x,y)=>x.d.localeCompare(y.d),
-             best:(x,y)=>((y.r10??-1e9)-(x.r10??-1e9)),worst:(x,y)=>((x.r10??1e9)-(y.r10??1e9))};
+             best:(x,y)=>((y.r10??-1e9)-(x.r10??-1e9)),worst:(x,y)=>((x.r10??1e9)-(y.r10??1e9)),
+             /* A range total you cannot rank by is half a feature — "who was talked
+                about most in these two weeks" is the question the range invites. */
+             sum:(x,y)=>(sumIn(y.tk)-sumIn(x.tk))||y.d.localeCompare(x.d)};
   /* Filtering used to render all 224 cards and then hide the non-matching ones with
      display:none - every filter still paid for 224 Chart instances. Now the filter
      decides what gets built at all, and only a page at a time. */
   const gv=id=>document.getElementById(id);
   const xOf=e=>e.m/Math.max(e.med,1);
+  /* Mentions summed across whatever date range is active, per ticker.
+     Setting a range used to change which cards appeared and not one number on them:
+     the spike-day count is a property of the event, not of the window the reader
+     just picked, so "Last 14d" silently answered a different question than it asked.
+
+     Be honest about what the sum is. ApeWisdom's `mentions` is a rolling 24h count
+     read once a day, and the read time drifts by hours, so consecutive days overlap
+     and the overlap is counted twice. This is "how much was it discussed, roughly",
+     not an exact total — which is why the spike-day figure stays next to it rather
+     than being replaced by it. */
+  let _sumKey=null,_sumMemo={},_sumDays=[];
+  function sumIn(tk){
+    const key=`${dFrom}|${dTo}`;
+    if(key!==_sumKey){
+      _sumKey=key;_sumMemo={};
+      _sumDays=DATES.filter(d=>(!dFrom||d>=dFrom)&&(!dTo||d<=dTo));
+    }
+    /* `tk in` rather than `_sumMemo[tk]||` — 0 mentions in the window is a real
+       answer, and the truthy form would recompute it on every render. Same shape as
+       the mapOf bug that once memoised an empty day forever. */
+    if(tk in _sumMemo)return _sumMemo[tk];
+    let s=0;for(const d of _sumDays)s+=mOf(d,tk);
+    return _sumMemo[tk]=s;
+  }
+  const rangeOn=()=>!!(dFrom||dTo);
+  const sumDayCount=()=>{sumIn('');return _sumDays.length;};
   /* Outcome filters only ever apply to resolved events — an unresolved one is not
      "not up", it is unknown, and folding those together would quietly bias any
      count the reader takes off this screen. */
@@ -848,6 +881,18 @@ async function initLab(){
   function renderEPS(){
     LABCH.forEach(c=>c.destroy());LABCH=[];grid.innerHTML='';
     const list=visibleEPS();
+    /* Only carried when it answers something: with no range it would repeat the same
+       all-time number on every card. Shown anyway when sorting by it, because a
+       list ordered by an invisible quantity is a list you cannot check. */
+    const showSum=rangeOn()||SORT==='sum';
+    const sumChip=tk=>{
+      const n=sumIn(tk), nd=sumDayCount();
+      const span=rangeOn()?`${dFrom||DATES[0]} → ${dTo||DATES[DATES.length-1]}`:'the whole archive';
+      return ` · <span class="rngm" title="${tk}: daily mention counts added up across ${span} (${nd} archive days).`
+           + ` Ticker-level, so every ${tk} card in this range shows the same figure.`
+           + ` Each day is a rolling 24h count read once, and read times drift, so overlapping hours are counted twice — read it as scale, not as an exact total.">`
+           + `${n.toLocaleString()} ${rangeOn()?'in range':'all-time'}</span>`;
+    };
     for(const ep of list.slice(0,shown)){
       const card=document.createElement('div');card.className='ep';
       const cls=CLS[ep.tk]||'';
@@ -862,7 +907,7 @@ async function initLab(){
       card.innerHTML=`<button class="epsum" aria-expanded="false">
           <span class="epid">
             <span class="epline1"><span class="tick">${ep.tk}</span>${BASKET.has(ep.tk)?'<span class="badge">Basket</span>':''}<span class="meta">${ep.d}</span></span>
-            <span class="epline2">${SEC(ep.tk)} · ${ep.m} mentions ×${(ep.m/Math.max(ep.med,1)).toFixed(0)}</span>
+            <span class="epline2">${SEC(ep.tk)} · ${ep.m} mentions ×${(ep.m/Math.max(ep.med,1)).toFixed(0)}${showSum?sumChip(ep.tk):''}</span>
           </span>
           ${num}
           <span class="epchev" aria-hidden="true">▶</span>
@@ -882,7 +927,11 @@ async function initLab(){
       grid.parentNode.insertBefore(b,grid.nextSibling);
     }
     document.getElementById('filtStat').textContent=
-      `${Math.min(shown,list.length)} of ${list.length} shown`+(list.length!==EPS.length?` · filtered from ${EPS.length}`:'');
+      `${Math.min(shown,list.length)} of ${list.length} shown`
+      +(list.length!==EPS.length?` · filtered from ${EPS.length}`:'')
+      /* The range covers calendar days; only some of them are archive days. Saying
+         which is which stops "Last 14d" from being read as 14 trading sessions. */
+      +(rangeOn()?` · range ${dFrom||DATES[0]} → ${dTo||DATES[DATES.length-1]}, ${sumDayCount()} archive days`:'');
     document.getElementById('gridEmpty').style.display=list.length?'none':'';
     paintTimeline();paintActiveFilters();
     if(window.__labState)writeView();
@@ -1125,8 +1174,13 @@ async function initLab(){
   /* Export exactly what is on screen, filters included - a screenshot of a filtered
      table is not something you can check someone else's arithmetic against. */
   const CSVCOLS=[['date',e=>e.d],['ticker',e=>e.tk],['sector',e=>SEC(e.tk)],
-    ['in_basket',e=>BASKET.has(e.tk)?'yes':'no'],['mentions',e=>e.m],
+    ['in_basket',e=>BASKET.has(e.tk)?'yes':'no'],['mentions_spike_day',e=>e.m],
     ['prior_20d_median',e=>e.med.toFixed(1)],['multiple',e=>xOf(e).toFixed(1)],
+    /* Both bounds travel with the number. A column called "mentions_in_range" whose
+       range lives only in the UI is not something anyone can check later. */
+    ['mentions_in_range',e=>sumIn(e.tk)],
+    ['range_from',()=>dFrom||DATES[0]],['range_to',()=>dTo||DATES[DATES.length-1]],
+    ['range_archive_days',()=>sumDayCount()],
     ['last_close',e=>{const v=lastClose(e.tk);return v==null?'':v.toFixed(2);}],
     ['ret_5d_pct',e=>e.r5==null?'':e.r5.toFixed(2)],
     ['ret_10d_pct',e=>e.r10==null?'':e.r10.toFixed(2)],
