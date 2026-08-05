@@ -206,7 +206,8 @@ footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
 .fchip span{opacity:.62;font-size:14px;line-height:1}
 .fchip.clearall{background:transparent;color:var(--ink3);border-style:dashed}
 .fchip.clearall:hover{color:var(--ink);border-color:var(--ink3)}
-.cardrange{display:flex;justify-content:flex-end;margin:8px 0 0}
+.cardrange{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:8px 0 0}
+.rangehint{font:500 11px/1 var(--sans);color:var(--ink3);letter-spacing:.02em}
 .rangeset{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--sunk)}
 .rgb{font:600 12px/1 var(--sans);padding:7px 13px;border:0;border-right:1px solid var(--line);
   background:transparent;color:var(--ink3);cursor:pointer;transition:.12s;letter-spacing:.02em}
@@ -753,13 +754,27 @@ async function initLab(){
   // ---- render: 按当前排序重建网格 ----
   /* Filter state is declared up here because renderEPS() reads it and runs before
      the control wiring further down would otherwise have initialised it. */
-  let LABCH=[],SORT='res',WIN='1M',applyF=null;
+  let LABCH=[],SORT='res',WIN='10d',applyF=null;
   /* Ranges anchor on the SPIKE, not on today — a two-month-old event has no
      "last week". Trading-day counts, with a short run-up so the spike never sits
      flat against the left edge. 1M is the default because the card quotes a 20-day
      return and the old +15d window could not even show it. */
-  const WINS={'1W':5,'2W':10,'1M':22,'3M':66,'ALL':null};
-  const winPre=n=>Math.max(3,Math.round(n/3));
+  /* Sessions, and the windows are the return horizons the card actually reports —
+     r5, r10, r20. The end of each is read off the price series, not off a calendar.
+
+     They used to be 5/10/22/66 labelled 1W/2W/1M/3M, and both halves were wrong at
+     once. DATES holds every calendar day (the archive captures weekends), so "2W"
+     drew 10 calendar days ≈ 7 sessions — while the headline number printed beside it
+     is a 10-SESSION return. Checked across the archive, that window contained the
+     return it was reporting for 0 of 206 events: every card was a picture of a
+     different window than its own number.
+
+     No calendar constant repairs that. 10 sessions land 14 days out at the median,
+     19 at P99 and 32 at worst, because a spike can fall on a weekend and holidays
+     shift everything after it — 14 days would still have missed half. Anchoring the
+     end on the price series makes the chart contain its number by construction. */
+  const WINS={'5d':5,'10d':10,'20d':20,'ALL':null};
+  const winPre=n=>Math.max(3,Math.round(n*7/5/3));   // calendar days of lead-in
   let secSel='',dFrom='',dTo='';
   const PAGE=30; let shown=PAGE;
   /* Plain "Newest" put every pending event first - the most recent spikes are
@@ -952,8 +967,11 @@ async function initLab(){
         :'<span class="pill no" title="The ruleset gates on a bear regime; in a non-bear tape it blocks every event by design.">Blocked by regime</span>';
       det.innerHTML=`${outcomeDetail(ep)}
         <div class="cv"><canvas></canvas></div>
-        <div class="cardrange"><span class="rangeset" role="group" aria-label="Chart range after the spike">${
-          ['1W','2W','1M','3M','ALL'].map(r=>`<button class="rgb${r===card._win?' sel':''}" data-w="${r}" aria-pressed="${r===card._win}">${r}</button>`).join('')
+        <div class="cardrange"><span class="rangehint">after spike</span><span class="rangeset" role="group" aria-label="Chart range after the spike">${
+          /* "+" because these read as a lookback otherwise — the whole question was
+             "I picked 2W, why is the axis four days?". The window runs forward from
+             the spike; ALL keeps no sign because it runs both ways. */
+          ['5d','10d','20d','ALL'].map(r=>`<button class="rgb${r===card._win?' sel':''}" data-w="${r}" aria-pressed="${r===card._win}" title="${r==='ALL'?'The whole archive':`Through the ${WINS[r]}-session return this card reports, plus ${winPre(WINS[r])} calendar days of lead-in`}">${r==='ALL'?r:'+'+r}</button>`).join('')
         }</span></div>
         <p class="hint cvnote" style="margin:5px 0 0"></p>
         <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
@@ -986,30 +1004,50 @@ async function initLab(){
     if(card._ch)card._ch.destroy();
     const px=ep.px,pi=ep.pi;
     const di=DATES.indexOf(ep.d);
-    const after=WINS[win];
-    const wd=(after==null)?DATES.slice()
-             :DATES.slice(Math.max(0,di-winPre(after)),di+after+1);
+    const sess=WINS[win];
+    /* End of the window is the session the return is measured to, looked up in the
+       price series. When prices do not reach that far the window runs to the end of
+       the archive instead of stopping early — an incomplete window should show
+       everything there is, and the note below says how much of it exists. */
+    let endIdx=DATES.length-1, haveSess=0;
+    if(sess!=null&&px&&pi>=0){
+      haveSess=Math.max(0,Math.min(sess,px.d.length-1-pi));
+      if(haveSess>=sess){const k=DATES.indexOf(px.d[pi+sess]);if(k>=0)endIdx=k;}
+    }
+    const wd=(sess==null)?DATES.slice()
+             :DATES.slice(Math.max(0,di-winPre(sess)),endIdx+1);
     const mm=wd.map(d=>mOf(d,ep.tk));
     let pline=null;
     if(px)pline=wd.map(d=>{const k=px.d.indexOf(d);return k>=0?+px.c[k].toFixed(2):null;});
     if(pline&&!pline.some(v=>v!=null))pline=null;
-    /* "Where did the rest go?" was asked twice about this chart. The window is
-       deliberately asymmetric — you care about what follows a spike — but nothing
-       said so, and nothing said more archive days existed past its right edge. */
+    /* "Where did the rest go?" was asked three times about this chart. The window is
+       deliberately asymmetric — you care about what follows a spike — but the labels
+       read like a lookback, and a spike on the newest archive day produced a four-day
+       stub with nothing saying why. Say how much of the window actually exists.
+
+       The `(span==null)` test used to be `(after==null)` against a local `after` that
+       shadowed the window size with `DATES.length-(di+16)` — always a number, so the
+       full-archive branch below could never run and ALL printed the short form. */
     const note=card.querySelector('.cvnote');
     if(note){
-      const after=DATES.length-(di+16);
-      const left=DATES.length-(DATES.indexOf(wd[wd.length-1])+1);
-      note.textContent=(after==null)
+      const left=DATES.length-(endIdx+1);
+      const tail=(!px||pi<0)
+        ? `no sessions yet — prices have not reached this spike`
+        : haveSess<sess
+          ? `${haveSess} of ${sess} sessions priced — this window fills in as sessions close`
+          : `${sess} of ${sess} sessions after the spike`
+            +(left>0?` · ${left} more archive day${left===1?'':'s'} after this — widen the range`:'');
+      note.textContent=(sess==null)
         ? `Full archive · ${wd[0]} → ${wd[wd.length-1]}`
-        : `${wd[0]} → ${wd[wd.length-1]}`+(left>0
-            ? ` · ${left} more archive day${left===1?'':'s'} after this — widen the range`
-            : '');
+        : `${wd[0]} → ${wd[wd.length-1]} · ${tail}`;
     }
     const mine=new Set(EPS.filter(e=>e.tk===ep.tk).map(e=>e.d));
     const spikeIdx=wd.indexOf(ep.d);
     card._ch=new Chart(card.querySelector('canvas'),{data:{labels:wd.map(d=>d.slice(5)),datasets:[
-      {type:'bar',data:mm,yAxisID:'y1',backgroundColor:wd.map(d=>((after==null)?mine.has(d):d===ep.d)?C.red:C.bar),maxBarThickness:8,minBarLength:3,order:2},
+      /* ALL shows every spike this ticker ever had in red; a bounded window reds only
+         the one the card is about. `sess` here was `after` before the rename — missing
+         it threw inside the Chart config, so the note updated and no chart appeared. */
+      {type:'bar',data:mm,yAxisID:'y1',backgroundColor:wd.map(d=>((sess==null)?mine.has(d):d===ep.d)?C.red:C.bar),maxBarThickness:8,minBarLength:3,order:2},
       ...(pline?[{type:'line',data:pline,yAxisID:'y',borderColor:C.blue,borderWidth:2,pointRadius:0,tension:.25,spanGaps:true,order:1}]:[])]},
       options:{responsive:true,maintainAspectRatio:false,animation:false,
         plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{
@@ -1152,11 +1190,11 @@ async function initLab(){
   /* Lets the URL serialiser reach state that lives in this closure, so a shared
      link restores the sector, the dates and the sort as well as the DOM controls. */
   window.__labState={
-    read:()=>({sec:secSel,df:dFrom,dt:dTo,sort:SORT==='res'?'':SORT,w:WIN==='1M'?'':WIN}),
+    read:()=>({sec:secSel,df:dFrom,dt:dTo,sort:SORT==='res'?'':SORT,w:WIN==='10d'?'':WIN}),
     write:sp=>{
       secSel=sp.get('sec')||'';dFrom=sp.get('df')||'';dTo=sp.get('dt')||'';
       const so=sp.get('sort')||'res';if(ORD[so])SORT=so;
-      const wv=sp.get('w')||'1M';if(wv in WINS)WIN=wv;
+      const wv=sp.get('w')||'10d';if(wv in WINS)WIN=wv;
       document.querySelectorAll('#sortbar [data-w]').forEach(x=>{
         const on=x.dataset.w===WIN;
         x.classList.toggle('sel',on);x.setAttribute('aria-pressed',String(on));});
