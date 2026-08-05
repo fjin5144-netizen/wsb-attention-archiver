@@ -104,6 +104,26 @@ def test_validator_accepts_real_days_and_rejects_corruption(tmp_path):
             f"validator accepted a payload it should reject: {label}"
 
 
+def test_the_two_front_ends_agree_on_the_basket():
+    """app.html carries its own copy of BASKET. Two copies of a list is how this repo
+    has been bitten before — the precompute and the client-side scan once held the
+    same wrong exclusion and agreed perfectly. Editing one and not the other would
+    silently give the two front ends different research baskets.
+    """
+    import re
+    app = os.path.join(ROOT, "app.html")
+    if not os.path.exists(app):
+        return
+    def basket(path):
+        with open(path) as f:
+            m = re.search(r"BASKET=new Set\(\[([^\]]*)\]", f.read())
+        assert m, f"could not read BASKET out of {os.path.basename(path)}"
+        return re.findall(r"[A-Z]{1,5}", m.group(1))
+    a, b = basket(os.path.join(ROOT, "index.html")), basket(app)
+    assert a == b, ("index.html and app.html disagree on the research basket: "
+                    f"only in index {sorted(set(a) - set(b))}, only in app {sorted(set(b) - set(a))}")
+
+
 def test_finding_matches_an_independent_recomputation():
     """The headline claim is now an artefact, so it can be wrong the same silent way
     events.json was. Recomputed here from prices and events rather than by calling
