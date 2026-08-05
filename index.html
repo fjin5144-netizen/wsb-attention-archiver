@@ -412,7 +412,19 @@ const C={blue:_cv('--c-line')||'#3987e5',green:_cv('--c-up')||'#199e70',red:_cv(
 let DATES=[],CACHE={},chart=null;
 
 async function gj(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json();}
+/* Day discovery, in order of how much it can be trusted to describe the snapshots
+   this page will actually read:
+     1. data/days.json  — written by archive.py, travels with the snapshots
+     2. the GitHub contents API — describes the last pushed commit, which is a
+        different moment from whatever is being served; on the first run of a UTC
+        day it is one day behind, and it spends an unauthenticated 60/hour budget
+     3. walking back from today — last resort, ~420 requests
+   Only the day LIST is shared. Event detection stays two independent implementations
+   (precomputed vs client-side); that is the entire reason the fallback exists. */
 async function listDates(){
+  try{const j=await gj(`${BASE}data/days.json`);
+      if(Array.isArray(j)&&j.length)return j.filter(n=>/^\d{4}-\d{2}-\d{2}$/.test(n)).sort();}
+  catch(e){}
   try{const j=await gj(`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/apewisdom`);
       return j.map(x=>x.name.replace('.json','')).filter(n=>/^\d{4}-\d{2}-\d{2}$/.test(n)).sort();}
   catch(e){const out=[],t=new Date();

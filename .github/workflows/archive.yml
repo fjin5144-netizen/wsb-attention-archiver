@@ -7,6 +7,10 @@ on:
     - cron: '45 23 * * *'       # 23:45 UTC 收盘后定格为当日档案
   workflow_dispatch:
   push:
+    # 限定 main:没有分支过滤时,在特性分支上推一下采集脚本就会在那条分支上跑一次
+    # 完整归档 —— 把快照提交到分支,还把 backup 分支强推成分支内容,而 backup 的
+    # 全部意义是「main 的另一份副本」。
+    branches: [main]
     paths:
       - 'scripts/**'
       - '.github/workflows/archive.yml'
@@ -26,19 +30,29 @@ jobs:
       - uses: actions/checkout@v4
       - name: Fetch snapshots
         run: python3 scripts/archive.py
-      # 关注度每天在长,价格包却是手工嵌进 index.html 的,于是悄悄落后了 17 天:
-      # 事件图的提及柱画到右边缘,价格线却早早断掉。放在收盘后那一档跑,
-      # 每天一次就够 —— 143 个请求跟着每小时的快照跑既没必要也不礼貌。
-      - name: Refresh price pack (daily, after the close)
-        if: github.event.schedule == '45 23 * * *' || github.event_name == 'workflow_dispatch'
-        run: python3 scripts/refresh_prices.py
       # 顺序有讲究:先验数据本身,再从它派生,最后在提交前把派生结果对着归档重算一遍。
       # 一个算少了 29% 的 events.json 不会报错、看起来也正常 —— 只有独立重算能拦住它。
       - name: Validate snapshot integrity
         run: python3 scripts/validate.py
+      # 关注度每天在长,价格包却是手工嵌进 index.html 的,于是悄悄落后了 17 天:
+      # 事件图的提及柱画到右边缘,价格线却早早断掉。整包重抓放在收盘后那一档,
+      # 每天一次就够 —— 143 个请求跟着每小时的快照跑既没必要也不礼貌。
+      - name: Refresh price pack (daily, after the close)
+        if: github.event.schedule == '45 23 * * *' || github.event_name == 'workflow_dispatch'
+        run: python3 scripts/refresh_prices.py
+      # 但补漏必须每次都跑。当天那份快照每小时被覆盖重写,mentions 是滚动 24h、
+      # 一整天都在长,所以盘中越线的票**立刻**成为事件,而整包刷新一天只排一档
+      # 且常被 GitHub 丢掉(08-03 排 11 档只实际跑了 4 次)。这段空窗就是
+      # 2026-08-04 AAOI / NVO 把归档卡红一整天的原因。没有新票时是 0 个请求。
+      - name: Top up prices for newly-spiking tickers
+        run: python3 scripts/refresh_prices.py --top-up
       - name: Precompute events
         run: python3 scripts/precompute_events.py
+      # continue-on-error 不是在放过失败 —— 下面「Fail if the golden tests failed」
+      # 照样把这次运行判红、照样告警。它换来的是:测试挂掉时原始档案仍然落地。
       - name: Golden-value tests
+        id: tests
+        continue-on-error: true
         run: |
           python3 -m pip install --quiet pytest
           python3 -m pytest tests/ -q
@@ -46,9 +60,20 @@ jobs:
         run: |
           git config user.name "wsb-archiver-bot"
           git config user.email "bot@users.noreply.github.com"
+          msg="snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+          # 派生产物没过校验就退回上一个好版本,但原始档案照常提交。
+          # 档案是项目唯一不可再生的资产(回填源已 404,那 66 天只剩这一份副本),
+          # 让它被一个派生数据的断言连坐丢掉,是把因果关系搞反了。
+          if [ "${{ steps.tests.outcome }}" != "success" ]; then
+            for f in data/events.json data/prices.json data/price_gaps.json; do
+              # HEAD 要写明:`git checkout -- <path>` 是从索引恢复的,不是从上一次提交
+              if git cat-file -e "HEAD:$f" 2>/dev/null; then git checkout HEAD -- "$f"; else rm -f "$f"; fi
+            done
+            msg="$msg (archive only — golden tests failed)"
+          fi
           git add data/ index.html
           if git diff --staged --quiet; then echo "no changes"; exit 0; fi
-          git commit -m "snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+          git commit -m "$msg"
           # 先提交后变基:工作区永远干净,冲突标记不可能进文件;
           # 万一上游恰有新提交,-X theirs 让本次快照数据获胜;失败则响亮报错,绝不静默吞掉
           git pull --rebase -X theirs
@@ -60,9 +85,24 @@ jobs:
           git checkout -B backup
           git push origin backup --force
 
+      - name: Fail if the golden tests failed
+        if: steps.tests.outcome != 'success'
+        run: |
+          echo "Archive committed, but the golden-value tests failed — derived artefacts were rolled back."
+          exit 1
+
       - name: Alert on failure
         if: failure()
         run: |
-          gh issue create --title "🚨 Archive Cron Failed" --body "The data collection cron job failed on \`$(date -u +%Y-%m-%d)\`. Data may be missing.<br><br>See the [workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) to debug."
+          # 复用同一个 issue。每次失败开一张新的,一个坏掉的下午就堆出三条一模一样的
+          # 告警(#1 #2 #3 就是这么来的),多出来的两条一点信息量都没有。
+          body="归档任务在 \`$(date -u +%Y-%m-%dT%H:%MZ)\` 失败。见 [workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)。"
+          n=$(gh issue list --state open --limit 50 --json number,title \
+                -q '[.[] | select(.title | contains("Archive Cron Failed"))][0].number // empty')
+          if [ -n "$n" ]; then
+            gh issue comment "$n" --body "$body"
+          else
+            gh issue create --title "🚨 Archive Cron Failed" --body "$body"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

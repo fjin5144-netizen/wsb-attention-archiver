@@ -104,10 +104,41 @@ def test_validator_accepts_real_days_and_rejects_corruption(tmp_path):
             f"validator accepted a payload it should reject: {label}"
 
 
+def test_days_index_matches_the_archive_directory():
+    """The page discovers its days from data/days.json. A stale one silently shortens
+    the client-side scan — which is the one path that exists to catch a bad
+    precompute, so it must not be the path that quietly goes blind first.
+    """
+    d = os.path.join(ROOT, "data", "apewisdom")
+    on_disk = sorted(n[:-5] for n in os.listdir(d)
+                     if n.endswith(".json") and n[:-5].count("-") == 2)
+    with open(os.path.join(ROOT, "data", "days.json")) as f:
+        listed = json.load(f)
+    assert listed == on_disk, (
+        f"days.json lists {len(listed)} days, the archive holds {len(on_disk)}; "
+        f"missing {sorted(set(on_disk) - set(listed))[:5]}, "
+        f"phantom {sorted(set(listed) - set(on_disk))[:5]}")
+
+
 def test_price_universe_covers_every_event_ticker():
     """Prices are what turn a spike into an outcome; an event ticker with no price
-    series shows '—' forever."""
+    series shows '—' forever.
+
+    Tickers no source will price are exempt, but only via the explicit list
+    refresh_prices.py writes — a silent skip would make a broken fetcher look like a
+    quiet day, and no exemption at all lets one dead symbol red-line the archive
+    forever. The cap is what keeps the exemption from becoming a dumping ground.
+    """
     with open(os.path.join(ROOT, "data", "prices.json")) as f:
         prices = set(json.load(f))
-    missing = {tk for _, tk in archive_events()} - prices
+    gaps = set()
+    gaps_file = os.path.join(ROOT, "data", "price_gaps.json")
+    if os.path.exists(gaps_file):
+        with open(gaps_file) as f:
+            gaps = set(json.load(f))
+    assert not (gaps & prices), \
+        f"price_gaps.json claims tickers that are in fact priced: {sorted(gaps & prices)}"
+    assert len(gaps) <= 8, \
+        f"{len(gaps)} tickers exempted from pricing — that is a broken fetcher, not dead symbols"
+    missing = {tk for _, tk in archive_events()} - prices - gaps
     assert not missing, f"{len(missing)} event tickers have no price series: {sorted(missing)[:10]}"

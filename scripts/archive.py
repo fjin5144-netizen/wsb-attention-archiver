@@ -361,6 +361,23 @@ def update_risk(root, day):
 
 # -----------------------------------------------------------
 
+def write_days_index(root):
+    """data/days.json <- the archive's date list, shipped alongside the snapshots.
+
+    The page used to discover its days from api.github.com. That listing describes
+    the last *pushed* commit, while the snapshots it then reads come from wherever
+    the page is served — two different moments. On the first run of a UTC day the
+    runner has a day on disk that the API has not seen yet, so the client-side
+    fallback scanned one day fewer than the archive holds and disagreed with it.
+    It also put the site on an unauthenticated 60-req/hour budget for no reason.
+    """
+    d = f"{root}/data/apewisdom"
+    days = sorted(n[:-5] for n in os.listdir(d)
+                  if n.endswith(".json") and n[:-5].count("-") == 2)
+    json.dump(days, open(f"{root}/data/days.json", "w"), separators=(",", ":"))
+    print(f"  days.json: {len(days)} days, through {days[-1] if days else '?'}")
+
+
 def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     now = dt.datetime.now(dt.timezone.utc)
@@ -377,6 +394,7 @@ def main():
     os.makedirs(f"{root}/data/apewisdom", exist_ok=True)
     json.dump({"fetched_at": now.isoformat(), "filters": aw},
               open(f"{root}/data/apewisdom/{day}.json", "w"))
+    write_days_index(root)
 
     ts = probe_tradestie(now.strftime("%m-%d-%Y"))
     if ts:
