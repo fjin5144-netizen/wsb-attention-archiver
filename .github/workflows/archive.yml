@@ -1,10 +1,20 @@
 name: Archive WSB attention data
 
 on:
+  # 一天的档案值 = 当天最后一次成功运行的读数。所以「定格在收盘后」不是靠某一档
+  # cron 准时,而是靠收盘后还有足够多次尝试落地 —— GitHub 丢档很凶(08-03 排 11 档
+  # 只跑了 4 次),还会延迟到离谱:08-03 的 23:45 那档在 08-04 上午 09:49 才执行,
+  # 于是把 08-04 定格成了开盘前的读数。
   schedule:
-    - cron: '45 11 * * *'       # 11:45 UTC 早间保底快照
-    - cron: '15 13-21 * * 1-5'  # 美股交易时段(周一至周五)每小时刷新
-    - cron: '45 23 * * *'       # 23:45 UTC 收盘后定格为当日档案
+    - cron: '45 11 * * *'       # 早间保底,万一后面全丢了也有一笔
+    # 含周末。原本是 '* * 1-5',周末于是只剩早间那一档,10 个未在收盘后定格的日子里
+    # 有 8 个是周末 —— mentions 是滚动 24h,午间读数和收盘读数不可比。
+    - cron: '15 13-20 * * *'
+    # 收盘后(EDT 20:00 / EST 21:00 UTC)密集尝试。多打几次是唯一能对抗丢档的办法;
+    # 不排到 23:35 之后,因为延迟跨过午夜就会写进第二天,反而害了这一天。
+    - cron: '5,35 21 * * *'
+    - cron: '5,35 22 * * *'
+    - cron: '5 23 * * *'
   workflow_dispatch:
   push:
     # 限定 main:没有分支过滤时,在特性分支上推一下采集脚本就会在那条分支上跑一次
@@ -35,11 +45,12 @@ jobs:
       - name: Validate snapshot integrity
         run: python3 scripts/validate.py
       # 关注度每天在长,价格包却是手工嵌进 index.html 的,于是悄悄落后了 17 天:
-      # 事件图的提及柱画到右边缘,价格线却早早断掉。整包重抓放在收盘后那一档,
-      # 每天一次就够 —— 143 个请求跟着每小时的快照跑既没必要也不礼貌。
-      - name: Refresh price pack (daily, after the close)
-        if: github.event.schedule == '45 23 * * *' || github.event_name == 'workflow_dispatch'
-        run: python3 scripts/refresh_prices.py
+      # 事件图的提及柱画到右边缘,价格线却早早断掉。整包重抓仍然一天一次就够 ——
+      # 146 个请求跟着每小时的快照跑既没必要也不礼貌 —— 但触发条件从「'45 23' 这档
+      # cron 跑了」改成「数据确实落后了」:那档 cron 恰恰是最不可靠的一档,把
+      # 「spike 能否变成结果」挂在它身上,方向搞反了。不落后时这一步几毫秒就返回。
+      - name: Refresh the full price pack when it is behind
+        run: python3 scripts/refresh_prices.py --if-stale
       # 但补漏必须每次都跑。当天那份快照每小时被覆盖重写,mentions 是滚动 24h、
       # 一整天都在长,所以盘中越线的票**立刻**成为事件,而整包刷新一天只排一档
       # 且常被 GitHub 丢掉(08-03 排 11 档只实际跑了 4 次)。这段空窗就是

@@ -12,6 +12,7 @@ Fetches primarily from stockanalysis, failing over to Yahoo Finance via cookie d
 
     python3 scripts/refresh_prices.py            # rewrite data/prices.json
     python3 scripts/refresh_prices.py --top-up   # fetch only what is missing
+    python3 scripts/refresh_prices.py --if-stale # full rewrite, but only when behind
     python3 scripts/refresh_prices.py --dry-run  # report only
 """
 import json, os, re, subprocess, sys, time, datetime as dt
@@ -23,6 +24,7 @@ INDEX = os.path.join(ROOT, "index.html")
 ARCHIVE = os.path.join(ROOT, "data", "apewisdom")
 PRICES_FILE = os.path.join(ROOT, "data", "prices.json")
 GAPS_FILE = os.path.join(ROOT, "data", "price_gaps.json")
+STATE_FILE = os.path.join(ROOT, "data", "price_state.json")
 
 HOT_FLOOR, HOT_X = 30, 3          # must match the thresholds in index.html
 START = "2026-04-01"              # ~20 trading days of run-up before the archive opens
@@ -50,6 +52,66 @@ def write_gaps(gaps):
     with open(GAPS_FILE, "w") as f:
         json.dump(sorted(gaps), f, indent=0)
         f.write("\n")
+
+
+def last_closed_session(now=None):
+    """The most recent weekday that has certainly closed, in UTC terms.
+
+    21:00 UTC clears the 16:00 ET close in both EDT and EST. Holidays are not
+    modelled — being one session conservative only costs a refresh that finds
+    nothing new.
+    """
+    now = now or dt.datetime.now(dt.timezone.utc)
+    ref = now.date() if now.hour >= 21 else now.date() - dt.timedelta(days=1)
+    while ref.weekday() >= 5:
+        ref -= dt.timedelta(days=1)
+    return ref.isoformat()
+
+
+MIN_REFRESH_GAP_H = 6
+
+
+def read_state():
+    try:
+        with open(STATE_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def staleness(old):
+    """(is_stale, reason). Time-based, deliberately not tied to one cron slot.
+
+    The full refresh used to fire only on the '45 23' schedule. That slot is the
+    least reliable one there is — GitHub dropped most of it, and the 08-03 firing
+    executed at 09:49 the next morning — so the pack that turns spikes into outcomes
+    was gated on the thing least likely to happen. Ask the data instead.
+
+    The gap guard is not decoration. last_closed_session() does not model market
+    holidays, so on Thanksgiving it names a weekday no bar will ever exist for and
+    "behind" stays true all day — without a floor that is 13 scheduled runs each
+    refetching 146 tickers, every holiday, forever.
+    """
+    ends = [v["d"][-1] for v in old.values() if v and v.get("d")]
+    if not ends:
+        return True, "no price data at all"
+    newest, want = max(ends), last_closed_session()
+    behind = sum(1 for e in ends if e < newest)
+    if newest >= want and behind <= len(ends) * 0.1:
+        return False, f"current through {newest} ({behind} ticker(s) trailing)"
+
+    why = (f"newest bar {newest}, last closed session {want}" if newest < want
+           else f"{behind}/{len(ends)} tickers trail {newest}")
+    last = read_state().get("last_full_refresh")
+    if last:
+        try:
+            age = (dt.datetime.now(dt.timezone.utc)
+                   - dt.datetime.fromisoformat(last.replace("Z", "+00:00"))).total_seconds() / 3600
+            if age < MIN_REFRESH_GAP_H:
+                return False, f"{why}, but last full refresh was {age:.1f}h ago (floor {MIN_REFRESH_GAP_H}h)"
+        except Exception:
+            pass
+    return True, why
 
 
 def get_basket():
@@ -154,6 +216,15 @@ def main():
     dry = "--dry-run" in sys.argv
     topup = "--top-up" in sys.argv
     old = read_prices()
+
+    if "--if-stale" in sys.argv:
+        stale, why = staleness(old)
+        print(f"price pack: {why}")
+        if not stale:
+            print("skipping full refresh")
+            return
+        print("refreshing in full")
+
     basket = get_basket()
     hot, last_archive = spike_universe()
 
@@ -225,6 +296,13 @@ def main():
     # ON / GO),真出现取不到的那天,这份记录让黄金测试能豁免它而不是永久卡死流水线。
     gaps = (hot | basket) - set(fresh) - {""}
     write_gaps(gaps)
+    # Stamped on every full pass, including the ones that came back with nothing new —
+    # the floor exists to stop retry storms, so a failed attempt has to count too.
+    if not topup:
+        with open(STATE_FILE, "w") as f:
+            json.dump({"last_full_refresh": dt.datetime.now(dt.timezone.utc)
+                       .strftime("%Y-%m-%dT%H:%M:%SZ"), "through": newest}, f, indent=1)
+            f.write("\n")
     print(f"data/prices.json updated · {len(fresh)} tickers · prices through {newest} · "
           f"archive through {last_archive}")
     print(f"data/price_gaps.json: {sorted(gaps) if gaps else 'none'}")

@@ -443,6 +443,17 @@ async function ensureDays(list){
     try{CACHE[d]=await gj(`${BASE}data/apewisdom/${d}.json`);}catch(e){CACHE[d]=null;}}));
 }
 const rowsOf=d=>((CACHE[d]||{}).filters||{}).wallstreetbets||[];
+/* A day's archived value is whatever the last run of that UTC day read, and mentions
+   is a rolling 24h count — so a day frozen at 15:42 covers a different window than one
+   frozen at 22:40 and its bar is short for a reason that has nothing to do with
+   attention. 2026-08-02 read 15 for AMZN against 54 the next day, and its share of the
+   board was identical on both (1.38%). Mark the read time rather than the weekday: once
+   collection lands after the close these stop being marked on their own. */
+const CLOSE_UTC=21;   // clears the 16:00 ET close in both EDT and EST
+const capAt=d=>{const t=(CACHE[d]||{}).fetched_at;if(!t)return null;
+  const x=new Date(t);return isNaN(x)?null:x;};
+const settled=d=>{const x=capAt(d);return x?x.getUTCHours()>=CLOSE_UTC:true;};
+const capLabel=d=>{const x=capAt(d);return x?`${String(x.getUTCHours()).padStart(2,'0')}:${String(x.getUTCMinutes()).padStart(2,'0')} UTC`:'unknown';};
 const MAPS={};
 /* This memo used to be `MAPS[d] || (MAPS[d] = build(d))`. If any code path asked for
    a day BEFORE its fetch landed, rowsOf() returned [] and the empty object was
@@ -1047,11 +1058,23 @@ async function initLab(){
       /* ALL shows every spike this ticker ever had in red; a bounded window reds only
          the one the card is about. `sess` here was `after` before the rename — missing
          it threw inside the Chart config, so the note updated and no chart appeared. */
-      {type:'bar',data:mm,yAxisID:'y1',backgroundColor:wd.map(d=>((sess==null)?mine.has(d):d===ep.d)?C.red:C.bar),maxBarThickness:8,minBarLength:3,order:2},
+      /* Bars for days that never got a post-close read are drawn hollow: their height
+         is not comparable to the ones beside them, and a short bar should not be
+         mistaken for quiet. */
+      {type:'bar',data:mm,yAxisID:'y1',
+       backgroundColor:wd.map(d=>settled(d)?(((sess==null)?mine.has(d):d===ep.d)?C.red:C.bar):'transparent'),
+       borderColor:wd.map(d=>((sess==null)?mine.has(d):d===ep.d)?C.red:C.bar),
+       borderWidth:wd.map(d=>settled(d)?0:1),
+       maxBarThickness:8,minBarLength:3,order:2},
       ...(pline?[{type:'line',data:pline,yAxisID:'y',borderColor:C.blue,borderWidth:2,pointRadius:0,tension:.25,spanGaps:true,order:1}]:[])]},
       options:{responsive:true,maintainAspectRatio:false,animation:false,
         plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{
-          label:c=>c.dataset.yAxisID==='y1'?` mentions ${c.parsed.y}`:` Price $${c.parsed.y}`}}},
+          label:c=>c.dataset.yAxisID==='y1'?` mentions ${c.parsed.y}`:` Price $${c.parsed.y}`,
+          /* The read time belongs next to the number it produced, not in a footnote
+             somewhere else — this is the one place a reader questions a bar. */
+          afterBody:items=>{const d=wd[items[0].dataIndex];
+            return settled(d)?`read ${capLabel(d)} · after the close`
+                            :`read ${capLabel(d)} · BEFORE the close — rolling 24h window,\nnot comparable to the days beside it`;}}}},
         scales:{x:{grid:{display:false},ticks:{color:C.mut,font:{size:9},maxTicksLimit:6}},
           y:{position:'left',grid:{color:C.grid},ticks:{color:C.mut,font:{size:9}},display:!!pline,
              title:{display:!!pline,text:'Price ($)',color:C.mut,font:{size:10}}},
