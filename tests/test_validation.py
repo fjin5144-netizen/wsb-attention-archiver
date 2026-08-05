@@ -104,6 +104,60 @@ def test_validator_accepts_real_days_and_rejects_corruption(tmp_path):
             f"validator accepted a payload it should reject: {label}"
 
 
+def test_finding_matches_an_independent_recomputation():
+    """The headline claim is now an artefact, so it can be wrong the same silent way
+    events.json was. Recomputed here from prices and events rather than by calling
+    finding.compute — a golden test that calls the code under test only proves the
+    function is deterministic, which is exactly what the seeded placebo already is.
+    """
+    import hashlib
+    with open(os.path.join(ROOT, "data", "finding.json")) as f:
+        shipped = json.load(f)
+    with open(os.path.join(ROOT, "data", "events.json")) as f:
+        events = json.load(f)
+    with open(os.path.join(ROOT, "data", "prices.json")) as f:
+        prices = json.load(f)
+    with open(os.path.join(ROOT, "data", "days.json")) as f:
+        days = json.load(f)
+
+    def fwd(tk, day, n):
+        p = prices.get(tk)
+        if not p:
+            return None
+        d = p["d"]
+        i = d.index(day) if day in d else next((k for k, x in enumerate(d) if x > day), -1)
+        if i < 0 or i + n >= len(p["c"]) or not p["c"][i]:
+            return None
+        return (p["c"][i + n] / p["c"][i] - 1) * 100
+
+    ev_days = {}
+    for e in events:
+        ev_days.setdefault(e["tk"], set()).add(e["d"])
+
+    assert shipped["events"] == len(events)
+    assert shipped["archive_days"] == len(days)
+    for row in shipped["horizons"]:
+        n = row["sessions"]
+        real, plac = [], []
+        for e in events:
+            r = fwd(e["tk"], e["d"], n)
+            if r is not None:
+                real.append(r)
+            pool = [d for d in days if d not in ev_days[e["tk"]]]
+            if not pool:
+                continue
+            h = int(hashlib.sha256(f"{e['tk']}|{e['d']}|{n}".encode()).hexdigest(), 16)
+            r = fwd(e["tk"], pool[h % len(pool)], n)
+            if r is not None:
+                plac.append(r)
+        assert row["spike"]["n"] == len(real), f"{n}d: spike sample size drifted"
+        assert row["placebo"]["n"] == len(plac), f"{n}d: placebo sample size drifted"
+        assert row["spike"]["median"] == round(statistics.median(real), 2), f"{n}d median"
+        assert row["placebo"]["median"] == round(statistics.median(plac), 2), f"{n}d placebo median"
+        # The rule the project keeps re-learning: never report the mean alone.
+        assert "trimmed_mean" in row["spike"] and "mean" in row["spike"]
+
+
 def test_days_index_matches_the_archive_directory():
     """The page discovers its days from data/days.json. A stale one silently shortens
     the client-side scan — which is the one path that exists to catch a bad

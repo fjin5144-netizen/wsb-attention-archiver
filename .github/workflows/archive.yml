@@ -59,6 +59,11 @@ jobs:
         run: python3 scripts/refresh_prices.py --top-up
       - name: Precompute events
         run: python3 scripts/precompute_events.py
+      # 站点顶部那句结论。放在事件集之后:它是从事件集和价格算出来的,
+      # 而且跟 events.json 一样是「不会报错、只会安静地错」的那类产物 ——
+      # 所以黄金测试里有一条独立重算它。
+      - name: Compute the headline finding
+        run: python3 scripts/finding.py
       # continue-on-error 不是在放过失败 —— 下面「Fail if the golden tests failed」
       # 照样把这次运行判红、照样告警。它换来的是:测试挂掉时原始档案仍然落地。
       - name: Golden-value tests
@@ -76,7 +81,7 @@ jobs:
           # 档案是项目唯一不可再生的资产(回填源已 404,那 66 天只剩这一份副本),
           # 让它被一个派生数据的断言连坐丢掉,是把因果关系搞反了。
           if [ "${{ steps.tests.outcome }}" != "success" ]; then
-            for f in data/events.json data/prices.json data/price_gaps.json; do
+            for f in data/events.json data/finding.json data/prices.json data/price_gaps.json; do
               # HEAD 要写明:`git checkout -- <path>` 是从索引恢复的,不是从上一次提交
               if git cat-file -e "HEAD:$f" 2>/dev/null; then git checkout HEAD -- "$f"; else rm -f "$f"; fi
             done
