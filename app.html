@@ -53,6 +53,11 @@ button{cursor:pointer}
 .pane{grid-area:pane;overflow:hidden;min-width:0;display:grid;
   grid-template-columns:minmax(300px,390px) 1fr;grid-template-areas:"list detail"}
 .pane.single{grid-template-columns:1fr;grid-template-areas:"detail"}
+/* Explicit, not implied. Dropping `list` from the template only unplaces it — a list
+   left over from the previous view then auto-places into an implicit track and shows
+   up beside the detail. It read as correct while testing Market only because the
+   list happened to be empty there. */
+.pane.single .list{display:none}
 .list{grid-area:list;overflow-y:auto;overscroll-behavior:contain;
   border-right:1px solid var(--line);min-width:0}
 .detail{grid-area:detail;overflow-y:auto;overscroll-behavior:contain;padding:18px 22px;min-width:0}
@@ -73,13 +78,21 @@ button{cursor:pointer}
 
 /* ---- rail ---- */
 .rk{font:600 10.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
-  color:var(--ink3);margin:0 0 9px}
+  color:var(--ink3);margin:0 0 9px;display:flex;align-items:center;gap:7px}
+.rkq{width:15px;height:15px;padding:0;border:1px solid var(--line2);border-radius:50%;
+  background:none;color:var(--ink3);font:600 9.5px/1 var(--sans)}
+.rkq:hover{color:var(--ink);border-color:var(--ink3)}
+tr.jump{cursor:pointer}
+tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .finding{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);
   border-radius:var(--r);padding:13px 14px;margin:0 0 14px}
 .fLead{font-size:13px;line-height:1.55;color:var(--ink2);margin:0}
 .fLead b{color:var(--ink);font-weight:650}
-.fRow{display:flex;justify-content:space-between;gap:8px;padding:6px 0;
-  border-top:1px solid var(--line);font-size:12px;margin-top:8px}
+.fRow{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;
+  padding:7px 0;border:0;border-top:1px solid var(--line);background:none;font-size:12px;
+  margin-top:8px;text-align:left;border-radius:0}
+.fRow:hover{color:var(--ink)}
+.fRow:hover .mut{color:var(--ink2)}
 .fRow:first-of-type{margin-top:10px}
 .fCav{font-size:11.5px;line-height:1.55;color:var(--ink3);margin:11px 0 0;
   padding-top:10px;border-top:1px solid var(--line)}
@@ -111,6 +124,9 @@ button{cursor:pointer}
   overflow:hidden;text-overflow:ellipsis}
 .row .out{grid-column:2;grid-row:1/3;font:650 14px/1 var(--sans);text-align:right;
   align-self:center;white-space:nowrap}
+.row .recn{display:block;font:400 10.5px/1.3 var(--sans);color:var(--ink3);margin-top:3px}
+/* A sort that ranks by a column the reader cannot see is a list they cannot check. */
+.row .out.mut{font-weight:400}
 .badge{font:600 9.5px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;
   padding:3px 5px;border-radius:4px;background:var(--line2);color:var(--ink2)}
 .badge.b{background:rgba(139,124,246,.18);color:var(--acc)}
@@ -320,7 +336,7 @@ function writeURL(){
 }
 function readURL(){
   const p=new URLSearchParams(location.search);
-  if(['today','aftermath','market'].includes(p.get('v')))VIEW=p.get('v');
+  if(['today','aftermath','market','method'].includes(p.get('v')))VIEW=p.get('v');
   SEL=p.get('sel')||null; Q=(p.get('q')||'').toUpperCase();
   if(p.get('w') in WINS)WIN=p.get('w');
   if(['new','old','worst','best','mentions'].includes(p.get('sort')))SORT=p.get('sort');
@@ -390,6 +406,22 @@ function eventRows(){
     mentions:(a,b)=>b.m-a.m};
   return L.sort(O[SORT]||O.new);
 }
+/* Every ticker's own history, so the board can answer the question the site is
+   actually about. "Who is loud today" is one column of it; "and what happened the
+   last three times this one was loud" is the other, and the board never had it —
+   the thesis lived in a different tab from the only live surface. */
+let TRACK=null;
+function track(tk){
+  if(!TRACK){
+    TRACK={};
+    for(const e of EVENTS)(TRACK[e.tk]=TRACK[e.tk]||[]).push(e);
+  }
+  const mine=TRACK[tk]||[];
+  const rs=mine.map(e=>ret(e.tk,e.d,10)).filter(v=>v!=null);
+  return {n:mine.length,closed:rs.length,med:rs.length?median(rs):null,
+    down:rs.length?rs.filter(v=>v<0).length:0};
+}
+
 function boardRows(){
   let L=rowsOf(DAY).map(r=>{
     const prior=DAYS.filter(d=>d<DAY).slice(-20);
@@ -400,17 +432,23 @@ function boardRows(){
   if(Q)L=L.filter(r=>r.ticker.includes(Q));
   if(ONLY==='basket')L=L.filter(r=>BASKET.has(r.ticker));
   if(ONLY==='closed')L=L.filter(r=>r.hot);
+  if(ONLY==='track')L=L.filter(r=>track(r.ticker).closed>0);
   const O={new:(a,b)=>a.rank-b.rank,old:(a,b)=>b.rank-a.rank,
     mentions:(a,b)=>b.mentions-a.mentions,
-    best:(a,b)=>b.x-a.x,worst:(a,b)=>(b.rank_24h_ago-b.rank)-(a.rank_24h_ago-a.rank)};
+    best:(a,b)=>b.x-a.x,
+    /* Worst track record first, and names with no record sink rather than sorting as
+       zero — "never spiked" is not the same claim as "spiked and went nowhere". */
+    worst:(a,b)=>{const x=track(a.ticker).med,y=track(b.ticker).med;
+      return (x==null?1e9:x)-(y==null?1e9:y);}};
   return L.sort(O[SORT]||O.new);
 }
 
 function render(){
-  $('pane').classList.toggle('single',VIEW==='market');
+  $('pane').classList.toggle('single',VIEW==='market'||VIEW==='method');
   document.querySelectorAll('[data-v]').forEach(b=>
     b.setAttribute('aria-selected',String(b.dataset.v===VIEW)));
   renderRail();
+  if(VIEW==='method'){$('detail').innerHTML=methodHTML();writeURL();return;}
   if(VIEW==='market'){$('detail').innerHTML=marketHTML();writeURL();return;}
   renderList();
   renderDetail();
@@ -421,22 +459,27 @@ function renderRail(){
   const f=FINDING&&(FINDING.horizons||[]).find(h=>h.sessions===(FINDING.headline_sessions||20));
   const findingHTML=f?`
     <div class="finding">
-      <p class="rk">What the archive says</p>
+      <p class="rk">What the archive says<button class="rkq" data-v="method" title="How these numbers are measured">?</button></p>
       <p class="fLead">After a confirmed spike, the median return over
         <b>${f.sessions} sessions</b> is <b class="dn">${pct(f.spike.median)}</b>.
         The same tickers on a random day: <b>${pct(f.placebo.median)}</b>.</p>
-      ${(FINDING.horizons||[]).map(h=>`<div class="fRow"><span class="mut">${h.sessions} sessions · n=${h.spike.n}</span>
-        <span class="num ${h.gap_median<0?'dn':'up'}">${h.gap_median.toFixed(1)} pts</span></div>`).join('')}
+      ${/* Clickable, because the most important sentence on the screen used to be the
+            one thing you could not act on. A horizon row takes you to the spikes it
+            is made of, with the chart already on that window. */''}
+      ${(FINDING.horizons||[]).map(h=>`<button class="fRow" data-hz="${h.sessions}"
+        title="Show the ${h.spike.n} spikes behind this, chart set to +${h.sessions}d">
+        <span class="mut">${h.sessions} sessions · n=${h.spike.n}</span>
+        <span class="num ${h.gap_median<0?'dn':'up'}">${h.gap_median.toFixed(1)} pts ›</span></button>`).join('')}
       <p class="fCav"><b>Not a finding.</b> ${FINDING.archive_days} days of archive is one quarter —
         too short to split across periods, and that is the test an earlier result failed.</p>
     </div>`:'';
   const sorts=VIEW==='aftermath'
     ? [['new','Newest'],['old','Oldest'],['worst','Worst 10d'],['best','Best 10d'],['mentions','Most mentions']]
-    : [['new','Rank'],['mentions','Mentions'],['best','Multiple'],['worst','Rank climb']];
+    : [['new','Rank'],['mentions','Mentions'],['best','Multiple'],['worst','Worst record']];
   const onlys=VIEW==='aftermath'
     ? [['','All'],['basket','Basket'],['closed','Closed 10d'],['pending','Pending']]
-    : [['','All'],['basket','Basket'],['closed','Spiking']];
-  if(VIEW==='market'){$('railBody').innerHTML=findingHTML;return;}
+    : [['','All'],['basket','Basket'],['closed','Spiking now'],['track','Has a record']];
+  if(VIEW==='market'||VIEW==='method'){$('railBody').innerHTML=findingHTML;return;}
   $('railBody').innerHTML=findingHTML
     +`<div class="fld"><label>Sort</label><div class="chips">${sorts.map(([k,l])=>
        `<button data-sort="${k}" aria-pressed="${SORT===k}">${l}</button>`).join('')}</div></div>`
@@ -450,6 +493,11 @@ function renderList(){
   const head=`<div class="listHead"><b>${L.length}</b> ${VIEW==='aftermath'?'spikes':'tickers'}
     ${Q?`· filter ${esc(Q)}`:''}${ONLY?` · ${ONLY}`:''}</div>`;
   if(!L.length){$('list').innerHTML=head+`<div class="empty">Nothing matches.</div>`;return;}
+  /* Page far enough to actually contain the selection. Without this, jumping to a
+     spike that sorts to position 300 — or opening a ?sel= deep link to one — landed
+     on row 1 instead, silently, because the guard below only looks at the slice. */
+  if(SEL){const i=L.findIndex(e=>key(e)===SEL);
+    if(i>=SHOWN)SHOWN=Math.ceil((i+1)/40)*40;}
   const slice=L.slice(0,SHOWN);
   const body=slice.map(e=>VIEW==='aftermath'?eventRow(e):boardRow(e)).join('');
   const more=L.length>SHOWN?`<button class="more" id="more">Show ${Math.min(40,L.length-SHOWN)} more · ${L.length-SHOWN} left</button>`:'';
@@ -468,12 +516,20 @@ function eventRow(e){
 }
 function boardRow(r){
   const d24=r.mentions-r.mentions_24h_ago, up=r.rank_24h_ago-r.rank;
+  const t=track(r.ticker);
+  /* The right-hand number is the track record, not the rank move. Rank churn is
+     noise this project has no claim about; "the last N times this went loud, the
+     median was X" is the claim, applied to the name in front of you. */
+  const rec=t.closed
+    ? `<div class="out ${cls(t.med)}">${pct(t.med)}<span class="recn">${t.closed} past spike${t.closed>1?'s':''}</span></div>`
+    : t.n?`<div class="out mut" style="font-size:12px">pending<span class="recn">${t.n} spike${t.n>1?'s':''}, no outcome yet</span></div>`
+        :`<div class="out mut" style="font-size:12px">—<span class="recn">never spiked</span></div>`;
   return `<div class="row" role="button" tabindex="0" data-k="${r.ticker}">
     <div class="r1"><span class="tk">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge b">basket</span>':''}
       ${r.hot?'<span class="badge" style="background:rgba(242,104,92,.18);color:var(--dn)">spike</span>':''}
-      <span class="dt">#${r.rank}</span></div>
+      <span class="dt">#${r.rank} · ${up>0?'▲':up<0?'▼':'–'}${Math.abs(up)||''}</span></div>
     <div class="r2">${r.mentions} mentions · ×${r.x.toFixed(1)} · ${d24>=0?'+':''}${d24} in 24h</div>
-    <div class="out ${up>0?'up':up<0?'dn':'mut'}" style="font-size:12.5px">${up>0?'▲':up<0?'▼':'–'}${Math.abs(up)||''}</div>
+    ${rec}
   </div>`;
 }
 function markSel(){
@@ -502,6 +558,19 @@ function winDays(tk,day,sess){
   }
   return {days:DAYS.slice(Math.max(0,di-pre),end+1),have,priced};
 }
+/* A dead end otherwise: "pending" says the window has not closed but not when it
+   will, and the answer is knowable — count the sessions still owed and add them at
+   five a week. */
+function resolveNote(e){
+  const[p,i]=priceIdx(e.tk,e.d);
+  if(!p||i<0)return 'waiting on the first session';
+  const owed=10-Math.max(0,Math.min(10,p.d.length-1-i));
+  if(owed<=0)return '10 sessions after';
+  const last=new Date((p.d[p.d.length-1]||e.d)+'T00:00:00Z');
+  last.setUTCDate(last.getUTCDate()+Math.ceil(owed*7/5));
+  return `${owed} session${owed>1?'s':''} to go · about ${last.toISOString().slice(0,10)}`;
+}
+
 function eventDetail(){
   const e=eventRows().find(x=>key(x)===SEL); if(!e)return '';
   const sess=WINS[WIN];
@@ -525,7 +594,7 @@ function eventDetail(){
       <p class="dSub">Confirmed spike on ${e.d} · read ${capLabel(e.d)}${settled(e.d)?'':' · before the close'}</p>
     </div>
     <div class="dOut"><div class="v ${cls(e.r10)}">${e.r10==null?'<span class="mut">pending</span>':pct(e.r10)}</div>
-      <div class="k">10 sessions after</div></div></div>
+      <div class="k">${e.r10==null?resolveNote(e):'10 sessions after'}</div></div></div>
   <div class="stats">
     ${st('mentions that day',e.m)}
     ${st('prior 20-day median',e.med.toFixed(1))}
@@ -576,10 +645,49 @@ function boardDetail(){
     <thead><tr><th>date</th><th class="n">mentions</th><th class="n">×</th><th class="n">5d</th><th class="n">10d</th><th class="n">20d</th></tr></thead>
     <tbody>${mine.slice().sort((a,b)=>b.d.localeCompare(a.d)).map(e=>{
       const f=n=>{const v=ret(e.tk,e.d,n);return v==null?'<span class="mut">—</span>':`<span class="${cls(v)}">${pct(v)}</span>`;};
-      return `<tr><td>${e.d}</td><td class="n">${e.m}</td><td class="n">×${(e.m/Math.max(e.med,1)).toFixed(0)}</td>
+      return `<tr class="jump" data-jump="${e.d}|${e.tk}" title="Open this spike in Aftermath">
+        <td>${e.d} ›</td><td class="n">${e.m}</td><td class="n">×${(e.m/Math.max(e.med,1)).toFixed(0)}</td>
         <td class="n">${f(5)}</td><td class="n">${f(10)}</td><td class="n">${f(20)}</td></tr>`;}).join('')}
     </tbody></table></div>`:''}`;
 }
+/* Asked out loud: "is mentions the end-of-day figure, or does it update hourly?"
+   Nothing on either front end answered it, and the answer changes how every number
+   here reads — so it lives one click from the numbers rather than in a README. */
+function methodHTML(){
+  const last=DAYS[DAYS.length-1], t=capAt(last);
+  return `<div class="dHead"><div><div class="dTk">How to read these numbers</div>
+      <p class="dSub">What is measured, when it is read, and what that costs.</p></div></div>
+    <h3>Mentions is a rolling 24-hour count, not a daily total</h3>
+    <p class="note">ApeWisdom reports how often a ticker was mentioned on r/wallstreetbets in
+      the 24 hours <b>before the moment it is read</b>. A day's archived figure is whatever the
+      last successful run of that UTC date saw, so it covers roughly
+      <b>[read time − 24h → read time]</b>, not the calendar day. It can fall as well as rise
+      during the day: on 2026-08-05 three reads gave MU 403, then 364, then 348, while AMD went
+      1090 → 1162 → 1171. A cumulative total could not do that.</p>
+    <h3>Which read wins</h3>
+    <p class="note">Each run overwrites that date's file, so the value freezes at the last run
+      before UTC midnight. Collection aims for after the US close — 14 attempts a day, five of
+      them past 21:00 UTC — but scheduling is best-effort, so the page states the read time
+      wherever it matters and draws a hollow bar for any day read before the close.
+      ${t?`The newest day, ${last}, was read at ${capLabel(last)}${settled(last)?' — after the close.':' — before the close, so it is not yet comparable to the days beside it.'}`:''}</p>
+    <h3>What that costs you</h3>
+    <p class="note">Two days are comparable only when their reads are about 24 hours apart.
+      Checked against the archive's own <code>mentions_24h_ago</code> field, a ~24h gap
+      reproduces the previous day's figure to within 0.5–6%; an 11-hour gap misses it by 72%.
+      It also means adding daily counts across a range double-counts the overlap — read a range
+      total as scale, not as an exact number of conversations.</p>
+    <h3>Spike, and what follows it</h3>
+    <p class="note">A confirmed spike is <b>≥30 mentions and ≥3× the prior 20 archive days'
+      median</b>, at most one per ticker every six archive days. Returns are measured in
+      <b>sessions</b> from the first session at or after the spike, which is why the chart
+      windows are +5d/+10d/+20d and not calendar weeks. The benchmark is the same tickers on a
+      random non-spike day, never zero — this basket outruns SPY unaided, so "it fell" on its
+      own is close to no information.</p>
+    <p class="note">Sources: ApeWisdom for attention, stockanalysis with a Yahoo fallback for
+      prices, Cboe for the market gauges. Everything is archived to the repository first and
+      read from there — the page never queries a data source live.</p>`;
+}
+
 function marketHTML(){
   if(!RISK)return `<div class="dHead"><div><div class="dTk">Market</div>
     <p class="dSub">Systemic gauges, independent of the attention archive.</p></div></div>
@@ -616,6 +724,14 @@ document.addEventListener('click',e=>{
   if(s){SORT=s.dataset.sort;SHOWN=40;render();$('rail').classList.remove('open');return;}
   const o=e.target.closest('[data-only]');
   if(o){ONLY=o.dataset.only;SHOWN=40;render();$('rail').classList.remove('open');return;}
+  const hz=e.target.closest('[data-hz]');
+  if(hz){VIEW='aftermath';WIN=hz.dataset.hz+'d';ONLY='closed';SORT='worst';
+    SEL=null;SHOWN=40;render();$('rail').classList.remove('open');return;}
+  const jp=e.target.closest('[data-jump]');
+  if(jp){VIEW='aftermath';SEL=jp.dataset.jump;SHOWN=40;ONLY='';Q='';$('q').value='';
+    render();$('pane').classList.add('showDetail');
+    const r=$('list').querySelector(`[data-k="${CSS.escape(SEL)}"]`);
+    if(r)r.scrollIntoView({block:'center'});return;}
   const w=e.target.closest('[data-win]');
   if(w){WIN=w.dataset.win;renderDetail();writeURL();return;}
   if(e.target.closest('#more')){SHOWN+=40;renderList();return;}
