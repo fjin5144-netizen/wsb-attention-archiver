@@ -1,0 +1,70 @@
+name: Collection watchdog
+
+# Watches the data, not the job. On 2026-08-06 two archive runs were cancelled after
+# 15 minutes each without ever being assigned a runner — `steps=0`, so no alert step
+# inside that workflow could have run — and GitHub then dropped every remaining slot
+# for six hours. The day froze before the close and nothing said so.
+#
+# Separate workflow, separate schedule, separate concurrency group: when the archive
+# cannot get a runner, this still might.
+
+on:
+  schedule:
+    - cron: '35 1 * * *'    # after midnight UTC: did the day that just ended settle?
+    - cron: '35 9 * * *'
+    - cron: '35 17 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: wsb-watchdog
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check collection health
+        id: check
+        continue-on-error: true
+        # The report has to reach the log either way. Under `bash -e` a non-zero exit
+        # from the script would end the step before `cat` ran, so the one run that
+        # actually found something would be the one that printed nothing.
+        run: |
+          set +e
+          python3 scripts/watchdog.py > report.md 2>&1
+          code=$?
+          set -e
+          cat report.md
+          exit $code
+
+      - name: Open, update or close the alert
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # One issue, reused. Three checks a day each opening their own would bury the
+          # one that matters — which is how #1 #2 #3 happened.
+          N=$(gh issue list --state open --limit 50 --json number,title \
+                -q "[.[] | select(.title | contains(\"Collection problem\"))][0].number // empty")
+          BODY="$(cat report.md)"
+          LINK="[watchdog run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+
+          if [ "${{ steps.check.outcome }}" != "success" ]; then
+            if [ -n "$N" ]; then
+              gh issue comment "$N" --body "$BODY"$'\n\n'"$LINK"
+            else
+              gh issue create --title "🚨 Collection problem" --body "$BODY"$'\n\n'"$LINK"
+            fi
+            exit 1
+          fi
+
+          # Recovered. An alarm that never clears is an alarm nobody reads, so close it
+          # rather than leaving a stale red flag beside a healthy archive.
+          if [ -n "$N" ]; then
+            gh issue comment "$N" --body "Recovered."$'\n\n'"$BODY"$'\n\n'"$LINK"
+            gh issue close "$N"
+          fi
+          echo "healthy"

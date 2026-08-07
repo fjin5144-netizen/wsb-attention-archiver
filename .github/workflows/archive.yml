@@ -107,12 +107,28 @@ jobs:
           echo "Archive committed, but the golden-value tests failed — derived artefacts were rolled back."
           exit 1
 
-      - name: Alert on failure
-        if: failure()
+  # 独立作业,不是 archive 里的一步。2026-08-06 那两次运行没拿到 runner 就被取消了
+  # (runner 为空、steps=0),作业里的任何一步都没执行 —— 一个 in-job 的告警步骤在这种
+  # 失败模式下永远不可能响。而且 `if: failure()` 本来也匹配不到 cancelled。
+  notify:
+    needs: archive
+    if: always() && needs.archive.result != 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Alert
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # 复用同一个 issue。每次失败开一张新的,一个坏掉的下午就堆出三条一模一样的
           # 告警(#1 #2 #3 就是这么来的),多出来的两条一点信息量都没有。
-          body="归档任务在 \`$(date -u +%Y-%m-%dT%H:%MZ)\` 失败。见 [workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)。"
+          r="${{ needs.archive.result }}"
+          extra=""
+          if [ "$r" = "cancelled" ]; then
+            extra=$'\n\n作业被取消 —— 通常是没有分配到 runner(等满 15 分钟)。本次采集完全没有执行。'
+          fi
+          body="归档作业在 \`$(date -u +%Y-%m-%dT%H:%MZ)\` 结束于 \`$r\`。见 [workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)。$extra"
           n=$(gh issue list --state open --limit 50 --json number,title \
                 -q '[.[] | select(.title | contains("Archive Cron Failed"))][0].number // empty')
           if [ -n "$n" ]; then
@@ -120,5 +136,3 @@ jobs:
           else
             gh issue create --title "🚨 Archive Cron Failed" --body "$body"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
