@@ -128,6 +128,32 @@ def test_the_wayback_backfill_stays_out_of_the_archive():
                 f"data/apewisdom/{d}.json came from the backfill, not from collection"
 
 
+def test_the_wayback_quality_manifest_is_current():
+    """ApeWisdom sometimes served a frozen page: five days in September 2025 are
+    byte-identical across five separate crawls, and 2023-03-21 matches 2023-05-17 to
+    98.4% two months apart. Against a 3.6% median similarity between adjacent days
+    those are not subtle — they were just invisible until something looked. This
+    fails if the manifest drifts from what the files actually say.
+    """
+    wb = os.path.join(ROOT, "data", "wayback")
+    manifest = os.path.join(wb, "quality.json")
+    if not os.path.isdir(wb) or not os.path.exists(manifest):
+        return
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "verify_wayback", os.path.join(ROOT, "scripts", "verify_wayback.py"))
+    vw = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(vw)
+    days, snaps = vw.load()
+    fresh = vw.compute(days, snaps)
+    with open(manifest) as f:
+        shipped = json.load(f)
+    assert shipped == fresh, "data/wayback/quality.json is stale — rerun scripts/verify_wayback.py"
+    # The flagging only means something while most days pass it.
+    assert fresh["usable"] / fresh["days"] > 0.8, \
+        f"only {fresh['usable']}/{fresh['days']} usable — the source, not the filter, is the problem"
+
+
 def test_the_two_front_ends_agree_on_the_basket():
     """app.html carries its own copy of BASKET. Two copies of a list is how this repo
     has been bitten before — the precompute and the client-side scan once held the

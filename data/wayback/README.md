@@ -36,6 +36,33 @@ as a coarse cross-period comparison with its own definitions, stated as such.
   row means. It is recorded per day — filter on it.
 * **Not daily.** See the coverage table.
 
+## Is it real?
+
+Yes, and it was checked rather than assumed. Mention peaks land on documented events
+with the right tickers, dates and magnitudes:
+
+    CLOV  2021-06-07    266 mentions, close $11.92
+          2021-06-08  4,284 mentions, close $22.15    the Clover Health squeeze, +86%
+    AMC   2021-06-08  1,890 mentions, $485            the June 2021 AMC peak
+    BB    2021-06-08  4,309 mentions                  the same meme wave
+    GME   2022-03-23  2,371 mentions, 33.5% 5d range  the RC Ventures disclosure week
+
+Nothing garbled reproduces four independent, checkable events on the right days. Also:
+230/230 days have ranks ascending and mentions descending, so no column slipped, and
+92.4% of parsed tickers already appear in the archive or the price pack — the rest are
+2021-era names (WISH, SNDL, CLOV, BITF) that simply stopped trending before 2026.
+
+## But 11 days are not usable
+
+ApeWisdom occasionally served a frozen page. Five consecutive days in September 2025
+are byte-identical despite five separate crawls at five different hours, and
+2023-03-21 matches 2023-05-17 to 98.4% *two months apart*. Adjacent days normally
+agree on 3.6% of counts.
+
+`scripts/verify_wayback.py` records them in `quality.json` — flagged, not deleted,
+because the captures are what archive.org holds and rewriting them would lose the
+evidence. **219 of 230 days are usable.** Read `quality.json` and skip the rest.
+
 ## Verified against the archive
 
 Two days overlap, and they say the same thing when read at the same time:
