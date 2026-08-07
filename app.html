@@ -246,7 +246,7 @@ const HOT_FLOOR=30, HOT_X=3, CLOSE_UTC=21;
 const BASKET=new Set(["GME","AMC","MSTR","PLTR","RKLB","SOFI","TSLA","NVDA","AMD","INTC","HOOD","COIN","RDDT","SMCI","IONQ","RGTI","QUBT","BBAI","SOUN","AI","CRWV","NBIS","TEM","ACHR","JOBY","LUNR","ASTS","SPCE","OKLO","SMR","MARA","RIOT","CLSK","WULF","DJT","OPEN","CVNA","UPST","AFRM","HIMS","TLRY","RUM","QS","BB","NOK","NIO","RIVN","LCID","PLUG","W","NVAX"]);
 const WINS={'5d':5,'10d':10,'20d':20,'all':null};
 
-let DAYS=[],EVENTS=[],FINDING=null,PRICES={},RISK=null,SNAP={},DAY='',
+let DAYS=[],EVENTS=[],FINDING=null,RANK=null,PRICES={},RISK=null,SNAP={},DAY='',
     VIEW='today',SEL=null,Q='',WIN='10d',SORT='new',ONLY='',SHOWN=40;
 
 const $=id=>document.getElementById(id);
@@ -290,12 +290,13 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
     catch(_){DAYS=[];}
   }
   if(!DAYS.length){$('boot').textContent='No archive data yet.';return;}
-  const [ev,fi,px]=await Promise.all([
+  const [ev,fi,px,rk]=await Promise.all([
     gj(`${BASE}data/events.json`).catch(()=>[]),
     gj(`${BASE}data/finding.json`).catch(()=>null),
     gj(`${BASE}data/prices.json`).catch(()=>({})),
+    gj(`${BASE}data/finding_rank.json`).catch(()=>null),
   ]);
-  EVENTS=ev;FINDING=fi;PRICES=px;
+  EVENTS=ev;FINDING=fi;PRICES=px;RANK=rk;
   DAY=DAYS[DAYS.length-1];
   await loadDays([DAY]);
   /* Land on a day that has rows. A run can commit before the fetch returns, and an
@@ -683,9 +684,44 @@ function methodHTML(){
       windows are +5d/+10d/+20d and not calendar weeks. The benchmark is the same tickers on a
       random non-spike day, never zero — this basket outruns SPY unaided, so "it fell" on its
       own is close to no information.</p>
+    ${RANK?rankHTML():''}
     <p class="note">Sources: ApeWisdom for attention, stockanalysis with a Yahoo fallback for
-      prices, Cboe for the market gauges. Everything is archived to the repository first and
-      read from there — the page never queries a data source live.</p>`;
+      prices, Cboe for the market gauges. Wayback captures of the ApeWisdom board for anything
+      before 2026-05. Everything is archived to the repository first and read from there — the
+      page never queries a data source live.</p>`;
+}
+
+/* Reported whatever it said. It does not reproduce the headline, and that is the
+   result: the effect lives in the *change* in attention, not the level of it. */
+function rankHTML(){
+  const row=(h,a,b)=>`<tr><td>${h.sessions}d</td><td class="n">${h[a].n}</td>
+    <td class="n ${h[a].median<0?'dn':'up'}">${h[a].median>0?'+':''}${h[a].median.toFixed(2)}%</td>
+    <td class="n">${h[b].median>0?'+':''}${h[b].median.toFixed(2)}%</td>
+    <td class="n ${h.gap_median<0?'dn':'up'}">${h.gap_median.toFixed(2)}</td></tr>`;
+  const tbl=(ds,a,b)=>`<h3>${ds.label} · ${ds.days} days, ${ds.span[0]} → ${ds.span[1]}</h3>
+    <div class="tblwrap"><table><thead><tr><th>horizon</th><th class="n">n</th>
+      <th class="n">top-3</th><th class="n">rest of board</th><th class="n">gap (pp)</th></tr></thead>
+      <tbody>${ds.horizons.map(h=>row(h,a,b)).join('')}</tbody></table></div>`;
+  const yr=(RANK.by_year||[]).map(e=>`<tr><td>${e.era}</td><td class="n">${e.days}</td>
+    <td class="n">${e.n}</td><td class="n ${e.median<0?'dn':'up'}">${e.median>0?'+':''}${e.median.toFixed(2)}%</td>
+    <td class="n ${e.gap<0?'dn':'up'}">${e.gap.toFixed(2)}</td></tr>`).join('');
+  return `<h3>Does it hold over five years?</h3>
+    <p class="note">The headline rests on ${'99'} days and cannot be split across periods — the
+      test an earlier result failed the moment its window was long enough to halve. Wayback
+      captures reach 2021 but are far too sparse for the spike definition, which needs the prior
+      20 archive days to actually be 20 days. So this asks something decidable from a single
+      snapshot — <b>a ticker holding a top-3 spot that day</b> — by the same code over both
+      datasets. Eleven frozen days are excluded.</p>
+    ${RANK.datasets.map(d=>tbl(d,'top3','rest_of_board')).join('')}
+    <h3>By year, ten sessions</h3>
+    <div class="tblwrap"><table><thead><tr><th>year</th><th class="n">days</th><th class="n">n</th>
+      <th class="n">top-3</th><th class="n">gap (pp)</th></tr></thead><tbody>${yr}</tbody></table></div>
+    <p class="note"><b>It does not reproduce the headline, and the sign is not stable.</b> Being
+      the most-discussed name is worth about half a point against the rest of the board — against
+      roughly seven points for a confirmed spike on the same 2026 data. By year the gap runs
+      -1.29, +1.82, -2.57, -0.58, +0.55: it changes sign. Read together, the two say the effect is
+      in the <b>change</b> in attention, not its level — and that even the level effect is not
+      something a quarter of data would have told you about.</p>`;
 }
 
 function marketHTML(){

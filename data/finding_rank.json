@@ -1,0 +1,180 @@
+{
+ "definition": "a ticker holding a top-3 spot on the board that day",
+ "benchmark": "the same tickers on board days they were not top-3",
+ "top_n": 3,
+ "excluded_suspect_days": 11,
+ "datasets": [
+  {
+   "label": "wayback (sparse, 2021-2026)",
+   "days": 219,
+   "span": [
+    "2021-05-10",
+    "2026-07-18"
+   ],
+   "tickers_ever_top3": 141,
+   "horizons": [
+    {
+     "sessions": 5,
+     "top3": {
+      "n": 649,
+      "median": -0.17,
+      "trimmed_mean": -0.31,
+      "mean": -0.3,
+      "win_rate": 49
+     },
+     "rest_of_board": {
+      "n": 638,
+      "median": 0.36,
+      "trimmed_mean": 0.42,
+      "mean": 0.66,
+      "win_rate": 56
+     },
+     "gap_median": -0.53
+    },
+    {
+     "sessions": 10,
+     "top3": {
+      "n": 649,
+      "median": -0.43,
+      "trimmed_mean": -0.87,
+      "mean": -0.47,
+      "win_rate": 46
+     },
+     "rest_of_board": {
+      "n": 638,
+      "median": 0.11,
+      "trimmed_mean": -0.28,
+      "mean": -0.07,
+      "win_rate": 51
+     },
+     "gap_median": -0.54
+    },
+    {
+     "sessions": 20,
+     "top3": {
+      "n": 646,
+      "median": 0.17,
+      "trimmed_mean": -1.04,
+      "mean": -0.1,
+      "win_rate": 52
+     },
+     "rest_of_board": {
+      "n": 634,
+      "median": 0.59,
+      "trimmed_mean": -0.15,
+      "mean": -0.06,
+      "win_rate": 52
+     },
+     "gap_median": -0.42
+    }
+   ]
+  },
+  {
+   "label": "daily archive (2026)",
+   "days": 99,
+   "span": [
+    "2026-05-01",
+    "2026-08-07"
+   ],
+   "tickers_ever_top3": 30,
+   "horizons": [
+    {
+     "sessions": 5,
+     "top3": {
+      "n": 255,
+      "median": 0.0,
+      "trimmed_mean": 0.04,
+      "mean": 0.57,
+      "win_rate": 50
+     },
+     "rest_of_board": {
+      "n": 250,
+      "median": -0.34,
+      "trimmed_mean": 1.05,
+      "mean": 2.87,
+      "win_rate": 44
+     },
+     "gap_median": 0.34
+    },
+    {
+     "sessions": 10,
+     "top3": {
+      "n": 235,
+      "median": -0.48,
+      "trimmed_mean": -0.56,
+      "mean": -0.06,
+      "win_rate": 48
+     },
+     "rest_of_board": {
+      "n": 224,
+      "median": 0.67,
+      "trimmed_mean": 1.34,
+      "mean": 2.26,
+      "win_rate": 58
+     },
+     "gap_median": -1.15
+    },
+    {
+     "sessions": 20,
+     "top3": {
+      "n": 198,
+      "median": -0.46,
+      "trimmed_mean": -0.87,
+      "mean": 0.36,
+      "win_rate": 45
+     },
+     "rest_of_board": {
+      "n": 203,
+      "median": -0.02,
+      "trimmed_mean": 1.49,
+      "mean": 7.18,
+      "win_rate": 50
+     },
+     "gap_median": -0.44
+    }
+   ]
+  }
+ ],
+ "by_year": [
+  {
+   "era": "2021",
+   "days": 16,
+   "n": 47,
+   "median": -0.29,
+   "rest": 1.0,
+   "gap": -1.29
+  },
+  {
+   "era": "2022",
+   "days": 14,
+   "n": 39,
+   "median": 0.06,
+   "rest": -1.76,
+   "gap": 1.82
+  },
+  {
+   "era": "2024",
+   "days": 22,
+   "n": 64,
+   "median": -0.68,
+   "rest": 1.89,
+   "gap": -2.57
+  },
+  {
+   "era": "2025",
+   "days": 114,
+   "n": 341,
+   "median": -0.49,
+   "rest": 0.09,
+   "gap": -0.58
+  },
+  {
+   "era": "2026",
+   "days": 43,
+   "n": 129,
+   "median": -0.93,
+   "rest": -1.48,
+   "gap": 0.55
+  }
+ ]
+}

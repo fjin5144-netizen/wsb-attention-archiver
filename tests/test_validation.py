@@ -154,6 +154,28 @@ def test_the_wayback_quality_manifest_is_current():
         f"only {fresh['usable']}/{fresh['days']} usable — the source, not the filter, is the problem"
 
 
+def test_the_cross_period_check_is_reproducible():
+    """finding_rank.json is the one artefact that says the headline does NOT generalise,
+    which makes it exactly the artefact nobody would notice going wrong. Recompute it.
+    """
+    path = os.path.join(ROOT, "data", "finding_rank.json")
+    if not os.path.exists(path):
+        return
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "finding_rank", os.path.join(ROOT, "scripts", "finding_rank.py"))
+    fr = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fr)
+    with open(path) as f:
+        shipped = json.load(f)
+    assert shipped == fr.compute(), \
+        "data/finding_rank.json is stale — rerun scripts/finding_rank.py"
+    # The sparse dataset is the whole point of it; losing it silently would leave a
+    # cross-period claim resting on one quarter again.
+    labels = [d["label"] for d in shipped["datasets"]]
+    assert any("wayback" in l for l in labels), f"the 2021-2026 arm vanished: {labels}"
+
+
 def test_the_two_front_ends_agree_on_the_basket():
     """app.html carries its own copy of BASKET. Two copies of a list is how this repo
     has been bitten before — the precompute and the client-side scan once held the
