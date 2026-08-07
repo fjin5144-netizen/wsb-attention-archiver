@@ -14,7 +14,7 @@ than from any workflow's exit code.
 
     python3 scripts/watchdog.py          # report, exit 1 if anything is wrong
 """
-import json, os, sys, datetime as dt
+import hashlib, json, os, sys, datetime as dt
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ARCHIVE = os.path.join(ROOT, "data", "apewisdom")
@@ -66,8 +66,9 @@ def main():
         have = set(days)
         missing = [(first + dt.timedelta(days=i)).isoformat() for i in range(expected)
                    if (first + dt.timedelta(days=i)).isoformat() not in have]
-        problems.append(f"**{len(missing)} missing archive day(s)**: {', '.join(missing[:8])}"
-                        + (" …" if len(missing) > 8 else ""))
+        problems.append(("gap:" + ",".join(missing),
+                         f"**{len(missing)} missing archive day(s)**: {', '.join(missing[:8])}"
+                         + (" …" if len(missing) > 8 else "")))
     else:
         notes.append(f"{len(days)} days, {days[0]} → {days[-1]}, no gaps")
 
@@ -76,9 +77,10 @@ def main():
     age = (now - ts).total_seconds() / 3600
     due = last_due_slot(now)
     if due and ts < due - dt.timedelta(hours=GRACE_H):
-        problems.append(f"**No snapshot since {ts:%Y-%m-%d %H:%M} UTC** ({age:.1f}h ago). "
-                        f"A run was due at {due:%Y-%m-%d %H:%M} UTC and nothing has landed since. "
-                        f"Scheduled runs are being dropped or cancelled.")
+        problems.append((f"stale:{days[-1]}:{due:%Y-%m-%dT%H:%M}",
+                         f"**No snapshot since {ts:%Y-%m-%d %H:%M} UTC** ({age:.1f}h ago). "
+                         f"A run was due at {due:%Y-%m-%d %H:%M} UTC and nothing has landed since. "
+                         f"Scheduled runs are being dropped or cancelled."))
     else:
         notes.append(f"newest read {days[-1]} {ts:%H:%M} UTC ({age:.1f}h ago), {len(rows)} tickers")
 
@@ -88,10 +90,11 @@ def main():
     if now.hour >= 1 and yesterday in days:
         yts, _ = read_day(yesterday)
         if yts.hour < CLOSE_UTC:
-            problems.append(
+            problems.append((
+                f"unsettled:{yesterday}",
                 f"**{yesterday} froze at {yts:%H:%M} UTC, before the US close.** Mentions is a "
                 f"rolling 24h count, so that day covers a different window than the days beside "
-                f"it and is not comparable to them. The post-close slots did not run.")
+                f"it and is not comparable to them. The post-close slots did not run."))
         else:
             notes.append(f"{yesterday} settled at {yts:%H:%M} UTC, after the close")
 
@@ -105,20 +108,26 @@ def main():
             newest = max(ends)
             lag = (now.date() - dt.date.fromisoformat(newest)).days
             if lag > PRICE_LAG_DAYS:
-                problems.append(f"**Prices are {lag} days behind** (newest bar {newest}). "
-                                f"Spikes will show no outcome until this catches up.")
+                problems.append((f"prices:{newest}",
+                                 f"**Prices are {lag} days behind** (newest bar {newest}). "
+                                 f"Spikes will show no outcome until this catches up."))
             else:
                 notes.append(f"prices through {newest} ({lag}d behind today)")
 
     stamp = f"{now:%Y-%m-%dT%H:%MZ}"
     if problems:
+        # A frozen day cannot be un-frozen, so re-reporting it three times a day is
+        # pure noise. The fingerprint is over what is wrong, not when it was noticed,
+        # so the workflow can tell "still the same thing" from "something new".
+        fp = hashlib.sha1("|".join(sorted(k for k, _ in problems)).encode()).hexdigest()[:12]
         print(f"### Collection problem · {stamp}\n")
-        for p in problems:
+        for _, p in problems:
             print(f"- {p}")
         print("\n<details><summary>Everything else that is fine</summary>\n")
         for n in notes:
             print(f"- {n}")
         print("\n</details>")
+        print(f"\n<!-- wd-fingerprint:{fp} -->")
         sys.exit(1)
 
     print(f"### Collection healthy · {stamp}\n")

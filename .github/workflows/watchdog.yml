@@ -54,7 +54,17 @@ jobs:
 
           if [ "${{ steps.check.outcome }}" != "success" ]; then
             if [ -n "$N" ]; then
-              gh issue comment "$N" --body "$BODY"$'\n\n'"$LINK"
+              # A day that froze before the close can never be un-frozen, so the same
+              # report three times a day is noise. Comment only when what is wrong has
+              # changed — the fingerprint covers the problems, not the timestamp.
+              FP=$(grep -o 'wd-fingerprint:[a-f0-9]*' report.md | head -1)
+              SEEN=$(gh issue view "$N" --json body,comments \
+                       -q '.body + " " + ([.comments[].body] | join(" "))')
+              if [ -n "$FP" ] && printf '%s' "$SEEN" | grep -q "$FP"; then
+                echo "unchanged ($FP) — not commenting again"
+              else
+                gh issue comment "$N" --body "$BODY"$'\n\n'"$LINK"
+              fi
             else
               gh issue create --title "🚨 Collection problem" --body "$BODY"$'\n\n'"$LINK"
             fi
