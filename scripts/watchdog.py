@@ -12,7 +12,17 @@ something that watches the data, which is what this does. It asks the four quest
 whose answers the archive exists to keep true, and it asks them from the files rather
 than from any workflow's exit code.
 
-    python3 scripts/watchdog.py          # report, exit 1 if anything is wrong
+Exit codes are the contract with the workflow, and they are deliberately not the
+usual two. A red run must mean "the watchdog is broken", never "the watchdog found
+something" — those look identical in the Actions list, and once they do, a red mark
+stops carrying information. Findings travel by issue; the exit code only says whether
+this check was able to do its job.
+
+    0  healthy
+    1  ran fine, found problems   -> workflow stays green, issue carries the report
+    2  the watchdog itself failed -> workflow goes red
+
+    python3 scripts/watchdog.py
 """
 import hashlib, json, os, sys, datetime as dt
 
@@ -136,4 +146,16 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit:
+        raise
+    except Exception:
+        # Anything unplanned is exit 2, not 1. A Python traceback exits 1 by default,
+        # which would be indistinguishable from a clean "found problems" — the
+        # watchdog would look like it was working while it was actually crashing.
+        import traceback
+        print("WATCHDOG FAILED — this is a bug in the check, not a data problem\n",
+              file=sys.stderr)
+        traceback.print_exc()
+        sys.exit(2)

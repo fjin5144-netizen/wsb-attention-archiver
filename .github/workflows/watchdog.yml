@@ -29,17 +29,28 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check collection health
         id: check
-        continue-on-error: true
+        # No continue-on-error: exit 1 means "checked, found something" and must not
+        # colour the run. Only exit 2 — the watchdog itself broken — goes red, so a red
+        # mark in the Actions list keeps meaning one thing.
+        #
         # The report has to reach the log either way. Under `bash -e` a non-zero exit
-        # from the script would end the step before `cat` ran, so the one run that
-        # actually found something would be the one that printed nothing.
+        # would end the step before `cat` ran, so the one run that actually found
+        # something would be the one that printed nothing.
         run: |
           set +e
           python3 scripts/watchdog.py > report.md 2>&1
           code=$?
           set -e
           cat report.md
-          exit $code
+          echo "found=$([ $code -eq 1 ] && echo yes || echo no)" >> $GITHUB_OUTPUT
+          # Visible in the run list without opening the log.
+          { echo "## $([ $code -eq 1 ] && echo '⚠️ Collection problem' || echo '✅ Collection healthy')"; \
+            echo; cat report.md; } >> $GITHUB_STEP_SUMMARY
+          if [ $code -ge 2 ]; then
+            echo "::error::The watchdog itself failed — this is a bug in the check."
+            exit 1
+          fi
+          exit 0
 
       - name: Open, update or close the alert
         env:
@@ -52,7 +63,7 @@ jobs:
           BODY="$(cat report.md)"
           LINK="[watchdog run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
 
-          if [ "${{ steps.check.outcome }}" != "success" ]; then
+          if [ "${{ steps.check.outputs.found }}" = "yes" ]; then
             if [ -n "$N" ]; then
               # A day that froze before the close can never be un-frozen, so the same
               # report three times a day is noise. Comment only when what is wrong has
@@ -68,7 +79,10 @@ jobs:
             else
               gh issue create --title "🚨 Collection problem" --body "$BODY"$'\n\n'"$LINK"
             fi
-            exit 1
+            # Deliberately not `exit 1`. The finding is reported in the issue; making
+            # the run red as well would mean 2026-08-06 — a day that can never be
+            # un-frozen — painted this workflow red twice a day forever.
+            exit 0
           fi
 
           # Recovered. An alarm that never clears is an alarm nobody reads, so close it
