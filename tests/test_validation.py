@@ -104,6 +104,30 @@ def test_validator_accepts_real_days_and_rejects_corruption(tmp_path):
             f"validator accepted a payload it should reject: {label}"
 
 
+def test_the_wayback_backfill_stays_out_of_the_archive():
+    """data/wayback holds ~230 sparse days rebuilt from archive.org. Its coverage runs
+    3–33% of the calendar, so "the prior 20 archive days" there spans about two months
+    and the spike definition means something else. Merged in, one events.json would
+    hold two definitions and nothing would error — so assert the separation instead of
+    trusting it.
+    """
+    wb = os.path.join(ROOT, "data", "wayback")
+    if not os.path.isdir(wb):
+        return
+    theirs = {n[:-5] for n in os.listdir(wb) if n.endswith(".json")}
+    arch = os.path.join(ROOT, "data", "apewisdom")
+    ours = {n[:-5] for n in os.listdir(arch) if n.endswith(".json")}
+    with open(os.path.join(ROOT, "data", "days.json")) as f:
+        listed = set(json.load(f))
+
+    strays = sorted(d for d in theirs - ours if d in listed)
+    assert not strays, f"wayback days reached days.json: {strays[:5]}"
+    for d in sorted(theirs & ours):
+        with open(os.path.join(arch, f"{d}.json")) as f:
+            assert json.load(f).get("source") != "wayback", \
+                f"data/apewisdom/{d}.json came from the backfill, not from collection"
+
+
 def test_the_two_front_ends_agree_on_the_basket():
     """app.html carries its own copy of BASKET. Two copies of a list is how this repo
     has been bitten before — the precompute and the client-side scan once held the
