@@ -156,6 +156,17 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .chartbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;
   position:relative}
 .chHit{cursor:crosshair}
+/* Visually separate from everything the research uses. Same panel, different border,
+   its own clock — so nobody reads a mid-session quote as an archived close. */
+.live{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:14px 0 0;
+  padding:11px 13px;background:var(--sunk);border:1px solid var(--line);
+  border-left:3px solid var(--up);border-radius:var(--r)}
+.live.dnb{border-left-color:var(--dn)}
+.live .lp{font:650 21px/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.live .lc{font:600 13px/1 var(--sans);font-variant-numeric:tabular-nums}
+.live .lk{font-size:11px;color:var(--ink3);margin-left:auto;text-align:right;line-height:1.5}
+.live .lx{font-size:11.5px;color:var(--ink3);flex-basis:100%}
+.live .lx b{color:var(--ink2);font-weight:600}
 /* Follows the pointer but never leaves the box, and never sits under the cursor —
    a readout you have to move away from to read is not a readout. */
 .chTip{position:absolute;pointer-events:none;z-index:3;opacity:0;transition:opacity .09s;
@@ -417,6 +428,39 @@ function readURL(){
    SKEW through the bar slot with a `v-min+1` rescale, which produced meaningless bars
    and an axis reading 31.52000000000001. A single-series chart is a line, not a
    borrowed one with its other half filled in. */
+/* Live quotes, fetched by the browser straight from stockanalysis — the only source
+   tested that sends CORS headers, so a static Pages site can reach it without a proxy.
+   Yahoo and stooq both refuse.
+
+   **Display only. This never touches prices.json and never reaches the research.**
+   Every number the finding rests on is a session close; splicing a mid-session quote
+   into a return would corrupt it exactly the way calendar days under a session-counted
+   window did. The archive stays closes; this sits beside it, labelled, with its own
+   clock showing.
+
+   One request per ticker — there is no batch endpoint (comma, plural and screener
+   forms all 404) — so it fires for the ticker whose panel is open and nothing else.
+   Fetching one per visible row would be forty requests and rude. */
+const QUOTES={}, QUOTE_TTL=45e3;
+async function quote(tk){
+  const hit=QUOTES[tk];
+  if(hit&&Date.now()-hit.at<QUOTE_TTL)return hit.q;
+  try{
+    const r=await fetch(`https://stockanalysis.com/api/quotes/s/${encodeURIComponent(tk)}`);
+    const j=await r.json();
+    const d=j&&j.data;
+    if(!d||typeof d.p!=='number')throw new Error('no price');
+    /* Only the top-level fields. The payload also carries `day`, `prevDay` and
+       `todaysChangePerc` blocks that disagree with the headline numbers — SPCX
+       reported todaysChangePerc 589% beside a real move of 15.83% — so they are
+       left alone rather than guessed at. */
+    const q={p:d.p, chg:d.c, chgPct:d.cp, prev:d.cl, at:d.u, status:d.ms,
+             tradeDate:d.td, extP:d.ep, extPct:d.ecp, extAt:d.eu, extLabel:d.es};
+    QUOTES[tk]={at:Date.now(), q};
+    return q;
+  }catch(e){ QUOTES[tk]={at:Date.now(), q:null}; return null; }
+}
+
 /* Every rendered chart registers its series and geometry so a pointer position can be
    turned back into a data point. Keyed rather than closed over because a redraw
    replaces the SVG wholesale and the market view holds two at once. */
@@ -638,6 +682,31 @@ function markSel(){
 function renderDetail(){
   if(!SEL){$('detail').innerHTML='<div class="empty">Pick a row.</div>';return;}
   $('detail').innerHTML=(VIEW==='aftermath'?eventDetail():boardDetail())||'<div class="empty">Not in this view.</div>';
+  fillLive();
+}
+
+/* Filled after paint, never awaited. A quote is a nicety; the panel must not wait on
+   a third party to render the archive it already holds. */
+async function fillLive(){
+  const slot=$('detail').querySelector('.liveSlot');
+  if(!slot)return;
+  const tk=slot.dataset.tk;
+  const q=await quote(tk);
+  /* The panel may have moved on while the request was in flight. */
+  const still=$('detail').querySelector('.liveSlot');
+  if(!still||still.dataset.tk!==tk||!q)return;
+  const up=(q.chgPct??0)>=0;
+  const stale=q.tradeDate&&PRICES[tk]&&PRICES[tk].d&&q.tradeDate>PRICES[tk].d[PRICES[tk].d.length-1];
+  still.innerHTML=`<div class="live ${up?'':'dnb'}">
+    <span class="lp">$${q.p.toFixed(2)}</span>
+    <span class="lc ${up?'up':'dn'}">${up?'+':''}${(q.chg??0).toFixed(2)} (${up?'+':''}${(q.chgPct??0).toFixed(2)}%)</span>
+    <span class="lk">live · market ${q.status||'?'}<br>${q.at||''}</span>
+    ${q.extP?`<span class="lx">${q.extLabel||'Extended'} <b>$${q.extP.toFixed(2)}</b>
+       ${(q.extPct??0)>=0?'+':''}${(q.extPct??0).toFixed(2)}% · ${q.extAt||''}</span>`:''}
+    <span class="lx">Quoted live from stockanalysis, ${stale?'<b>ahead of the archive</b> — ':''}not part of
+      the archive and not used in any figure on this site. Every return here is measured
+      on session closes.</span>
+  </div>`;
 }
 /* Always {days, have, priced}. The window ends on the session the return is measured
    to, looked up in the price series rather than counted on a calendar — a spike can
@@ -701,6 +770,7 @@ function eventDetail(){
     ${st('after 10',e.r10==null?'—':pct(e.r10),cls(e.r10))}
     ${st('after 20',e.r20==null?'—':pct(e.r20),cls(e.r20))}
   </div>
+  <div class="liveSlot" data-tk="${e.tk}"></div>
   <div class="chartbox">${chart(days,mm,pl,e.d)}
     <div class="cLegend"><span><i style="background:var(--acc)"></i>price</span>
       <span><i style="background:var(--bar)"></i>mentions</span>
@@ -746,6 +816,7 @@ function boardDetail(){
     ${st('upvotes',r.upvotes!=null?r.upvotes:'—')}
     ${st('past spikes',r.ctx===false?'n/a':mine.length)}
   </div>
+  <div class="liveSlot" data-tk="${r.ticker}"></div>
   <div class="chartbox">${chart(prior,mm,pl,r.hot?DAY:'')}
     <div class="cLegend"><span><i style="background:var(--acc)"></i>price</span>
       <span><i style="background:var(--bar)"></i>mentions</span>
