@@ -68,7 +68,20 @@ def last_closed_session(now=None):
     return ref.isoformat()
 
 
-MIN_REFRESH_GAP_H = 6
+# Two floors, because the two ways of being behind carry opposite evidence.
+#
+# If nothing at all has the last closed session, it may not exist — a market holiday
+# is a weekday last_closed_session() names and no bar will ever appear for. Retrying
+# that is futile, and without a floor it is 13 scheduled runs refetching 155 tickers,
+# every holiday, forever. Six hours.
+#
+# But if some tickers already have the bar and others do not, the session is real and
+# the provider is simply mid-publish. That is positive evidence a refetch will help.
+# Holding it back for six hours left 114 of 155 tickers a day behind from the close
+# until 11:45 the next morning — about fifteen hours, every single day. SpaceX showing
+# yesterday's 114.92 while today's 133.27 was already available is what that looks like.
+MIN_REFRESH_GAP_H = 6          # nothing published — may be a holiday
+PARTIAL_REFRESH_GAP_H = 1      # some published, some not — the provider is catching up
 
 
 def read_state():
@@ -100,15 +113,17 @@ def staleness(old):
     if newest >= want and behind <= len(ends) * 0.1:
         return False, f"current through {newest} ({behind} ticker(s) trailing)"
 
-    why = (f"newest bar {newest}, last closed session {want}" if newest < want
-           else f"{behind}/{len(ends)} tickers trail {newest}")
+    partial = newest >= want
+    why = (f"{behind}/{len(ends)} tickers trail {newest}" if partial
+           else f"newest bar {newest}, last closed session {want}")
+    floor = PARTIAL_REFRESH_GAP_H if partial else MIN_REFRESH_GAP_H
     last = read_state().get("last_full_refresh")
     if last:
         try:
             age = (dt.datetime.now(dt.timezone.utc)
                    - dt.datetime.fromisoformat(last.replace("Z", "+00:00"))).total_seconds() / 3600
-            if age < MIN_REFRESH_GAP_H:
-                return False, f"{why}, but last full refresh was {age:.1f}h ago (floor {MIN_REFRESH_GAP_H}h)"
+            if age < floor:
+                return False, f"{why}, but last full refresh was {age:.1f}h ago (floor {floor}h)"
         except Exception:
             pass
     return True, why
