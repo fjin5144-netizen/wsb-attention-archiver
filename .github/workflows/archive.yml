@@ -44,6 +44,11 @@ jobs:
       # 一个算少了 29% 的 events.json 不会报错、看起来也正常 —— 只有独立重算能拦住它。
       - name: Validate snapshot integrity
         run: python3 scripts/validate.py
+      # 把「读到这个提及数的那一刻」的价格也存下来。价格包是收盘价,而快照是任意时刻读的,
+      # 两者本来对不齐。顺带:这是浏览器实时报价唯一的记忆 —— 源哪天挂了,站点还能退回
+      # 最后一次归档的报价并说明它有多旧。CNBC 支持批量,40 只票一个请求。
+      - name: Archive the board price at read time
+        run: python3 scripts/quotes.py
       # 关注度每天在长,价格包却是手工嵌进 index.html 的,于是悄悄落后了 17 天:
       # 事件图的提及柱画到右边缘,价格线却早早断掉。整包重抓仍然一天一次就够 ——
       # 146 个请求跟着每小时的快照跑既没必要也不礼貌 —— 但触发条件从「'45 23' 这档

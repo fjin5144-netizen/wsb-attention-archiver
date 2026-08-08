@@ -442,6 +442,45 @@ function readURL(){
    forms all 404) — so it fires for the ticker whose panel is open and nothing else.
    Fetching one per visible row would be forty requests and rude. */
 const QUOTES={}, QUOTE_TTL=45e3;
+let ARCHIVED_Q=null;
+
+/* Second live source, and it is the better one: CNBC batches (forty symbols in one
+   request) and sends CORS. Kept as the fallback rather than promoted because the two
+   disagree by cents on some names and switching silently is how a number changes for
+   no stated reason. */
+async function quoteCNBC(tk){
+  const u=`https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol`
+    +`?symbols=${encodeURIComponent(tk)}&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json`;
+  const j=await (await fetch(u)).json();
+  let rows=j?.FormattedQuoteResult?.FormattedQuote;
+  if(!rows)throw new Error('no quote');
+  if(!Array.isArray(rows))rows=[rows];
+  const q=rows[0], n=v=>{const x=parseFloat(String(v??'').replace(/[,%+]/g,''));return isFinite(x)?x:null;};
+  if(n(q.last)==null)throw new Error('no price');
+  const e=q.ExtendedMktQuote||{};
+  return {p:n(q.last), chg:n(q.change), chgPct:n(q.change_pct), prev:n(q.previous_day_closing),
+          at:q.last_time, status:q.curmktstatus, tradeDate:(q.last_time||'').slice(0,10),
+          extP:n(e.last), extPct:n(e.change_pct), extAt:e.last_time, extLabel:e.type,
+          src:'CNBC'};
+}
+
+/* Last resort: the reading this repo archived at the last collection run. Not live and
+   says so — but it means a dead upstream degrades to "a price, an hour old" instead of
+   to nothing, which is the whole reason quotes.py writes it down. */
+async function quoteArchived(tk){
+  if(ARCHIVED_Q===null){
+    /* One small file rather than a directory listing, which Pages cannot serve. The
+       per-reading history lives in data/quotes/{date}/{HHMM}.json for research; the
+       site only ever needs the newest. */
+    try{ARCHIVED_Q=await gj(`${BASE}data/quotes/latest.json`);}catch(e){ARCHIVED_Q=false;}
+  }
+  const q=ARCHIVED_Q&&ARCHIVED_Q.quotes&&ARCHIVED_Q.quotes[tk];
+  if(!q)return null;
+  return {p:q.p, chg:q.chg, chgPct:q.pct, prev:q.prev, at:ARCHIVED_Q.t, status:q.status,
+          extP:q.ext?.p, extPct:q.ext?.pct, extAt:q.ext?.at, extLabel:'Extended',
+          src:'archived', archived:true};
+}
+
 async function quote(tk){
   const hit=QUOTES[tk];
   if(hit&&Date.now()-hit.at<QUOTE_TTL)return hit.q;
@@ -456,9 +495,21 @@ async function quote(tk){
        left alone rather than guessed at. */
     const q={p:d.p, chg:d.c, chgPct:d.cp, prev:d.cl, at:d.u, status:d.ms,
              tradeDate:d.td, extP:d.ep, extPct:d.ecp, extAt:d.eu, extLabel:d.es};
+    q.src='stockanalysis';
     QUOTES[tk]={at:Date.now(), q};
     return q;
-  }catch(e){ QUOTES[tk]={at:Date.now(), q:null}; return null; }
+  }catch(e){
+    /* Three tiers. Every source this project has relied on has eventually died —
+       tradestie, the backfill repo, stooq, and Yahoo's crumb dance this week — so the
+       question is not whether but what happens after. */
+    for(const next of [quoteCNBC, quoteArchived]){
+      try{
+        const q=await next(tk);
+        if(q){QUOTES[tk]={at:Date.now(), q};return q;}
+      }catch(_){}
+    }
+    QUOTES[tk]={at:Date.now(), q:null}; return null;
+  }
 }
 
 /* Every rendered chart registers its series and geometry so a pointer position can be
@@ -700,7 +751,7 @@ async function fillLive(){
   still.innerHTML=`<div class="live ${up?'':'dnb'}">
     <span class="lp">$${q.p.toFixed(2)}</span>
     <span class="lc ${up?'up':'dn'}">${up?'+':''}${(q.chg??0).toFixed(2)} (${up?'+':''}${(q.chgPct??0).toFixed(2)}%)</span>
-    <span class="lk">live · market ${q.status||'?'}<br>${q.at||''}</span>
+    <span class="lk">${q.archived?'last archived':'live'} · ${q.src||'?'} · market ${q.status||'?'}<br>${q.at||''}</span>
     ${q.extP?`<span class="lx">${q.extLabel||'Extended'} <b>$${q.extP.toFixed(2)}</b>
        ${(q.extPct??0)>=0?'+':''}${(q.extPct??0).toFixed(2)}% · ${q.extAt||''}</span>`:''}
     <span class="lx">Quoted live from stockanalysis, ${stale?'<b>ahead of the archive</b> — ':''}not part of

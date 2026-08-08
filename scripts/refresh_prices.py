@@ -190,6 +190,36 @@ def fetch_sa(tk):
     return {"d": d, "c": c} if len(d) > 20 else None
 
 
+def fetch_nasdaq(tk):
+    """Nasdaq's own history endpoint. Added because the fallback that was documented as
+    working no longer is: yahoo_crumb() gets 429 on getcrumb and fc.yahoo.com 404s, so
+    the price pack had quietly become single-sourced on stockanalysis — exactly the
+    shape of every dead source in this project's history (tradestie, the backfill repo,
+    stooq). Checked against stockanalysis on the same day: AAPL 2026-08-07 $313.33 from
+    both."""
+    frm = (dt.date.today() - dt.timedelta(days=400)).isoformat()
+    url = (f"https://api.nasdaq.com/api/quote/{tk}/historical?assetclass=stocks"
+           f"&fromdate={frm}&todate={dt.date.today().isoformat()}&limit=9999")
+    r = subprocess.run(["curl", "-s", "--max-time", "30", "-H", f"User-Agent: {UA}", url],
+                       capture_output=True, text=True)
+    try:
+        rows = ((json.loads(r.stdout).get("data") or {}).get("tradesTable") or {}).get("rows") or []
+    except Exception:
+        return None
+    out = {}
+    for b in rows:
+        try:
+            m, d_, y = b["date"].split("/")
+            iso = f"{y}-{m}-{d_}"
+            if iso < START:
+                continue
+            out[iso] = round(float(b["close"].replace("$", "").replace(",", "")), 2)
+        except Exception:
+            continue
+    d = sorted(out)
+    return {"d": d, "c": [out[x] for x in d]} if len(d) > 20 else None
+
+
 def yahoo_crumb():
     cj = http.cookiejar.CookieJar()
     op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
@@ -278,11 +308,21 @@ def main():
     # 补漏是往已有的包上叠加,完整刷新则整包重建 —— 后者保留了原来的语义:
     # 抓失败的票沿用旧历史,而不是被丢掉。
     fresh = dict(old) if topup else {}
-    kept, failed = [], []
+    kept, failed, srcs = [], [], {}
     for n, tk in enumerate(targets, 1):
+        # Three tiers, tried in order of how much each has been seen to work today.
+        # Which tier answered is recorded rather than forgotten: the sources agree to
+        # the cent on most names but not all — SPCX closed $133.27 on stockanalysis and
+        # $133.11 on Nasdaq, different consolidated prints — so a silent switch would
+        # move returns by a fraction of a percent with nothing saying why.
         got = fetch_sa(tk)
-        if not got:
-            got = fetch_yahoo(tk, op, crumb)
+        if got: srcs["stockanalysis"] = srcs.get("stockanalysis", 0) + 1
+        else:
+            got = fetch_nasdaq(tk)
+            if got: srcs["nasdaq"] = srcs.get("nasdaq", 0) + 1
+            else:
+                got = fetch_yahoo(tk, op, crumb)
+                if got: srcs["yahoo"] = srcs.get("yahoo", 0) + 1
 
         if got:
             fresh[tk] = got
@@ -302,6 +342,8 @@ def main():
     newest = max(ends) if ends else "?"
     print(f"fetched {len(targets) - len(kept) - len(failed)} fresh, kept {len(kept)} stale, "
           f"{len(failed)} unavailable{': ' + ', '.join(failed) if failed else ''}")
+    if srcs:
+        print("  by source: " + ", ".join(f"{k}={v}" for k, v in sorted(srcs.items())))
     print(f"price cutoffs now: {dict(sorted(ends.items()))}")
 
     os.makedirs(os.path.dirname(PRICES_FILE), exist_ok=True)
@@ -316,7 +358,8 @@ def main():
     if not topup:
         with open(STATE_FILE, "w") as f:
             json.dump({"last_full_refresh": dt.datetime.now(dt.timezone.utc)
-                       .strftime("%Y-%m-%dT%H:%M:%SZ"), "through": newest}, f, indent=1)
+                       .strftime("%Y-%m-%dT%H:%M:%SZ"), "through": newest,
+                       "sources": srcs}, f, indent=1)
             f.write("\n")
     print(f"data/prices.json updated · {len(fresh)} tickers · prices through {newest} · "
           f"archive through {last_archive}")
