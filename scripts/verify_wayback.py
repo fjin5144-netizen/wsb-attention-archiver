@@ -88,6 +88,11 @@ def compute(days, snaps):
     return {
         "days": len(days),
         "span": [days[0], days[-1]] if days else [],
+        # The list itself, so the site can offer these dates in its picker without
+        # fetching 230 files to find out which exist. They were browsable nowhere:
+        # the data was in the repo and feeding the cross-period study, but the date
+        # dropdown still started at 2026-05-01, which is not what "put it in" meant.
+        "days_list": days,
         "usable": len(days) - len(suspect),
         "median_adjacent_similarity_pct": round(st.median(sims), 1) if sims else None,
         "similarity_threshold_pct": SIMILAR,

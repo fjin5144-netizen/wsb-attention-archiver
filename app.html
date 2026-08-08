@@ -110,6 +110,13 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 /* ---- list ---- */
 .listHead{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);
   padding:9px 14px;font-size:11.5px;color:var(--ink3);display:flex;gap:8px;align-items:center}
+.srcTag{margin-left:auto;padding:2px 7px;border-radius:4px;font-size:10.5px;
+  background:rgba(139,124,246,.16);color:var(--acc);white-space:nowrap}
+.srcTag.bad{background:rgba(237,161,0,.16);color:var(--warn)}
+.wbNote{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);
+  border-radius:var(--r);padding:11px 13px;margin:0 0 14px;font-size:12.5px;line-height:1.6;color:var(--ink3)}
+.wbNote.bad{border-left-color:var(--warn)}
+.wbNote b{color:var(--ink2)}
 .row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;
   padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;border-left:2px solid transparent}
 .row:hover{background:var(--sunk)}
@@ -246,7 +253,7 @@ const HOT_FLOOR=30, HOT_X=3, CLOSE_UTC=21;
 const BASKET=new Set(["GME","AMC","MSTR","PLTR","RKLB","SOFI","TSLA","NVDA","AMD","INTC","HOOD","COIN","RDDT","SMCI","IONQ","RGTI","QUBT","BBAI","SOUN","AI","CRWV","NBIS","TEM","ACHR","JOBY","LUNR","ASTS","SPCE","OKLO","SMR","MARA","RIOT","CLSK","WULF","DJT","OPEN","CVNA","UPST","AFRM","HIMS","TLRY","RUM","QS","BB","NOK","NIO","RIVN","LCID","PLUG","W","NVAX"]);
 const WINS={'5d':5,'10d':10,'20d':20,'all':null};
 
-let DAYS=[],EVENTS=[],FINDING=null,RANK=null,PRICES={},RISK=null,SNAP={},DAY='',
+let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},RISK=null,SNAP={},DAY='',
     VIEW='today',SEL=null,Q='',WIN='10d',SORT='new',ONLY='',SHOWN=40;
 
 const $=id=>document.getElementById(id);
@@ -290,21 +297,37 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
     catch(_){DAYS=[];}
   }
   if(!DAYS.length){$('boot').textContent='No archive data yet.';return;}
-  const [ev,fi,px,rk]=await Promise.all([
+  const [ev,fi,px,rk,wq]=await Promise.all([
     gj(`${BASE}data/events.json`).catch(()=>[]),
     gj(`${BASE}data/finding.json`).catch(()=>null),
     gj(`${BASE}data/prices.json`).catch(()=>({})),
     gj(`${BASE}data/finding_rank.json`).catch(()=>null),
+    gj(`${BASE}data/wayback/quality.json`).catch(()=>null),
   ]);
   EVENTS=ev;FINDING=fi;PRICES=px;RANK=rk;
+  if(wq){WBDAYS=wq.days_list||[];WBSUSPECT=new Set(Object.keys(wq.suspect||{}));}
   DAY=DAYS[DAYS.length-1];
   await loadDays([DAY]);
   /* Land on a day that has rows. A run can commit before the fetch returns, and an
      empty newest day would blank the whole shell. */
   for(let i=DAYS.length-1;i>=0&&!rowsOf(DAY).length;i--){DAY=DAYS[i];await loadDays([DAY]);}
-  $('day').innerHTML=DAYS.slice().reverse().map(d=>`<option value="${d}">${d}</option>`).join('');
+  /* Both datasets in one picker, in two labelled groups. Same board, different
+     provenance and density — grouping says so without hiding either, which is what
+     shipping the files and leaving the dropdown at 2026-05-01 amounted to. */
+  const wbOpts=WBDAYS.filter(d=>!DAYS.includes(d)).slice().reverse()
+    .map(d=>`<option value="${d}">${d}${WBSUSPECT.has(d)?' · frozen':''}</option>`).join('');
+  $('day').innerHTML=
+    `<optgroup label="daily archive (${DAYS.length})">`
+    +DAYS.slice().reverse().map(d=>`<option value="${d}">${d}</option>`).join('')
+    +`</optgroup>`
+    +(wbOpts?`<optgroup label="archive.org crawls (${WBDAYS.length}, sparse)">${wbOpts}</optgroup>`:'');
   $('day').value=DAY;
   readURL();
+  /* readURL can move DAY to a date whose snapshot was never fetched — the boot
+     sequence loads the newest day, then the URL points somewhere else entirely.
+     Without this the deep-linked day rendered an empty board with a correct header. */
+  await loadDays([DAY]);
+  $('day').value=DAY;
   $('boot').remove();
   render();
   /* The rest streams in behind the shell: mention history needs every snapshot, but
@@ -317,7 +340,11 @@ async function loadDays(list){
   const todo=list.filter(d=>!(d in SNAP));
   for(let i=0;i<todo.length;i+=12){
     await Promise.all(todo.slice(i,i+12).map(async d=>{
-      try{SNAP[d]=await gj(`${BASE}data/apewisdom/${d}.json`);}catch(e){SNAP[d]=null;}
+      /* Which folder a date lives in is a property of the date, not of the caller.
+         Hard-coding apewisdom here is what kept 2021-2025 unreachable while the files
+         sat in the repo. */
+      const dir=DAYS.includes(d)?'apewisdom':'wayback';
+      try{SNAP[d]=await gj(`${BASE}data/${dir}/${d}.json`);}catch(e){SNAP[d]=null;}
       delete MAPS[d];
     }));
   }
@@ -342,7 +369,9 @@ function readURL(){
   if(p.get('w') in WINS)WIN=p.get('w');
   if(['new','old','worst','best','mentions'].includes(p.get('sort')))SORT=p.get('sort');
   ONLY=p.get('only')||'';
-  if(DAYS.includes(p.get('d')))DAY=p.get('d');
+  /* Deep links must reach the crawl days too, or the 2021-2026 half of the picker
+     cannot be shared. */
+  if(DAYS.includes(p.get('d'))||WBDAYS.includes(p.get('d')))DAY=p.get('d');
   $('q').value=Q;
 }
 
@@ -424,10 +453,17 @@ function track(tk){
 }
 
 function boardRows(){
+  /* A crawl day has no prior-20 window in this dataset — the daily archive starts in
+     2026, so `prior` came back empty, `med` fell to 0 and the multiple degenerated to
+     the mention count itself: every 2021 row showed ×4309 and a SPIKE badge, directly
+     under a banner saying spike detection does not run there. Compute nothing that
+     cannot be computed, and let the row render without it. */
+  const ctx=DAYS.includes(DAY);
   let L=rowsOf(DAY).map(r=>{
+    if(!ctx)return {...r,med:null,x:null,hot:false,ctx:false};
     const prior=DAYS.filter(d=>d<DAY).slice(-20);
     const med=prior.length?median(prior.map(d=>mOf(d,r.ticker))):0;
-    return {...r,med,x:r.mentions/Math.max(med,1),
+    return {...r,med,x:r.mentions/Math.max(med,1),ctx:true,
       hot:r.mentions>=HOT_FLOOR&&r.mentions>=HOT_X*Math.max(med,1)};
   });
   if(Q)L=L.filter(r=>r.ticker.includes(Q));
@@ -491,8 +527,13 @@ function renderRail(){
 
 function renderList(){
   const L=VIEW==='aftermath'?eventRows():boardRows();
+  /* Say where the board came from. A 2022 crawl and a 2026 collected day render
+     identically and mean different things — top-100 vs top-500, an archive.org crawl
+     hour vs a post-close read, and no spike detection behind it either way. */
+  const wb=VIEW==='today'&&!DAYS.includes(DAY);
+  const src=wb?`<span class="srcTag${WBSUSPECT.has(DAY)?' bad':''}">archive.org crawl${WBSUSPECT.has(DAY)?' · frozen page':''}</span>`:'';
   const head=`<div class="listHead"><b>${L.length}</b> ${VIEW==='aftermath'?'spikes':'tickers'}
-    ${Q?`· filter ${esc(Q)}`:''}${ONLY?` · ${ONLY}`:''}</div>`;
+    ${Q?`· filter ${esc(Q)}`:''}${ONLY?` · ${ONLY}`:''}${src}</div>`;
   if(!L.length){$('list').innerHTML=head+`<div class="empty">Nothing matches.</div>`;return;}
   /* Page far enough to actually contain the selection. Without this, jumping to a
      spike that sorts to position 300 — or opening a ?sel= deep link to one — landed
@@ -516,20 +557,25 @@ function eventRow(e){
   </div>`;
 }
 function boardRow(r){
+  /* `mentions_24h_ago` and `rank_24h_ago` are API fields the crawls never carried, so
+     the deltas read NaN. And the track record is built from 2026 events — printing it
+     beside a 2021 board is future information sitting next to a past date. */
   const d24=r.mentions-r.mentions_24h_ago, up=r.rank_24h_ago-r.rank;
-  const t=track(r.ticker);
+  const t=r.ctx===false?null:track(r.ticker);
   /* The right-hand number is the track record, not the rank move. Rank churn is
      noise this project has no claim about; "the last N times this went loud, the
      median was X" is the claim, applied to the name in front of you. */
-  const rec=t.closed
+  const rec=!t
+    ? `<div class="out mut" style="font-size:12.5px">${r.upvotes!=null?r.upvotes.toLocaleString():'—'}<span class="recn">upvotes</span></div>`
+    : t.closed
     ? `<div class="out ${cls(t.med)}">${pct(t.med)}<span class="recn">${t.closed} past spike${t.closed>1?'s':''}</span></div>`
     : t.n?`<div class="out mut" style="font-size:12px">pending<span class="recn">${t.n} spike${t.n>1?'s':''}, no outcome yet</span></div>`
         :`<div class="out mut" style="font-size:12px">—<span class="recn">never spiked</span></div>`;
   return `<div class="row" role="button" tabindex="0" data-k="${r.ticker}">
     <div class="r1"><span class="tk">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge b">basket</span>':''}
       ${r.hot?'<span class="badge" style="background:rgba(242,104,92,.18);color:var(--dn)">spike</span>':''}
-      <span class="dt">#${r.rank} · ${up>0?'▲':up<0?'▼':'–'}${Math.abs(up)||''}</span></div>
-    <div class="r2">${r.mentions} mentions · ×${r.x.toFixed(1)} · ${d24>=0?'+':''}${d24} in 24h</div>
+      <span class="dt">#${r.rank}${Number.isFinite(up)?` · ${up>0?'▲':up<0?'▼':'–'}${Math.abs(up)||''}`:''}</span></div>
+    <div class="r2">${r.mentions} mentions${r.x!=null?` · ×${r.x.toFixed(1)}`:''}${Number.isFinite(d24)?` · ${d24>=0?'+':''}${d24} in 24h`:''}</div>
     ${rec}
   </div>`;
 }
@@ -617,31 +663,44 @@ function eventDetail(){
 }
 function boardDetail(){
   const r=boardRows().find(x=>x.ticker===SEL); if(!r)return '';
-  const prior=DAYS.filter(d=>d<=DAY).slice(-40);
+  /* Chart from whichever series this date belongs to. Filtering DAYS on a 2021 date
+     returns nothing, so the chart came out empty beside a board full of numbers. */
+  const series=DAYS.includes(DAY)?DAYS:WBDAYS;
+  const prior=series.filter(d=>d<=DAY).slice(-40);
   const mm=prior.map(d=>mOf(d,r.ticker));
   const p=PRICES[r.ticker];
   const pl=prior.map(d=>{const k=p?p.d.indexOf(d):-1;return k>=0?p.c[k]:null;});
   const mine=EVENTS.filter(e=>e.tk===r.ticker);
   const st=(k,v,c='')=>`<div class="stat"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`;
   const d24=r.mentions-r.mentions_24h_ago;
-  return `<button class="back" data-back="1">‹ The board</button>
+  /* On a crawl day the detail is still a real board, but three things behind it are
+     not the same, and a reader comparing it to a 2026 card would not know. */
+  const wbn=!DAYS.includes(DAY)?`<div class="wbNote${WBSUSPECT.has(DAY)?' bad':''}">
+    <b>${DAY} comes from an archive.org crawl</b>, not from collection.
+    ${WBSUSPECT.has(DAY)?'<b>This day is flagged frozen</b> — ApeWisdom served an identical page across several dates, so its counts are one reading wearing more than one date. ':''}
+    Top 100 rather than 500, read at ${capLabel(DAY)} rather than after the close, and the
+    spike detection does not run on it — coverage is too sparse for "the prior 20 archive
+    days" to mean 20 days. Mentions and rank are real; a comparison with a 2026 board is not
+    like-for-like.</div>`:'';
+  return `<button class="back" data-back="1">‹ The board</button>${wbn}
   <div class="dHead"><div>
     <div class="dTk">${r.ticker}${BASKET.has(r.ticker)?' <span class="badge b">basket</span>':''}</div>
     <p class="dSub">${esc(r.name||r.ticker)} · rank #${r.rank} on ${DAY}</p></div>
     <div class="dOut"><div class="v">${r.mentions}</div><div class="k">mentions</div></div></div>
   <div class="stats">
-    ${st('prior 20-day median',r.med.toFixed(1))}
-    ${st('multiple',' ×'+r.x.toFixed(1),r.hot?'dn':'')}
-    ${st('24h change',(d24>=0?'+':'')+d24,d24>0?'up':d24<0?'dn':'')}
-    ${st('rank 24h ago','#'+r.rank_24h_ago)}
-    ${st('upvotes',r.upvotes)}
-    ${st('past spikes',mine.length)}
+    ${r.ctx===false?st('source','archive.org'):st('prior 20-day median',r.med.toFixed(1))}
+    ${r.ctx===false?st('board depth','top '+rowsOf(DAY).length):st('multiple',' ×'+r.x.toFixed(1),r.hot?'dn':'')}
+    ${Number.isFinite(d24)?st('24h change',(d24>=0?'+':'')+d24,d24>0?'up':d24<0?'dn':''):st('read at',capLabel(DAY))}
+    ${Number.isFinite(r.rank_24h_ago)?st('rank 24h ago','#'+r.rank_24h_ago):st('rank','#'+r.rank)}
+    ${st('upvotes',r.upvotes!=null?r.upvotes:'—')}
+    ${st('past spikes',r.ctx===false?'n/a':mine.length)}
   </div>
   <div class="chartbox">${chart(prior,mm,pl,r.hot?DAY:'')}
     <div class="cLegend"><span><i style="background:var(--acc)"></i>price</span>
       <span><i style="background:var(--bar)"></i>mentions</span>
       <span><i style="border:1px solid var(--bar)"></i>read before the close</span></div>
-    <p class="note">Last 40 archive days through ${DAY}.</p></div>
+    <p class="note">Last 40 ${DAYS.includes(DAY)?'archive':'crawled'} days through ${DAY}${
+      DAYS.includes(DAY)?'':' — crawls are sparse, so these 40 points span years, not weeks'}.</p></div>
   ${mine.length?`<h3>Past confirmed spikes</h3><div class="tblwrap"><table>
     <thead><tr><th>date</th><th class="n">mentions</th><th class="n">×</th><th class="n">5d</th><th class="n">10d</th><th class="n">20d</th></tr></thead>
     <tbody>${mine.slice().sort((a,b)=>b.d.localeCompare(a.d)).map(e=>{
