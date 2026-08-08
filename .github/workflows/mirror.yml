@@ -1,0 +1,104 @@
+name: Offsite mirror
+
+# main and backup are both branches of one repository under one account. That covers a
+# bad push and a broken run; it does not cover the account. A suspension, an accidental
+# delete or a leaked credential takes both at once — and 66 days of data/apewisdom exist
+# nowhere else on earth, the tracker they were backfilled from having been 404 since
+# July.
+#
+# So: a full mirror, history and all, somewhere that is not GitHub. The whole repository
+# is about 24 MB and after the first push it is incremental — the second push of an
+# unchanged repo took 15ms.
+#
+# No credential is ever handled in the clear here. MIRROR_URL and MIRROR_TOKEN are
+# repository secrets set by hand; until they exist this reports that and exits green,
+# rather than failing daily over something nobody has configured yet.
+
+on:
+  schedule:
+    - cron: '20 3 * * *'     # after the archive day has settled
+    - cron: '20 15 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: wsb-mirror
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Check the mirror is configured
+        id: cfg
+        env:
+          URL: ${{ secrets.MIRROR_URL }}
+        run: |
+          if [ -z "${URL:-}" ]; then
+            echo "configured=no" >> $GITHUB_OUTPUT
+            { echo "### No mirror configured";
+              echo "Set the \`MIRROR_URL\` and \`MIRROR_TOKEN\` repository secrets to enable it."; } >> $GITHUB_STEP_SUMMARY
+            echo "MIRROR_URL is not set — skipping. Not a failure."
+          else
+            echo "configured=yes" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Mirror every branch and tag
+        if: steps.cfg.outputs.configured == 'yes'
+        env:
+          URL: ${{ secrets.MIRROR_URL }}
+          TOKEN: ${{ secrets.MIRROR_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # A bare mirror clone rather than actions/checkout. Tested both: from a working
+          # checkout, `push --mirror` sends refs/remotes/origin/* as if they were real
+          # branches and silently omits `backup`, which exists there only as a
+          # remote-tracking ref. A mirror clone holds exactly refs/heads/main and
+          # refs/heads/backup, and nothing else — GitHub's refs/pull/* are not included.
+          git clone --quiet --mirror "https://github.com/${GITHUB_REPOSITORY}.git" src.git
+          cd src.git
+          echo "refs to mirror:"
+          git for-each-ref --format='  %(refname) %(objectname:short)'
+
+          # The token goes in a credential file the process reads, never on a command
+          # line and never inside a remote URL that `git remote -v` or a log would echo.
+          git config --global credential.helper store
+          host=$(printf '%s' "$URL" | sed -E 's#^https?://##; s#/.*##')
+          umask 077
+          printf 'https://x-access-token:%s@%s\n' "$TOKEN" "$host" > "$HOME/.git-credentials"
+
+          # --mirror makes the far side match this one, deletions included. That is the
+          # point; a mirror that only ever adds drifts into a different repository.
+          git push --mirror "$URL"
+
+          rm -f "$HOME/.git-credentials"
+          { echo "### Mirrored to $host";
+            echo '```'; git count-objects -vH; echo '```'; } >> $GITHUB_STEP_SUMMARY
+
+      - name: Close the alert when it recovers
+        if: success() && steps.cfg.outputs.configured == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          n=$(gh issue list --state open --limit 50 --json number,title \
+                -q '[.[] | select(.title | contains("Mirror failed"))][0].number // empty')
+          if [ -n "$n" ]; then
+            gh issue comment "$n" --body "Recovered — mirror pushed at \`$(date -u +%Y-%m-%dT%H:%MZ)\`."
+            gh issue close "$n"
+          fi
+
+      - name: Report a broken mirror
+        if: failure() && steps.cfg.outputs.configured == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # One issue reused, like the other alerts here: a mirror failing for a week
+          # should be one thread, not fourteen.
+          body="异地镜像在 \`$(date -u +%Y-%m-%dT%H:%MZ)\` 推送失败。见 [run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)。**备份没有更新** —— 归档采集本身不受影响。"
+          n=$(gh issue list --state open --limit 50 --json number,title \
+                -q '[.[] | select(.title | contains("Mirror failed"))][0].number // empty')
+          if [ -n "$n" ]; then gh issue comment "$n" --body "$body";
+          else gh issue create --title "🚨 Mirror failed" --body "$body"; fi
