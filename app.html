@@ -153,7 +153,19 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .stat{background:var(--card);padding:10px 12px}
 .stat .k{font-size:10.5px;color:var(--ink3);letter-spacing:.02em}
 .stat .v{font:600 15px/1.2 var(--sans);margin-top:3px}
-.chartbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.chartbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;
+  position:relative}
+.chHit{cursor:crosshair}
+/* Follows the pointer but never leaves the box, and never sits under the cursor —
+   a readout you have to move away from to read is not a readout. */
+.chTip{position:absolute;pointer-events:none;z-index:3;opacity:0;transition:opacity .09s;
+  background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;
+  font:400 11.5px/1.5 var(--sans);color:var(--ink2);white-space:nowrap;
+  box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.chTip.on{opacity:1}
+.chTip .d{color:var(--ink);font-weight:600;font-size:12px}
+.chTip .v{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.chTip .warn{color:var(--warn)}
 .chartbox svg{display:block;width:100%;height:auto}
 .cLegend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--ink3);margin:10px 0 0}
 .cLegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
@@ -253,7 +265,7 @@ const HOT_FLOOR=30, HOT_X=3, CLOSE_UTC=21;
 const BASKET=new Set(["GME","AMC","MSTR","PLTR","RKLB","SOFI","TSLA","NVDA","AMD","INTC","HOOD","COIN","RDDT","SMCI","IONQ","RGTI","QUBT","BBAI","SOUN","AI","CRWV","NBIS","TEM","ACHR","JOBY","LUNR","ASTS","SPCE","OKLO","SMR","MARA","RIOT","CLSK","WULF","DJT","OPEN","CVNA","UPST","AFRM","HIMS","TLRY","RUM","QS","BB","NOK","NIO","RIVN","LCID","PLUG","W","NVAX"]);
 const WINS={'5d':5,'10d':10,'20d':20,'all':null};
 
-let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},RISK=null,SNAP={},DAY='',
+let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},PXH=null,RISK=null,SNAP={},DAY='',
     VIEW='today',SEL=null,Q='',WIN='10d',SORT='new',ONLY='',SHOWN=40;
 
 const $=id=>document.getElementById(id);
@@ -280,7 +292,25 @@ const mOf=(d,tk)=>mapOf(d)[tk]||0;
 /* Sessions, read off the price series — the same fix the main chart needed. A window
    counted in calendar days cannot contain the return it is captioned with, because a
    spike can land on a weekend and holidays shift the rest. */
-function priceIdx(tk,d){const p=PRICES[tk];if(!p)return[null,-1];
+/* prices.json starts 2026-04-01 — everything the daily archive needs and nothing a
+   2021 crawl day does. prices_hist.json reaches back to 2021 but is 3.4 MB, so it is
+   fetched the first time a crawl day is opened rather than by every visitor on every
+   load. Hovering a 2021 chart showed mentions and "no price that day" until this. */
+/* Date-aware, because ticker-aware is not enough: BB is in prices.json with 2026 bars,
+   so preferring "whichever file has the ticker" returned the 2026 series for a 2021
+   query and reported no price. Pick the series that actually covers the day. */
+const pxOf=(tk,day)=>{
+  const a=PRICES[tk], b=PXH&&PXH[tk];
+  const covers=v=>v&&v.d&&v.d.length&&(!day||day>=v.d[0]);
+  if(covers(a))return a;
+  if(covers(b))return b;
+  return a||b||null;
+};
+async function ensureHist(){
+  if(PXH)return;
+  try{PXH=await gj(`${BASE}data/prices_hist.json`);}catch(e){PXH={};}
+}
+function priceIdx(tk,d){const p=pxOf(tk,d);if(!p)return[null,-1];
   const i=p.d.indexOf(d);if(i>=0)return[p,i];
   const j=p.d.findIndex(x=>x>d);return j>0?[p,j]:[null,-1];}
 function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
@@ -326,6 +356,10 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
   /* readURL can move DAY to a date whose snapshot was never fetched — the boot
      sequence loads the newest day, then the URL points somewhere else entirely.
      Without this the deep-linked day rendered an empty board with a correct header. */
+  if(!DAYS.includes(DAY)){
+    await ensureHist();
+    await loadDays([DAY,...WBDAYS.filter(d=>d<=DAY).slice(-40)]);
+  }
   await loadDays([DAY]);
   $('day').value=DAY;
   $('boot').remove();
@@ -383,6 +417,11 @@ function readURL(){
    SKEW through the bar slot with a `v-min+1` rescale, which produced meaningless bars
    and an axis reading 31.52000000000001. A single-series chart is a line, not a
    borrowed one with its other half filled in. */
+/* Every rendered chart registers its series and geometry so a pointer position can be
+   turned back into a data point. Keyed rather than closed over because a redraw
+   replaces the SVG wholesale and the market view holds two at once. */
+const CHARTS={}; let CHID=0;
+
 function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$'){
   const padL=44,padR=mentions?44:14,padT=12,padB=22;
   const iw=w-padL-padR, ih=h-padT-padB;
@@ -415,12 +454,24 @@ function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$'){
   const yr=(v,y)=>`<text x="${w-padR+7}" y="${y}" font-size="9.5" fill="var(--ink3)">${v}</text>`;
   const xl=[0,Math.floor((n-1)/2),n-1].filter((v,i,a)=>a.indexOf(v)===i).map(i=>
     `<text x="${x(i).toFixed(1)}" y="${h-6}" text-anchor="middle" font-size="9.5" fill="var(--ink3)">${days[i].slice(5)}</text>`).join('');
-  return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Mentions and price around the spike">
+  /* Only the extremes were labelled, so every value between them was drawn and
+     unreadable. The crosshair reads the series back out at whatever day the pointer
+     is over — price and mentions together, which is the pair the whole page is about. */
+  const id=++CHID;
+  const py=v=>padT+ih-((v-pMin)/pSpan)*ih*0.92-ih*0.04;
+  CHARTS[id]={days,mentions,prices,unit,w,padL,iw,n,padT,ih,py,x};
+  const dots=prices.map((v,i)=>v==null?'':
+    `<circle class="chDot" data-i="${i}" cx="${x(i).toFixed(1)}" cy="${py(v).toFixed(1)}" r="3.2" fill="var(--acc)" opacity="0"/>`).join('');
+
+  return `<svg viewBox="0 0 ${w} ${h}" data-ch="${id}" role="img" aria-label="Mentions and price around the spike">
     <line x1="${padL}" y1="${padT+ih}" x2="${w-padR}" y2="${padT+ih}" stroke="var(--line)"/>
     ${marker}${bars}
     ${line?`<path d="${line}" fill="none" stroke="var(--acc)" stroke-width="1.8" stroke-linejoin="round"/>`:''}
     ${pv.length?yl(unit+pMax.toFixed(pMax<10?2:0),padT+10)+yl(unit+pMin.toFixed(pMin<10?2:0),padT+ih-2):''}
     ${mentions?yr(mMax,padT+10)+yr('0',padT+ih-2):''}${xl}
+    <line class="chCross" x1="0" y1="${padT}" x2="0" y2="${padT+ih}" stroke="var(--ink3)" stroke-width="1" opacity="0"/>
+    ${dots}
+    <rect class="chHit" x="${padL}" y="${padT}" width="${iw}" height="${ih}" fill="transparent"/>
   </svg>`;
 }
 
@@ -624,7 +675,7 @@ function eventDetail(){
   const W=winDays(e.tk,e.d,sess);
   const days=W.days;
   const mm=days.map(d=>mOf(d,e.tk));
-  const p=PRICES[e.tk];
+  const p=pxOf(e.tk,days[0]);
   const pl=days.map(d=>{const k=p?p.d.indexOf(d):-1;return k>=0?p.c[k]:null;});
   const span=`${days[0]} → ${days[days.length-1]}`;
   /* Say how much of the window exists. "I picked 2W and got four days" was a real
@@ -668,7 +719,7 @@ function boardDetail(){
   const series=DAYS.includes(DAY)?DAYS:WBDAYS;
   const prior=series.filter(d=>d<=DAY).slice(-40);
   const mm=prior.map(d=>mOf(d,r.ticker));
-  const p=PRICES[r.ticker];
+  const p=pxOf(r.ticker,prior[0]);
   const pl=prior.map(d=>{const k=p?p.d.indexOf(d):-1;return k>=0?p.c[k]:null;});
   const mine=EVENTS.filter(e=>e.tk===r.ticker);
   const st=(k,v,c='')=>`<div class="stat"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`;
@@ -835,6 +886,50 @@ document.addEventListener('click',e=>{
   if(row){SEL=row.dataset.k;markSel();renderDetail();writeURL();
     $('pane').classList.add('showDetail');}
 });
+/* One delegated handler for every chart on the page. Per-chart listeners would leak
+   on each redraw, and a redraw happens on every window change. */
+function chartHover(e){
+  const svg=e.target.closest?.('svg[data-ch]');
+  const box=e.target.closest?.('.chartbox');
+  if(!svg||!box){hideTip(box);return;}
+  const C=CHARTS[svg.dataset.ch]; if(!C){hideTip(box);return;}
+  const r=svg.getBoundingClientRect();
+  if(!r.width)return;
+  /* The SVG scales to the container, so client pixels have to go back through the
+     viewBox before they mean anything in chart coordinates. */
+  const vx=(e.clientX-r.left)/r.width*C.w;
+  const i=Math.max(0,Math.min(C.n-1,Math.round((vx-C.padL)/(C.iw||1)*(C.n-1))));
+  const d=C.days[i], px=C.prices[i], mn=C.mentions?C.mentions[i]:null;
+
+  const cross=svg.querySelector('.chCross');
+  if(cross){cross.setAttribute('x1',C.x(i));cross.setAttribute('x2',C.x(i));cross.setAttribute('opacity','.45');}
+  svg.querySelectorAll('.chDot').forEach(c=>c.setAttribute('opacity',+c.dataset.i===i?'1':'0'));
+
+  let tip=box.querySelector('.chTip');
+  if(!tip){tip=document.createElement('div');tip.className='chTip';box.appendChild(tip);}
+  const ok=settled(d);
+  tip.innerHTML=`<div class="d">${d}</div>`
+    +(px!=null?`<div>${C.unit==='$'?'price':'value'} <span class="v">${C.unit}${px.toFixed(px<10?2:2)}</span></div>`
+              :`<div class="mut">no price that day</div>`)
+    +(mn!=null?`<div>mentions <span class="v">${mn.toLocaleString()}</span></div>`:'')
+    +(C.mentions?`<div class="${ok?'mut':'warn'}">read ${capLabel(d)}${ok?'':' · before the close'}</div>`:'');
+  tip.classList.add('on');
+  /* Clamp inside the box so the readout never gets cut off at either edge. */
+  const bw=box.getBoundingClientRect(), tw=tip.offsetWidth||150;
+  let left=e.clientX-bw.left+14;
+  if(left+tw>bw.width-8)left=e.clientX-bw.left-tw-14;
+  tip.style.left=Math.max(8,left)+'px';
+  tip.style.top=Math.max(8,e.clientY-bw.top-tip.offsetHeight-12)+'px';
+}
+function hideTip(box){
+  document.querySelectorAll('.chTip.on').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('svg[data-ch] .chCross').forEach(c=>c.setAttribute('opacity','0'));
+  document.querySelectorAll('svg[data-ch] .chDot').forEach(c=>c.setAttribute('opacity','0'));
+}
+document.addEventListener('pointermove',chartHover);
+document.addEventListener('pointerleave',()=>hideTip(),true);
+document.addEventListener('pointerdown',chartHover);
+
 document.addEventListener('keydown',e=>{
   /* `e.target` is not always an element — a key pressed with nothing focused targets
      `document`, which has no .matches, and the throw took the whole handler with it. */
@@ -850,7 +945,15 @@ document.addEventListener('keydown',e=>{
 });
 $('q').addEventListener('input',e=>{Q=e.target.value.toUpperCase();SHOWN=40;SEL=null;
   if(VIEW!=='market')render();});
-$('day').addEventListener('change',async e=>{DAY=e.target.value;await loadDays([DAY]);SEL=null;render();});
+$('day').addEventListener('change',async e=>{
+  DAY=e.target.value;SEL=null;
+  if(!DAYS.includes(DAY)){
+    await ensureHist();
+    /* The detail charts the 40 days before this one, and on a crawl day those are
+       crawl days too — without loading them every bar read 0 mentions. */
+    await loadDays([DAY,...WBDAYS.filter(d=>d<=DAY).slice(-40)]);
+  }else{await loadDays([DAY]);}
+  render();});
 
 function exportCSV(){
   const L=eventRows();
