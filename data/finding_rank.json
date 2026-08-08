@@ -88,13 +88,13 @@
       "win_rate": 50
      },
      "rest_of_board": {
-      "n": 241,
-      "median": -0.4,
-      "trimmed_mean": 1.66,
-      "mean": 2.94,
+      "n": 240,
+      "median": -0.34,
+      "trimmed_mean": 1.71,
+      "mean": 2.99,
       "win_rate": 45
      },
-     "gap_median": 0.4
+     "gap_median": 0.34
     },
     {
      "sessions": 10,
@@ -108,8 +108,8 @@
      "rest_of_board": {
       "n": 228,
       "median": 0.67,
-      "trimmed_mean": 1.57,
-      "mean": 1.87,
+      "trimmed_mean": 1.6,
+      "mean": 1.92,
       "win_rate": 57
      },
      "gap_median": -1.15
@@ -126,7 +126,7 @@
      "rest_of_board": {
       "n": 204,
       "median": -0.55,
-      "trimmed_mean": 0.2,
+      "trimmed_mean": 0.19,
       "mean": 3.77,
       "win_rate": 47
      },
