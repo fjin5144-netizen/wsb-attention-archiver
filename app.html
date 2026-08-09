@@ -51,15 +51,30 @@ button{cursor:pointer}
 .rail{grid-area:rail;background:var(--sunk);border-right:1px solid var(--line);
   overflow-y:auto;overscroll-behavior:contain;padding:14px}
 .pane{grid-area:pane;overflow:hidden;min-width:0;display:grid;
-  grid-template-columns:minmax(300px,390px) 1fr;grid-template-areas:"list detail"}
+  grid-template-columns:minmax(300px,400px) 1fr;grid-template-areas:"list detail"}
+/* Controls-then-list in one column, so the controls sit against the thing they filter
+   and only the rows scroll under them. They used to live in the rail, 200px away
+   across the screen and below a paragraph of prose. */
+.listcol{grid-area:list;display:grid;grid-template-rows:auto 1fr;min-height:0;
+  border-right:1px solid var(--line)}
+.listctl{border-bottom:1px solid var(--line);background:var(--sunk);padding:9px 12px;
+  display:flex;flex-direction:column;gap:7px}
+.ctlrow{display:flex;align-items:center;gap:9px;min-width:0}
+.ctlk{font:600 10px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink3);width:52px;flex:none}
+.ctlrow.active{border-top:1px solid var(--line);padding-top:7px}
+.fchip{background:rgba(139,124,246,.14);border:1px solid rgba(139,124,246,.35);
+  color:var(--acc);border-radius:6px;padding:4px 8px;font-size:11px}
+.fchip:hover{background:rgba(139,124,246,.24)}
+.fchip.clr{background:none;border-color:var(--line2);color:var(--ink3)}
+.fchip.clr:hover{color:var(--ink)}
 .pane.single{grid-template-columns:1fr;grid-template-areas:"detail"}
 /* Explicit, not implied. Dropping `list` from the template only unplaces it — a list
    left over from the previous view then auto-places into an implicit track and shows
    up beside the detail. It read as correct while testing Market only because the
    list happened to be empty there. */
-.pane.single .list{display:none}
-.list{grid-area:list;overflow-y:auto;overscroll-behavior:contain;
-  border-right:1px solid var(--line);min-width:0}
+.pane.single .listcol{display:none}
+.list{overflow-y:auto;overscroll-behavior:contain;min-width:0}
 .detail{grid-area:detail;overflow-y:auto;overscroll-behavior:contain;padding:18px 22px;min-width:0}
 
 .brand{font:650 16px/1 var(--sans);letter-spacing:-.02em;white-space:nowrap}
@@ -139,6 +154,9 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .badge.b{background:rgba(139,124,246,.18);color:var(--acc)}
 .more{display:block;width:100%;background:none;border:0;border-top:1px solid var(--line);
   padding:12px;color:var(--ink3);font-size:12px}
+.kbd{padding:11px 14px 16px;font-size:11px;color:var(--ink3);border-top:1px solid var(--line)}
+.kbd kbd{font:500 10px/1 var(--mono);border:1px solid var(--line2);border-bottom-width:2px;
+  border-radius:4px;padding:3px 5px;margin-right:3px;color:var(--ink2)}
 
 /* ---- detail ---- */
 .dHead{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:0 0 4px}
@@ -180,6 +198,7 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .chartbox svg{display:block;width:100%;height:auto}
 .cLegend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--ink3);margin:10px 0 0}
 .cLegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.hoverHint{margin-left:auto;color:var(--ink3);opacity:.75}
 .winbar{display:flex;align-items:center;gap:8px;margin:12px 0 0;flex-wrap:wrap}
 .note{font-size:12px;line-height:1.6;color:var(--ink3);margin:11px 0 0}
 .empty{display:grid;place-items:center;height:100%;color:var(--ink3);font-size:13px;text-align:center;padding:30px}
@@ -218,9 +237,11 @@ h3:first-child{margin-top:0}
   .pane{grid-template-columns:1fr;grid-template-areas:"list"}
   .pane .detail{display:none}
   .pane.showDetail{grid-template-areas:"detail"}
-  .pane.showDetail .list{display:none}
+  .pane.showDetail .listcol{display:none}
   .pane.showDetail .detail{display:block;padding:15px}
-  .pane.single .list{display:none}
+  .pane.single .listcol{display:none}
+  .ctlk{width:auto}
+  .listctl{padding:8px 10px}
   .pane.single{grid-template-areas:"detail"}
   .pane.single .detail{display:block}
   .mtabs{grid-area:tabs;display:grid;grid-auto-flow:column;background:var(--sunk);
@@ -257,14 +278,20 @@ h3:first-child{margin-top:0}
     <div id="railBody"></div>
   </aside>
   <main class="pane" id="pane">
-    <div class="list" id="list"></div>
+    <div class="listcol" id="listcol">
+      <div class="listctl" id="listctl"></div>
+      <div class="list" id="list"></div>
+    </div>
     <div class="detail" id="detail"></div>
   </main>
   <nav class="mtabs" id="mtabs" role="tablist">
     <button role="tab" data-v="today" aria-selected="true"><span class="g">▦</span>Today</button>
     <button role="tab" data-v="aftermath" aria-selected="false"><span class="g">◷</span>Aftermath</button>
     <button role="tab" data-v="market" aria-selected="false"><span class="g">◈</span>Market</button>
-    <button data-rail="1"><span class="g">⚙</span>Filters</button>
+    <!-- Was "Filters". The filters now sit above the list where they belong, so the
+         gear was pointing at a drawer that no longer holds any. What is in there is
+         the claim the whole site rests on. -->
+    <button data-rail="1"><span class="g">◑</span>Finding</button>
   </nav>
 </div>
 <div class="loading" id="boot">Loading the archive<div class="bar"><i></i></div></div>
@@ -277,7 +304,7 @@ const BASKET=new Set(["GME","AMC","MSTR","PLTR","RKLB","SOFI","TSLA","NVDA","AMD
 const WINS={'5d':5,'10d':10,'20d':20,'all':null};
 
 let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},PXH=null,RISK=null,SNAP={},DAY='',
-    VIEW='today',SEL=null,Q='',WIN='10d',SORT='new',ONLY='',SHOWN=40;
+    VIEW='today',SEL=null,Q='',WIN='10d',SORT='res',ONLY='',SHOWN=40;
 
 const $=id=>document.getElementById(id);
 const gj=async u=>{const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json();};
@@ -396,23 +423,44 @@ async function loadDays(list){
 }
 
 /* ---------- url state ---------- */
-function writeURL(){
+function stateURL(){
   const p=new URLSearchParams();
   if(VIEW!=='today')p.set('v',VIEW);
   if(SEL)p.set('sel',SEL);
   if(Q)p.set('q',Q);
   if(WIN!=='10d')p.set('w',WIN);
-  if(SORT!=='new')p.set('sort',SORT);
+  if(SORT!=='res')p.set('sort',SORT);
   if(ONLY)p.set('only',ONLY);
   if(DAY!==DAYS[DAYS.length-1])p.set('d',DAY);
-  history.replaceState(null,'',p.toString()?'?'+p:location.pathname);
+  return p.toString()?'?'+p:location.pathname;
 }
+
+/* Back is the undo everyone already knows, and it was leaving the site. Every state
+   change went through replaceState, so ten clicks in the app added zero history
+   entries and the browser's back button exited to whatever preceded it.
+   
+   push for things a person would expect to undo — changing view, picking a row,
+   applying a filter, changing the day. replace for typing in the search box, which
+   would otherwise bury the real steps under one entry per keystroke. */
+function writeURL(push){
+  const u=stateURL();
+  if(u===location.pathname+location.search)return;
+  if(push)history.pushState(null,'',u); else history.replaceState(null,'',u);
+}
+
+window.addEventListener('popstate',async()=>{
+  readURL();
+  if(!DAYS.includes(DAY)&&WBDAYS.includes(DAY))await ensureHist();
+  await loadDays([DAY]);
+  syncChrome();
+  render(false);
+});
 function readURL(){
   const p=new URLSearchParams(location.search);
   if(['today','aftermath','market','method'].includes(p.get('v')))VIEW=p.get('v');
   SEL=p.get('sel')||null; Q=(p.get('q')||'').toUpperCase();
   if(p.get('w') in WINS)WIN=p.get('w');
-  if(['new','old','worst','best','mentions'].includes(p.get('sort')))SORT=p.get('sort');
+  if(['res','new','old','worst','best','mentions'].includes(p.get('sort')))SORT=p.get('sort');
   ONLY=p.get('only')||'';
   /* Deep links must reach the crawl days too, or the 2021-2026 half of the picker
      cannot be shared. */
@@ -577,7 +625,13 @@ function eventRows(){
   if(ONLY==='basket')L=L.filter(e=>BASKET.has(e.tk));
   if(ONLY==='closed')L=L.filter(e=>e.r10!=null);
   if(ONLY==='pending')L=L.filter(e=>e.r10==null);
-  const O={new:(a,b)=>b.d.localeCompare(a.d),old:(a,b)=>a.d.localeCompare(b.d),
+  /* Resolved first, newest among them. Default was plain "newest", and because the
+     newest spikes are precisely the ones whose 10-day window has not closed, the page
+     about what happens after a spike opened with 36 of 40 visible rows reading
+     "pending" — 90% of the first screen saying "not known yet" while 215 of 254 events
+     did have an answer. */
+  const O={res:(a,b)=>((b.r10!=null)-(a.r10!=null))||b.d.localeCompare(a.d),
+    new:(a,b)=>b.d.localeCompare(a.d),old:(a,b)=>a.d.localeCompare(b.d),
     worst:(a,b)=>(a.r10??1e9)-(b.r10??1e9),best:(a,b)=>(b.r10??-1e9)-(a.r10??-1e9),
     mentions:(a,b)=>b.m-a.m};
   return L.sort(O[SORT]||O.new);
@@ -616,7 +670,8 @@ function boardRows(){
   if(ONLY==='basket')L=L.filter(r=>BASKET.has(r.ticker));
   if(ONLY==='closed')L=L.filter(r=>r.hot);
   if(ONLY==='track')L=L.filter(r=>track(r.ticker).closed>0);
-  const O={new:(a,b)=>a.rank-b.rank,old:(a,b)=>b.rank-a.rank,
+  /* The board has no resolved/pending axis, so the shared default falls back to rank. */
+  const O={res:(a,b)=>a.rank-b.rank,new:(a,b)=>a.rank-b.rank,old:(a,b)=>b.rank-a.rank,
     mentions:(a,b)=>b.mentions-a.mentions,
     best:(a,b)=>b.x-a.x,
     /* Worst track record first, and names with no record sink rather than sorting as
@@ -626,16 +681,26 @@ function boardRows(){
   return L.sort(O[SORT]||O.new);
 }
 
-function render(){
-  $('pane').classList.toggle('single',VIEW==='market'||VIEW==='method');
+/* Chrome that only works in some views should not be lit in the others. The date
+   picker drives Today alone, and neither it nor the search does anything in Market —
+   both sat there enabled, implying otherwise. */
+function syncChrome(){
+  $('day').style.display=(VIEW==='today')?'':'none';
+  $('q').style.display=(VIEW==='market'||VIEW==='method')?'none':'';
+  $('q').value=Q;
   document.querySelectorAll('[data-v]').forEach(b=>
     b.setAttribute('aria-selected',String(b.dataset.v===VIEW)));
+}
+
+function render(push=true){
+  syncChrome();
+  $('pane').classList.toggle('single',VIEW==='market'||VIEW==='method');
   renderRail();
-  if(VIEW==='method'){$('detail').innerHTML=methodHTML();writeURL();return;}
-  if(VIEW==='market'){$('detail').innerHTML=marketHTML();writeURL();return;}
+  if(VIEW==='method'){$('detail').innerHTML=methodHTML();writeURL(push);return;}
+  if(VIEW==='market'){$('detail').innerHTML=marketHTML();writeURL(push);return;}
   renderList();
   renderDetail();
-  writeURL();
+  writeURL(push);
 }
 
 function renderRail(){
@@ -657,18 +722,41 @@ function renderRail(){
         too short to split across periods, and that is the test an earlier result failed.</p>
     </div>`:'';
   const sorts=VIEW==='aftermath'
-    ? [['new','Newest'],['old','Oldest'],['worst','Worst 10d'],['best','Best 10d'],['mentions','Most mentions']]
-    : [['new','Rank'],['mentions','Mentions'],['best','Multiple'],['worst','Worst record']];
+    ? [['res','Newest resolved'],['new','Newest'],['old','Oldest'],['worst','Worst 10d'],['best','Best 10d'],['mentions','Most mentions']]
+    : [['res','Rank'],['mentions','Mentions'],['best','Multiple'],['worst','Worst record']];
   const onlys=VIEW==='aftermath'
     ? [['','All'],['basket','Basket'],['closed','Closed 10d'],['pending','Pending']]
     : [['','All'],['basket','Basket'],['closed','Spiking now'],['track','Has a record']];
   if(VIEW==='market'||VIEW==='method'){$('railBody').innerHTML=findingHTML;return;}
+  /* Controls moved out of here and directly above the list they act on. They were
+     200px away across a column, behind a paragraph of research prose — the thing you
+     touch constantly sitting below the thing you read once. The rail now holds only
+     the claim; `#listctl` holds the controls. */
   $('railBody').innerHTML=findingHTML
-    +`<div class="fld"><label>Sort</label><div class="chips">${sorts.map(([k,l])=>
-       `<button data-sort="${k}" aria-pressed="${SORT===k}">${l}</button>`).join('')}</div></div>`
-    +`<div class="fld"><label>Show</label><div class="chips">${onlys.map(([k,l])=>
-       `<button data-only="${k}" aria-pressed="${ONLY===k}">${l}</button>`).join('')}</div></div>`
     +(VIEW==='aftermath'?`<button class="railBtn" id="csv">Export what is listed (CSV)</button>`:'');
+  const ctl=$('listctl');
+  if(ctl)ctl.innerHTML=
+     `<div class="ctlrow"><span class="ctlk">Sort</span><div class="chips">${sorts.map(([k,l])=>
+       `<button data-sort="${k}" aria-pressed="${SORT===k}">${l}</button>`).join('')}</div></div>`
+    +`<div class="ctlrow"><span class="ctlk">Show</span><div class="chips">${onlys.map(([k,l])=>
+       `<button data-only="${k}" aria-pressed="${ONLY===k}">${l}</button>`).join('')}</div></div>`
+    +activeFiltersHTML();
+}
+
+/* What is currently narrowing the list, each one removable, plus one control that
+   undoes all of it. Pressed states alone told you a filter was on but gave no way to
+   see the whole set or get back to the full 254 in one action. */
+function activeFiltersHTML(){
+  const bits=[];
+  if(Q)bits.push([`ticker · ${esc(Q)}`,'q']);
+  if(ONLY)bits.push([({basket:'basket only',closed:VIEW==='aftermath'?'closed 10d':'spiking now',
+                       pending:'pending only',track:'has a record'})[ONLY]||ONLY,'only']);
+  if(SORT!=='res')bits.push([`sorted · ${SORT}`,'sort']);
+  if(VIEW==='today'&&DAY!==DAYS[DAYS.length-1])bits.push([`day · ${DAY}`,'day']);
+  if(!bits.length)return '';
+  return `<div class="ctlrow active"><span class="ctlk">Filtering</span><div class="chips">`
+    +bits.map(([label,k])=>`<button class="fchip" data-drop="${k}">${label}<span aria-hidden="true"> ×</span></button>`).join('')
+    +`<button class="fchip clr" data-drop="all">Clear all</button></div></div>`;
 }
 
 function renderList(){
@@ -689,7 +777,10 @@ function renderList(){
   const slice=L.slice(0,SHOWN);
   const body=slice.map(e=>VIEW==='aftermath'?eventRow(e):boardRow(e)).join('');
   const more=L.length>SHOWN?`<button class="more" id="more">Show ${Math.min(40,L.length-SHOWN)} more · ${L.length-SHOWN} left</button>`:'';
-  $('list').innerHTML=head+body+more;
+  /* j/k, arrows and / existed and nothing said so. One quiet line at the end of the
+     list costs nothing and is the only place a reader is already looking down. */
+  const hint=`<div class="kbd"><kbd>j</kbd><kbd>k</kbd> move · <kbd>/</kbd> search · <kbd>←</kbd> back</div>`;
+  $('list').innerHTML=head+body+more+hint;
   if(!SEL||!slice.some(e=>key(e)===SEL))SEL=key(slice[0]);
   markSel();
 }
@@ -826,7 +917,8 @@ function eventDetail(){
     <div class="cLegend"><span><i style="background:var(--acc)"></i>price</span>
       <span><i style="background:var(--bar)"></i>mentions</span>
       <span><i style="background:var(--dn)"></i>spike day</span>
-      <span><i style="border:1px solid var(--bar)"></i>read before the close — not comparable</span></div>
+      <span><i style="border:1px solid var(--bar)"></i>read before the close — not comparable</span>
+      <span class="hoverHint">hover the chart for any day's price and mentions</span></div>
     <div class="winbar"><span class="mut" style="font-size:11.5px">after spike</span>
       <div class="chips">${Object.keys(WINS).map(k=>
         `<button data-win="${k}" aria-pressed="${WIN===k}">${k==='all'?'ALL':'+'+k}</button>`).join('')}</div></div>
@@ -984,7 +1076,15 @@ function marketHTML(){
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
   const v=e.target.closest('[data-v]');
-  if(v){VIEW=v.dataset.v;SEL=null;SHOWN=40;render();return;}
+  if(v){
+    /* Carry the ticker across. Looking at AMD on Today and switching to Aftermath used
+       to land on an unrelated event with the box empty — the one thing you were
+       thinking about, dropped at the door. */
+    const carry=SEL&&(VIEW==='today'?SEL:String(SEL).split('|')[1]);
+    VIEW=v.dataset.v;SEL=null;SHOWN=40;
+    if(carry&&(VIEW==='today'||VIEW==='aftermath')){Q=carry;}
+    render();return;
+  }
   if(e.target.closest('[data-rail]')){$('rail').classList.add('open');return;}
   if(e.target.closest('#railClose')){$('rail').classList.remove('open');return;}
   if(e.target.closest('[data-back]')){$('pane').classList.remove('showDetail');return;}
@@ -992,6 +1092,18 @@ document.addEventListener('click',e=>{
   if(s){SORT=s.dataset.sort;SHOWN=40;render();$('rail').classList.remove('open');return;}
   const o=e.target.closest('[data-only]');
   if(o){ONLY=o.dataset.only;SHOWN=40;render();$('rail').classList.remove('open');return;}
+  const drop=e.target.closest('[data-drop]');
+  if(drop){
+    const k=drop.dataset.drop;
+    if(k==='all'){Q='';ONLY='';SORT='res';if(DAYS.length)DAY=DAYS[DAYS.length-1];}
+    if(k==='q')Q='';
+    if(k==='only')ONLY='';
+    if(k==='sort')SORT='res';
+    if(k==='day'&&DAYS.length)DAY=DAYS[DAYS.length-1];
+    SHOWN=40;SEL=null;
+    (async()=>{await loadDays([DAY]);render();})();
+    return;
+  }
   const hz=e.target.closest('[data-hz]');
   if(hz){VIEW='aftermath';WIN=hz.dataset.hz+'d';ONLY='closed';SORT='worst';
     SEL=null;SHOWN=40;render();$('rail').classList.remove('open');return;}
@@ -1001,11 +1113,11 @@ document.addEventListener('click',e=>{
     const r=$('list').querySelector(`[data-k="${CSS.escape(SEL)}"]`);
     if(r)r.scrollIntoView({block:'center'});return;}
   const w=e.target.closest('[data-win]');
-  if(w){WIN=w.dataset.win;renderDetail();writeURL();return;}
+  if(w){WIN=w.dataset.win;renderDetail();writeURL(true);return;}
   if(e.target.closest('#more')){SHOWN+=40;renderList();return;}
   if(e.target.closest('#csv')){exportCSV();return;}
   const row=e.target.closest('.row');
-  if(row){SEL=row.dataset.k;markSel();renderDetail();writeURL();
+  if(row){SEL=row.dataset.k;markSel();renderDetail();writeURL(true);
     $('pane').classList.add('showDetail');}
 });
 /* One delegated handler for every chart on the page. Per-chart listeners would leak
@@ -1060,13 +1172,16 @@ document.addEventListener('keydown',e=>{
     const rows=[...$('list').querySelectorAll('.row')];
     const i=rows.findIndex(r=>r.dataset.k===SEL);
     const j=Math.max(0,Math.min(rows.length-1,i+((e.key==='j'||e.key==='ArrowDown')?1:-1)));
-    if(rows[j]){SEL=rows[j].dataset.k;markSel();renderDetail();writeURL();
+    /* Arrowing through a list is scanning, not navigating — one history entry per
+       keypress would make Back mean "up one row" twenty times over. */
+    if(rows[j]){SEL=rows[j].dataset.k;markSel();renderDetail();writeURL(false);
       rows[j].scrollIntoView({block:'nearest'});e.preventDefault();}
   }
   if(e.key==='/'){$('q').focus();e.preventDefault();}
+  if(e.key==='ArrowLeft'){history.back();e.preventDefault();}
 });
 $('q').addEventListener('input',e=>{Q=e.target.value.toUpperCase();SHOWN=40;SEL=null;
-  if(VIEW!=='market')render();});
+  if(VIEW!=='market')render(false);});
 $('day').addEventListener('change',async e=>{
   DAY=e.target.value;SEL=null;
   if(!DAYS.includes(DAY)){
