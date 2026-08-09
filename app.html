@@ -606,8 +606,7 @@ const CHARTS={}; let CHID=0;
 
 /* opts: {sign:true} colours the line by the sign of each segment and draws a heavy
    zero axis — the whole point of GEX is which side of zero it is on, and one flat
-   purple line said nothing about that. {guides:[[value,colour,label]]} draws dashed
-   reference levels, which is how DIX's 0.45 / 0.40 bands read on the original. */
+   purple line said nothing about that. */
 function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$',opts={}){
   const padL=44,padR=mentions?44:14,padT=12,padB=22;
   const iw=w-padL-padR, ih=h-padT-padB;
@@ -661,13 +660,6 @@ function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$',opts={}){
     refs+=`<line x1="${padL}" y1="${zy.toFixed(1)}" x2="${w-padR}" y2="${zy.toFixed(1)}"
       stroke="var(--ink3)" stroke-width="1.4" opacity=".85"/>`
       +`<text x="${w-padR-2}" y="${(zy-4).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--ink3)">0</text>`;
-  }
-  for(const [v,col,lab] of (opts.guides||[])){
-    if(v<pMin||v>pMax)continue;
-    const gy=yOf(v);
-    refs+=`<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}"
-      stroke="${col}" stroke-width="1" stroke-dasharray="4 3" opacity=".7"/>`
-      +`<text x="${padL+4}" y="${(gy-4).toFixed(1)}" font-size="9" fill="${col}" opacity=".9">${lab}</text>`;
   }
   const si=days.indexOf(spikeDay);
   const marker=si>=0?`<line x1="${x(si).toFixed(1)}" y1="${padT}" x2="${x(si).toFixed(1)}" y2="${padT+ih}" stroke="var(--dn)" stroke-width="1" stroke-dasharray="3 3" opacity=".8"/>`:'';
@@ -1163,8 +1155,10 @@ function marketHTML(){
 
   if(DIXROWS&&DIXROWS.length){
     const rows=cut(DIXROWS);
-    const d=rows.map(r=>r[0]), gx=rows.map(r=>+r[3]/1e9), dx=rows.map(r=>+r[2]);
-    const g=gx[gx.length-1], dv=dx[dx.length-1];
+    /* Still DIX.csv — column 3 is GEX. The dark-pool column beside it is simply not
+       read; dropping the file would drop the fifteen years of GEX with it. */
+    const d=rows.map(r=>r[0]), gx=rows.map(r=>+r[3]/1e9);
+    const g=gx[gx.length-1];
     const pos=g>=0;
     /* The sign is the whole reading, so it is stated in colour, in words and by the
        zero axis on the chart. One flat line and a bare number said none of it. */
@@ -1182,14 +1176,6 @@ function marketHTML(){
         <p class="note">${rows.length} sessions · ${d[0]} → ${d[d.length-1]} ·
           ${gx.filter(v=>v<0).length} of them below zero.</p></div>`;
 
-    const zone=dv>=0.45?['strong (dark-pool accumulation)','up']:dv<0.40?['weak','dn']:['neutral','mut'];
-    out+=`<h3>DIX · dark-pool index <span class="mut" style="font-weight:400">(SqueezeMetrics official)</span></h3>
-      <div class="gauge"><div class="gv ${zone[1]}">${dv.toFixed(3)}</div>
-        <div class="gtxt"><b>${zone[0]}</b> — buying intensity 0–1.
-          <span class="mut">· range over this window [${Math.min(...dx).toFixed(2)}, ${Math.max(...dx).toFixed(2)}] · ${d[d.length-1]}</span></div></div>
-      <div class="chartbox">${chart(d,null,dx,'',760,180,'',{guides:[[0.45,'var(--up)','0.45'],[0.40,'var(--dn)','0.40']]})}
-        <p class="note">Per its authors, ≥0.45 has typically preceded strength and &lt;0.40 weakness —
-          their statistical observation, not this site's endorsement.</p></div>`;
   }
 
   if(RISK&&RISK.dates&&RISK.dates.length){
