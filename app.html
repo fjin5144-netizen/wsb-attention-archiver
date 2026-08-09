@@ -44,8 +44,25 @@ button{cursor:pointer}
 .up{color:var(--up)} .dn{color:var(--dn)} .mut{color:var(--ink3)}
 
 /* ---- shell: the whole point. Nothing outside .pane ever scrolls. ---- */
-.app{height:100dvh;display:grid;grid-template-columns:var(--rail) 1fr;
-  grid-template-rows:var(--top) 1fr;grid-template-areas:"top top" "rail pane"}
+.app{height:100dvh;display:grid;grid-template-columns:1fr;
+  grid-template-rows:var(--top) auto 1fr;grid-template-areas:"top" "claim" "pane"}
+
+/* One line, foldable, spanning the width. Collapsed it states the result; expanded it
+   is the same block that used to occupy the left column. Either way the leftmost
+   column below is the ticker list. */
+.claim{grid-area:claim;background:var(--sunk);border-bottom:1px solid var(--line)}
+.claimBar{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;
+  padding:9px 16px;text-align:left;color:var(--ink2);font-size:12.5px}
+.claimBar:hover{background:var(--card)}
+.claimBar .cw{font:600 10px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink3);flex:none}
+.claimBar .cl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.claimBar .cl b{color:var(--ink);font-weight:650}
+.claimBar .cl .dn{color:var(--dn)}
+.claimBar .cx{color:var(--ink3);transition:transform .15s;flex:none}
+.claimBar[aria-expanded=true] .cx{transform:rotate(180deg)}
+.claimBody{padding:0 16px 15px;max-width:940px}
+.claimBody .fLead{font-size:13.5px}
 .topbar{grid-area:top;display:flex;align-items:center;gap:14px;padding:0 16px;
   background:var(--sunk);border-bottom:1px solid var(--line);min-width:0}
 .rail{grid-area:rail;background:var(--sunk);border-right:1px solid var(--line);
@@ -223,8 +240,11 @@ h3:first-child{margin-top:0}
 .railClose{display:none}
 @media (max-width:900px){
   :root{--top:50px}
-  .app{grid-template-columns:1fr;grid-template-rows:var(--top) 1fr auto;
-    grid-template-areas:"top" "pane" "tabs"}
+  .app{grid-template-columns:1fr;grid-template-rows:var(--top) auto 1fr auto;
+    grid-template-areas:"top" "claim" "pane" "tabs"}
+  .claimBar{padding:8px 12px}
+  .claimBar .cw{display:none}
+  .claimBody{padding:0 12px 13px}
   /* The rail becomes a sheet rather than a column. It holds the finding and the
      filters, which on a phone are a thing you open, decide, and close. */
   .rail{position:fixed;inset:var(--top) 0 0 0;z-index:40;border-right:0;
@@ -263,20 +283,27 @@ h3:first-child{margin-top:0}
   <header class="topbar">
     <div class="brand">Salience<span>Retail attention on r/wallstreetbets</span></div>
     <div class="seg" role="tablist" id="seg">
-      <button role="tab" data-v="today" aria-selected="true">Today</button>
+      <button role="tab" data-v="today" aria-selected="true" title="The board on one archive day">Board</button>
       <button role="tab" data-v="aftermath" aria-selected="false">Aftermath</button>
       <button role="tab" data-v="market" aria-selected="false">Market</button>
     </div>
     <div class="spacer"></div>
     <div class="tbctl">
       <input id="q" type="search" placeholder="ticker" aria-label="Filter by ticker" autocomplete="off">
-      <select id="day" aria-label="Archive date"></select>
     </div>
   </header>
-  <aside class="rail" id="rail">
-    <button class="railClose" id="railClose">Done</button>
-    <div id="railBody"></div>
-  </aside>
+  <!-- The claim used to own a 272px column down the left, permanently, mostly prose.
+       Leftmost belongs to the tickers — that is what a person came to navigate. This
+       is one line until you want the rest of it, and it stays put while the list
+       scrolls under it. -->
+  <section class="claim" id="claim">
+    <button class="claimBar" id="claimBar" aria-expanded="false" aria-controls="claimBody">
+      <span class="cw">What the archive says</span>
+      <span class="cl" id="claimLine">…</span>
+      <span class="cx" aria-hidden="true">▾</span>
+    </button>
+    <div class="claimBody" id="claimBody" hidden></div>
+  </section>
   <main class="pane" id="pane">
     <div class="listcol" id="listcol">
       <div class="listctl" id="listctl"></div>
@@ -285,13 +312,12 @@ h3:first-child{margin-top:0}
     <div class="detail" id="detail"></div>
   </main>
   <nav class="mtabs" id="mtabs" role="tablist">
-    <button role="tab" data-v="today" aria-selected="true"><span class="g">▦</span>Today</button>
+    <button role="tab" data-v="today" aria-selected="true"><span class="g">▦</span>Board</button>
     <button role="tab" data-v="aftermath" aria-selected="false"><span class="g">◷</span>Aftermath</button>
     <button role="tab" data-v="market" aria-selected="false"><span class="g">◈</span>Market</button>
-    <!-- Was "Filters". The filters now sit above the list where they belong, so the
-         gear was pointing at a drawer that no longer holds any. What is in there is
-         the claim the whole site rests on. -->
-    <button data-rail="1"><span class="g">◑</span>Finding</button>
+    <!-- The fourth tab opened the rail. The rail is gone: filters sit above the list
+         and the claim is a foldable bar across the top, reachable in both layouts
+         without a tab of its own. -->
   </nav>
 </div>
 <div class="loading" id="boot">Loading the archive<div class="bar"><i></i></div></div>
@@ -379,17 +405,6 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
   /* Land on a day that has rows. A run can commit before the fetch returns, and an
      empty newest day would blank the whole shell. */
   for(let i=DAYS.length-1;i>=0&&!rowsOf(DAY).length;i--){DAY=DAYS[i];await loadDays([DAY]);}
-  /* Both datasets in one picker, in two labelled groups. Same board, different
-     provenance and density — grouping says so without hiding either, which is what
-     shipping the files and leaving the dropdown at 2026-05-01 amounted to. */
-  const wbOpts=WBDAYS.filter(d=>!DAYS.includes(d)).slice().reverse()
-    .map(d=>`<option value="${d}">${d}${WBSUSPECT.has(d)?' · frozen':''}</option>`).join('');
-  $('day').innerHTML=
-    `<optgroup label="daily archive (${DAYS.length})">`
-    +DAYS.slice().reverse().map(d=>`<option value="${d}">${d}</option>`).join('')
-    +`</optgroup>`
-    +(wbOpts?`<optgroup label="archive.org crawls (${WBDAYS.length}, sparse)">${wbOpts}</optgroup>`:'');
-  $('day').value=DAY;
   readURL();
   /* readURL can move DAY to a date whose snapshot was never fetched — the boot
      sequence loads the newest day, then the URL points somewhere else entirely.
@@ -399,7 +414,11 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
     await loadDays([DAY,...WBDAYS.filter(d=>d<=DAY).slice(-40)]);
   }
   await loadDays([DAY]);
-  $('day').value=DAY;
+  try{
+    if(localStorage.getItem('claimOpen')==='1'){
+      $('claimBar').setAttribute('aria-expanded','true');$('claimBody').hidden=false;
+    }
+  }catch(_){}
   $('boot').remove();
   render();
   /* The rest streams in behind the shell: mention history needs every snapshot, but
@@ -685,7 +704,6 @@ function boardRows(){
    picker drives Today alone, and neither it nor the search does anything in Market —
    both sat there enabled, implying otherwise. */
 function syncChrome(){
-  $('day').style.display=(VIEW==='today')?'':'none';
   $('q').style.display=(VIEW==='market'||VIEW==='method')?'none':'';
   $('q').value=Q;
   document.querySelectorAll('[data-v]').forEach(b=>
@@ -695,7 +713,7 @@ function syncChrome(){
 function render(push=true){
   syncChrome();
   $('pane').classList.toggle('single',VIEW==='market'||VIEW==='method');
-  renderRail();
+  renderClaim();
   if(VIEW==='method'){$('detail').innerHTML=methodHTML();writeURL(push);return;}
   if(VIEW==='market'){$('detail').innerHTML=marketHTML();writeURL(push);return;}
   renderList();
@@ -703,11 +721,25 @@ function render(push=true){
   writeURL(push);
 }
 
-function renderRail(){
+/* Shared by the board's control row. Two groups so provenance stays visible. */
+function dayOptions(){
+  const wb=WBDAYS.filter(d=>!DAYS.includes(d)).slice().reverse()
+    .map(d=>`<option value="${d}"${d===DAY?' selected':''}>${d}${WBSUSPECT.has(d)?' · frozen':''}</option>`).join('');
+  return `<optgroup label="daily archive (${DAYS.length})">`
+    +DAYS.slice().reverse().map(d=>`<option value="${d}"${d===DAY?' selected':''}>${d}</option>`).join('')
+    +`</optgroup>`+(wb?`<optgroup label="archive.org crawls (${WBDAYS.length}, sparse)">${wb}</optgroup>`:'');
+}
+
+function renderClaim(){
   const f=FINDING&&(FINDING.horizons||[]).find(h=>h.sessions===(FINDING.headline_sessions||20));
+  /* Collapsed line first: the result in a sentence. The rest is the same block that
+     was in the rail, revealed only when asked for. */
+  $('claimLine').innerHTML=f
+    ? `spikes run <b class="dn">${f.gap_median.toFixed(1)} points</b> below the same tickers on a random day, over ${f.sessions} sessions · <b>n=${f.spike.n}</b> · 100 days of archive, not a finding`
+    : 'no finding computed yet';
   const findingHTML=f?`
     <div class="finding">
-      <p class="rk">What the archive says<button class="rkq" data-v="method" title="How these numbers are measured">?</button></p>
+      <p class="rk">How this is measured<button class="rkq" data-v="method" title="How these numbers are measured">?</button></p>
       <p class="fLead">After a confirmed spike, the median return over
         <b>${f.sessions} sessions</b> is <b class="dn">${pct(f.spike.median)}</b>.
         The same tickers on a random day: <b>${pct(f.placebo.median)}</b>.</p>
@@ -721,26 +753,28 @@ function renderRail(){
       <p class="fCav"><b>Not a finding.</b> ${FINDING.archive_days} days of archive is one quarter —
         too short to split across periods, and that is the test an earlier result failed.</p>
     </div>`:'';
+  $('claimBody').innerHTML=findingHTML;
   const sorts=VIEW==='aftermath'
     ? [['res','Newest resolved'],['new','Newest'],['old','Oldest'],['worst','Worst 10d'],['best','Best 10d'],['mentions','Most mentions']]
     : [['res','Rank'],['mentions','Mentions'],['best','Multiple'],['worst','Worst record']];
   const onlys=VIEW==='aftermath'
     ? [['','All'],['basket','Basket'],['closed','Closed 10d'],['pending','Pending']]
     : [['','All'],['basket','Basket'],['closed','Spiking now'],['track','Has a record']];
-  if(VIEW==='market'||VIEW==='method'){$('railBody').innerHTML=findingHTML;return;}
-  /* Controls moved out of here and directly above the list they act on. They were
-     200px away across a column, behind a paragraph of research prose — the thing you
-     touch constantly sitting below the thing you read once. The rail now holds only
-     the claim; `#listctl` holds the controls. */
-  $('railBody').innerHTML=findingHTML
-    +(VIEW==='aftermath'?`<button class="railBtn" id="csv">Export what is listed (CSV)</button>`:'');
+
+  /* The date is a parameter of the board, not of the site. It sat in the global chrome
+     beside a tab called "Today", so picking 2021-06-08 left the tab still saying
+     "Today" — the control looked like it applied to all three views and applies to
+     one. It lives in that view's own control row now, and the tab is called Board. */
   const ctl=$('listctl');
   if(ctl)ctl.innerHTML=
-     `<div class="ctlrow"><span class="ctlk">Sort</span><div class="chips">${sorts.map(([k,l])=>
+     (VIEW==='today'?`<div class="ctlrow"><span class="ctlk">Day</span>
+        <select id="day2" class="dsel" aria-label="Archive date">${dayOptions()}</select></div>`:'')
+    +`<div class="ctlrow"><span class="ctlk">Sort</span><div class="chips">${sorts.map(([k,l])=>
        `<button data-sort="${k}" aria-pressed="${SORT===k}">${l}</button>`).join('')}</div></div>`
     +`<div class="ctlrow"><span class="ctlk">Show</span><div class="chips">${onlys.map(([k,l])=>
        `<button data-only="${k}" aria-pressed="${ONLY===k}">${l}</button>`).join('')}</div></div>`
-    +activeFiltersHTML();
+    +activeFiltersHTML()
+    +(VIEW==='aftermath'?`<div class="ctlrow"><span class="ctlk"></span><button class="railBtn" id="csv">Export what is listed (CSV)</button></div>`:'');
 }
 
 /* What is currently narrowing the list, each one removable, plus one control that
@@ -1085,13 +1119,20 @@ document.addEventListener('click',e=>{
     if(carry&&(VIEW==='today'||VIEW==='aftermath')){Q=carry;}
     render();return;
   }
-  if(e.target.closest('[data-rail]')){$('rail').classList.add('open');return;}
-  if(e.target.closest('#railClose')){$('rail').classList.remove('open');return;}
+  const cb=e.target.closest('#claimBar');
+  if(cb){
+    const open=cb.getAttribute('aria-expanded')!=='true';
+    cb.setAttribute('aria-expanded',String(open));
+    $('claimBody').hidden=!open;
+    /* Remembered, because a reader who folded it away meant it. */
+    try{localStorage.setItem('claimOpen',open?'1':'0');}catch(_){}
+    return;
+  }
   if(e.target.closest('[data-back]')){$('pane').classList.remove('showDetail');return;}
   const s=e.target.closest('[data-sort]');
-  if(s){SORT=s.dataset.sort;SHOWN=40;render();$('rail').classList.remove('open');return;}
+  if(s){SORT=s.dataset.sort;SHOWN=40;render();return;}
   const o=e.target.closest('[data-only]');
-  if(o){ONLY=o.dataset.only;SHOWN=40;render();$('rail').classList.remove('open');return;}
+  if(o){ONLY=o.dataset.only;SHOWN=40;render();return;}
   const drop=e.target.closest('[data-drop]');
   if(drop){
     const k=drop.dataset.drop;
@@ -1106,7 +1147,7 @@ document.addEventListener('click',e=>{
   }
   const hz=e.target.closest('[data-hz]');
   if(hz){VIEW='aftermath';WIN=hz.dataset.hz+'d';ONLY='closed';SORT='worst';
-    SEL=null;SHOWN=40;render();$('rail').classList.remove('open');return;}
+    SEL=null;SHOWN=40;render();return;}
   const jp=e.target.closest('[data-jump]');
   if(jp){VIEW='aftermath';SEL=jp.dataset.jump;SHOWN=40;ONLY='';Q='';$('q').value='';
     render();$('pane').classList.add('showDetail');
@@ -1180,17 +1221,16 @@ document.addEventListener('keydown',e=>{
   if(e.key==='/'){$('q').focus();e.preventDefault();}
   if(e.key==='ArrowLeft'){history.back();e.preventDefault();}
 });
+document.addEventListener('change',async e=>{
+  if(e.target&&e.target.id==='day2'){
+    DAY=e.target.value;SEL=null;
+    if(!DAYS.includes(DAY)){await ensureHist();await loadDays([DAY,...WBDAYS.filter(d=>d<=DAY).slice(-40)]);}
+    else await loadDays([DAY]);
+    render();
+  }
+});
 $('q').addEventListener('input',e=>{Q=e.target.value.toUpperCase();SHOWN=40;SEL=null;
   if(VIEW!=='market')render(false);});
-$('day').addEventListener('change',async e=>{
-  DAY=e.target.value;SEL=null;
-  if(!DAYS.includes(DAY)){
-    await ensureHist();
-    /* The detail charts the 40 days before this one, and on a crawl day those are
-       crawl days too — without loading them every bar read 0 mentions. */
-    await loadDays([DAY,...WBDAYS.filter(d=>d<=DAY).slice(-40)]);
-  }else{await loadDays([DAY]);}
-  render();});
 
 function exportCSV(){
   const L=eventRows();
