@@ -136,6 +136,9 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .chips button{background:var(--card);border:1px solid var(--line);border-radius:6px;
   padding:5px 9px;font-size:11.5px;color:var(--ink2)}
 .chips button[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+.chips button[disabled]{opacity:.35;cursor:default}
+.chips .cnt{margin-left:6px;font-variant-numeric:tabular-nums;opacity:.65;font-size:10.5px}
+.chips button[aria-pressed=true] .cnt{opacity:.85}
 .railBtn{width:100%;background:var(--card);border:1px solid var(--line);border-radius:7px;
   padding:8px;font-size:12px;color:var(--ink2)}
 
@@ -164,6 +167,13 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .row .out{grid-column:2;grid-row:1/3;font:650 14px/1 var(--sans);text-align:right;
   align-self:center;white-space:nowrap}
 .row .recn{display:block;font:400 10.5px/1.3 var(--sans);color:var(--ink3);margin-top:3px}
+.row .r2 b{color:var(--ink2);font-weight:600}
+.row .px{font:500 10.5px/1 var(--mono);color:var(--ink3);border:1px solid var(--line);
+  border-radius:4px;padding:3px 5px}
+.grp{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;
+  padding:8px 14px;background:var(--bg);border-bottom:1px solid var(--line);
+  font:600 10.5px/1.3 var(--sans);letter-spacing:.04em;color:var(--ink3);text-transform:uppercase}
+.grp .gn{margin-left:auto;font-variant-numeric:tabular-nums;text-transform:none;opacity:.7}
 /* A sort that ranks by a column the reader cannot see is a list they cannot check. */
 .row .out.mut{font-weight:400}
 .badge{font:600 9.5px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;
@@ -693,7 +703,10 @@ function eventRows(){
   let L=EVENTS.map(e=>({...e,r5:ret(e.tk,e.d,5),r10:ret(e.tk,e.d,10),r20:ret(e.tk,e.d,20)}));
   if(Q)L=L.filter(e=>e.tk.includes(Q));
   if(ONLY==='basket')L=L.filter(e=>BASKET.has(e.tk));
-  if(ONLY==='closed')L=L.filter(e=>e.r10!=null);
+  if(ONLY==='crash')L=L.filter(e=>e.r10!=null&&e.r10<=-25);
+  if(ONLY==='fell')L=L.filter(e=>e.r10!=null&&e.r10<=-5&&e.r10>-25);
+  if(ONLY==='flat')L=L.filter(e=>e.r10!=null&&Math.abs(e.r10)<5);
+  if(ONLY==='rose')L=L.filter(e=>e.r10!=null&&e.r10>=5);
   if(ONLY==='pending')L=L.filter(e=>e.r10==null);
   /* Resolved first, newest among them. Default was plain "newest", and because the
      newest spikes are precisely the ones whose 10-day window has not closed, the page
@@ -722,6 +735,55 @@ function track(tk){
     down:rs.length?rs.filter(v=>v<0).length:0};
 }
 
+/* Into the top 100 after ten straight days absent — the old site's definition. Needs
+   the prior days in cache; before they stream in it reports nothing rather than
+   guessing, so the count reads 0 and not a wrong number. */
+function isNewFace(tk){
+  const i=DAYS.indexOf(DAY); if(i<10)return false;
+  const prior=DAYS.slice(i-10,i);
+  if(prior.some(d=>!SNAP[d]))return false;
+  return prior.every(d=>!mapOf(d)[tk]);
+}
+
+/* Counts must describe the whole view, not the slice the current group already made —
+   otherwise every button but the active one reads its own filtered subset and the
+   numbers move as you click. Search and day still apply; the group does not. */
+function groupBase(view){
+  const keep=ONLY; ONLY='';
+  try{ return view==='aftermath'?eventRows():boardRows(); }
+  finally{ ONLY=keep; }
+}
+
+/* The old site's four surge tiers, verbatim. Filter chips labelled "Deep risers" were
+   not the same thing at all — what was lost is the grouped display with the movement
+   written out, `rank 22 → 9 · mentions 12 → 21`. That "from → to" is the trajectory;
+   a current rank and a delta arrow is not.
+
+   `seen` consumes across tiers so a name appears once, at the highest tier it earned,
+   exactly as it did there. */
+const CHEAP_MAX=100;
+function surgeTiers(rows){
+  const cand=rows.filter(r=>Number.isFinite(r.rank_24h_ago));
+  const seen=new Set();
+  const take=(f,cap=8)=>{const out=cand.filter(r=>!seen.has(r.ticker)&&f(r))
+      .sort((a,b)=>a.rank-b.rank).slice(0,cap);out.forEach(r=>seen.add(r.ticker));return out;};
+  const t15=take(r=>r.rank<=15&&r.rank_24h_ago>15&&(r.rank_24h_ago-r.rank)>=10);
+  const t50=take(r=>r.rank<=50&&(r.rank_24h_ago-r.rank)>=15);
+  const t100=take(r=>r.rank<=100&&r.rank_24h_ago>150,10);
+  const nf=take(r=>isNewFace(r.ticker),8);
+  const cheap=cand.filter(r=>{const p=lastClose(r.ticker);
+      return p!=null&&p<CHEAP_MAX&&r.rank<=100&&(r.rank_24h_ago-r.rank)>=15;})
+    .sort((a,b)=>(b.rank_24h_ago-b.rank)-(a.rank_24h_ago-a.rank)).slice(0,10);
+  return [
+    ['Into top 15 · climbed ≥10 spots',t15],
+    ['Into top 50 · climbed ≥15 spots',t50],
+    ['Deep risers · beyond #150 → top 100',t100],
+    ['New faces · back after 10 days absent',nf],
+    [`Cheap surges · under $${CHEAP_MAX}, climbed ≥15 into top 100`,cheap],
+  ].filter(([,l])=>l.length);
+}
+function lastClose(tk){const p=pxOf(tk,DAY);return p&&p.c&&p.c.length?p.c[p.c.length-1]:null;}
+
 function boardRows(){
   /* A crawl day has no prior-20 window in this dataset — the daily archive starts in
      2026, so `prior` came back empty, `med` fell to 0 and the multiple degenerated to
@@ -737,8 +799,16 @@ function boardRows(){
       hot:r.mentions>=HOT_FLOOR&&r.mentions>=HOT_X*Math.max(med,1)};
   });
   if(Q)L=L.filter(r=>r.ticker.includes(Q));
+  /* Board groups by how attention moved, Aftermath by how the price answered. Both
+     were a flat list of tickers with a chart, which is why they read as the same screen
+     twice. These are the old site's own categories — "deep risers" is
+     `beyond #150 → top 100` there too. */
+  const climb=r=>Number.isFinite(r.rank_24h_ago)?r.rank_24h_ago-r.rank:null;
   if(ONLY==='basket')L=L.filter(r=>BASKET.has(r.ticker));
-  if(ONLY==='closed')L=L.filter(r=>r.hot);
+  if(ONLY==='hot')L=L.filter(r=>r.hot);
+  if(ONLY==='t15')L=L.filter(r=>r.rank<=15&&climb(r)>=10);
+  if(ONLY==='deep')L=L.filter(r=>r.rank<=100&&r.rank_24h_ago>150);
+  if(ONLY==='new')L=L.filter(r=>isNewFace(r.ticker));
   if(ONLY==='track')L=L.filter(r=>track(r.ticker).closed>0);
   /* The board has no resolved/pending axis, so the shared default falls back to rank. */
   const O={res:(a,b)=>a.rank-b.rank,new:(a,b)=>a.rank-b.rank,old:(a,b)=>b.rank-a.rank,
@@ -814,9 +884,27 @@ function renderClaim(){
   const sorts=VIEW==='aftermath'
     ? [['res','Newest resolved'],['new','Newest'],['old','Oldest'],['worst','Worst 10d'],['best','Best 10d'],['mentions','Most mentions']]
     : [['res','Rank'],['mentions','Mentions'],['best','Multiple'],['worst','Worst record']];
+  /* Counts on the buttons. "12 fell more than 25%" is itself the finding; making
+     someone click each group to discover the shape wastes the one screen that could
+     have shown it. */
+  const base=VIEW==='aftermath'?groupBase('aftermath'):groupBase('today');
+  const cl=r=>Number.isFinite(r.rank_24h_ago)?r.rank_24h_ago-r.rank:null;
+  const n=f=>base.filter(f).length;
   const onlys=VIEW==='aftermath'
-    ? [['','All'],['basket','Basket'],['closed','Closed 10d'],['pending','Pending']]
-    : [['','All'],['basket','Basket'],['closed','Spiking now'],['track','Has a record']];
+    ? [['','All',base.length],
+       ['crash','Fell ≥25%',n(e=>e.r10!=null&&e.r10<=-25)],
+       ['fell','Fell 5–25%',n(e=>e.r10!=null&&e.r10<=-5&&e.r10>-25)],
+       ['flat','Flat ±5%',n(e=>e.r10!=null&&Math.abs(e.r10)<5)],
+       ['rose','Rose ≥5%',n(e=>e.r10!=null&&e.r10>=5)],
+       ['pending','No outcome yet',n(e=>e.r10==null)],
+       ['basket','Basket',n(e=>BASKET.has(e.tk))]]
+    : [['','All',base.length],
+       ['hot','Spiking now',n(r=>r.hot)],
+       ['t15','Into top 15',n(r=>r.rank<=15&&cl(r)>=10)],
+       ['deep','Deep risers',n(r=>r.rank<=100&&r.rank_24h_ago>150)],
+       ['new','New faces',n(r=>isNewFace(r.ticker))],
+       ['track','Has a record',n(r=>track(r.ticker).closed>0)],
+       ['basket','Basket',n(r=>BASKET.has(r.ticker))]];
 
   /* The date is a parameter of the board, not of the site. It sat in the global chrome
      beside a tab called "Today", so picking 2021-06-08 left the tab still saying
@@ -828,8 +916,8 @@ function renderClaim(){
         <select id="day2" class="dsel" aria-label="Archive date">${dayOptions()}</select></div>`:'')
     +`<div class="ctlrow"><span class="ctlk">Sort</span><div class="chips">${sorts.map(([k,l])=>
        `<button data-sort="${k}" aria-pressed="${SORT===k}">${l}</button>`).join('')}</div></div>`
-    +`<div class="ctlrow"><span class="ctlk">Show</span><div class="chips">${onlys.map(([k,l])=>
-       `<button data-only="${k}" aria-pressed="${ONLY===k}">${l}</button>`).join('')}</div></div>`
+    +`<div class="ctlrow"><span class="ctlk">Show</span><div class="chips">${onlys.map(([k,l,c])=>
+       `<button data-only="${k}" aria-pressed="${ONLY===k}"${c===0?' disabled':''}>${l}<span class="cnt">${c}</span></button>`).join('')}</div></div>`
     +activeFiltersHTML()
     +(VIEW==='aftermath'?`<div class="ctlrow"><span class="ctlk"></span><button class="railBtn" id="csv">Export what is listed (CSV)</button></div>`:'');
 }
@@ -840,8 +928,10 @@ function renderClaim(){
 function activeFiltersHTML(){
   const bits=[];
   if(Q)bits.push([`ticker · ${esc(Q)}`,'q']);
-  if(ONLY)bits.push([({basket:'basket only',closed:VIEW==='aftermath'?'closed 10d':'spiking now',
-                       pending:'pending only',track:'has a record'})[ONLY]||ONLY,'only']);
+  const LBL={basket:'basket only',hot:'spiking now',t15:'into top 15',deep:'deep risers',
+    'new':'new faces',track:'has a record',crash:'fell ≥25%',fell:'fell 5–25%',
+    flat:'flat ±5%',rose:'rose ≥5%',pending:'no outcome yet'};
+  if(ONLY)bits.push([LBL[ONLY]||ONLY,'only']);
   if(SORT!=='res')bits.push([`sorted · ${SORT}`,'sort']);
   if(VIEW==='today'&&DAY!==DAYS[DAYS.length-1])bits.push([`day · ${DAY}`,'day']);
   if(!bits.length)return '';
@@ -866,7 +956,21 @@ function renderList(){
   if(SEL){const i=L.findIndex(e=>key(e)===SEL);
     if(i>=SHOWN)SHOWN=Math.ceil((i+1)/40)*40;}
   const slice=L.slice(0,SHOWN);
-  const body=slice.map(e=>VIEW==='aftermath'?eventRow(e):boardRow(e)).join('');
+  /* The board's default is the grouped movers view, because "who moved" is what a
+     board is for. Picking a group, searching, or sorting drops back to a flat list —
+     at that point the reader has said what they want ordered by. */
+  let body;
+  const grouped=VIEW==='today'&&!ONLY&&!Q&&SORT==='res';
+  if(grouped){
+    const tiers=surgeTiers(L);
+    const inTier=new Set(tiers.flatMap(([,l])=>l.map(r=>r.ticker)));
+    body=tiers.map(([h,l])=>
+        `<div class="grp">${h}<span class="gn">${l.length}</span></div>`+l.map(boardRow).join('')).join('')
+      +`<div class="grp">Everything else<span class="gn">${L.length-inTier.size}</span></div>`
+      +L.filter(r=>!inTier.has(r.ticker)).slice(0,SHOWN).map(boardRow).join('');
+  }else{
+    body=slice.map(e=>VIEW==='aftermath'?eventRow(e):boardRow(e)).join('');
+  }
   const more=L.length>SHOWN?`<button class="more" id="more">Show ${Math.min(40,L.length-SHOWN)} more · ${L.length-SHOWN} left</button>`:'';
   /* j/k, arrows and / existed and nothing said so. One quiet line at the end of the
      list costs nothing and is the only place a reader is already looking down. */
@@ -902,8 +1006,12 @@ function boardRow(r){
   return `<div class="row" role="button" tabindex="0" data-k="${r.ticker}">
     <div class="r1"><span class="tk">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge b">basket</span>':''}
       ${r.hot?'<span class="badge" style="background:rgba(242,104,92,.18);color:var(--dn)">spike</span>':''}
-      <span class="dt">#${r.rank}${Number.isFinite(up)?` · ${up>0?'▲':up<0?'▼':'–'}${Math.abs(up)||''}`:''}</span></div>
-    <div class="r2">${r.mentions} mentions${r.x!=null?` · ×${r.x.toFixed(1)}`:''}${Number.isFinite(d24)?` · ${d24>=0?'+':''}${d24} in 24h`:''}</div>
+      ${(()=>{const p=lastClose(r.ticker);return p!=null?`<span class="px">$${p<10?p.toFixed(2):Math.round(p)}</span>`:'';})()}</div>
+    ${/* from → to, not a bare current value with an arrow. Where it came from is the
+          reading — VOO at #9 says little; 22 → 9 says it moved. */''}
+    <div class="r2">${Number.isFinite(r.rank_24h_ago)
+        ? `rank <b>${r.rank_24h_ago} → ${r.rank}</b> · mentions ${r.mentions_24h_ago} → ${r.mentions}`
+        : `rank #${r.rank} · ${r.mentions} mentions${r.x!=null?` · ×${r.x.toFixed(1)}`:''}`}</div>
     ${rec}
   </div>`;
 }
@@ -1197,12 +1305,19 @@ function marketHTML(){
 document.addEventListener('click',e=>{
   const v=e.target.closest('[data-v]');
   if(v){
-    /* Carry the ticker across. Looking at AMD on Today and switching to Aftermath used
-       to land on an unrelated event with the box empty — the one thing you were
-       thinking about, dropped at the door. */
+    /* Carry the ticker across, but not the same way in both directions.
+    
+       Board → Aftermath filters: you want that ticker's spike history, and a list of
+       one ticker's events is a sensible thing.
+       
+       Aftermath → Board selects instead: you want to see where it sits among
+       everything, and a board narrowed to one row is not a board. Filtering both ways
+       made Board open with "All 1" and every group reading zero. */
     const carry=SEL&&(VIEW==='today'?SEL:String(SEL).split('|')[1]);
+    const from=VIEW;
     VIEW=v.dataset.v;SEL=null;SHOWN=40;
-    if(carry&&(VIEW==='today'||VIEW==='aftermath')){Q=carry;}
+    if(carry&&VIEW==='aftermath'&&from==='today')Q=carry;
+    else if(carry&&VIEW==='today'&&from==='aftermath'){Q='';SEL=carry;}
     render();return;
   }
   const cb=e.target.closest('#claimBar');
