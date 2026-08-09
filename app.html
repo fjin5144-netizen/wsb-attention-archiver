@@ -80,6 +80,9 @@ button{cursor:pointer}
 .ctlk{font:600 10px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
   color:var(--ink3);width:52px;flex:none}
 .ctlrow.active{border-top:1px solid var(--line);padding-top:7px}
+/* The lens decides what every control under it means, so it reads first and heavier. */
+.ctlrow.lens{padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:1px}
+.ctlrow.lens .chips button{font-size:12px;padding:6px 11px}
 .fchip{background:rgba(139,124,246,.14);border:1px solid rgba(139,124,246,.35);
   color:var(--acc);border-radius:6px;padding:4px 8px;font-size:11px}
 .fchip:hover{background:rgba(139,124,246,.24)}
@@ -303,9 +306,14 @@ h3:first-child{margin-top:0}
   <header class="topbar">
     <div class="brand">Salience<span>Retail attention on r/wallstreetbets</span></div>
     <div class="seg" role="tablist" id="seg">
-      <button role="tab" data-v="today" aria-selected="true" title="The board on one archive day">Board</button>
-      <button role="tab" data-v="aftermath" aria-selected="false">Aftermath</button>
-      <button role="tab" data-v="market" aria-selected="false">Market</button>
+      <!-- Two destinations, not three. Board and Aftermath were never separate places:
+           same shell, same detail pane, same ticker column — only the list's contents
+           and its unit differ, which makes them lenses rather than destinations. They
+           cannot share one list (a board is 500 tickers on a day, of which 403 have
+           never spiked; aftermath is 254 events across 120 tickers, AAPL holding 7 of
+           them) so the lens picks the unit and lives beside the groups it changes. -->
+      <button role="tab" data-v="stocks" aria-selected="true" title="Attention and what followed it">Stocks</button>
+      <button role="tab" data-v="market" aria-selected="false" title="Systemic gauges, unrelated to the archive">Market</button>
     </div>
     <div class="spacer"></div>
     <div class="tbctl">
@@ -332,8 +340,7 @@ h3:first-child{margin-top:0}
     <div class="detail" id="detail"></div>
   </main>
   <nav class="mtabs" id="mtabs" role="tablist">
-    <button role="tab" data-v="today" aria-selected="true"><span class="g">▦</span>Board</button>
-    <button role="tab" data-v="aftermath" aria-selected="false"><span class="g">◷</span>Aftermath</button>
+    <button role="tab" data-v="stocks" aria-selected="true"><span class="g">▦</span>Stocks</button>
     <button role="tab" data-v="market" aria-selected="false"><span class="g">◈</span>Market</button>
     <!-- The fourth tab opened the rail. The rail is gone: filters sit above the list
          and the claim is a foldable bar across the top, reachable in both layouts
@@ -349,7 +356,7 @@ const HOT_FLOOR=30, HOT_X=3, CLOSE_UTC=21;
 const BASKET=new Set(["GME","AMC","MSTR","PLTR","RKLB","SOFI","TSLA","NVDA","AMD","INTC","HOOD","COIN","RDDT","SMCI","IONQ","RGTI","QUBT","BBAI","SOUN","AI","CRWV","NBIS","TEM","ACHR","JOBY","LUNR","ASTS","SPCE","OKLO","SMR","MARA","RIOT","CLSK","WULF","DJT","OPEN","CVNA","UPST","AFRM","HIMS","TLRY","RUM","QS","BB","NOK","NIO","RIVN","LCID","PLUG","W","NVAX"]);
 const WINS={'5d':5,'10d':10,'20d':20,'all':null};
 
-let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},PXH=null,RISK=null,DIXROWS=null,MWIN='2Y',SNAP={},DAY='',
+let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},PXH=null,RISK=null,DIXROWS=null,MWIN='2Y',LASTLENS='today',SNAP={},DAY='',
     VIEW='today',SEL=null,Q='',WIN='10d',SORT='res',ONLY='',SHOWN=40;
 
 const $=id=>document.getElementById(id);
@@ -827,8 +834,11 @@ function boardRows(){
 function syncChrome(){
   $('q').style.display=(VIEW==='market'||VIEW==='method')?'none':'';
   $('q').value=Q;
+  /* One destination covers two lenses, so Stocks stays lit under either. */
+  const dest=(VIEW==='today'||VIEW==='aftermath')?'stocks':VIEW;
   document.querySelectorAll('[data-v]').forEach(b=>
-    b.setAttribute('aria-selected',String(b.dataset.v===VIEW)));
+    b.setAttribute('aria-selected',String(b.dataset.v===dest)));
+  if(VIEW==='today'||VIEW==='aftermath')LASTLENS=VIEW;
 }
 
 function render(push=true){
@@ -912,7 +922,11 @@ function renderClaim(){
      one. It lives in that view's own control row now, and the tab is called Board. */
   const ctl=$('listctl');
   if(ctl)ctl.innerHTML=
-     (VIEW==='today'?`<div class="ctlrow"><span class="ctlk">Day</span>
+     `<div class="ctlrow lens"><span class="ctlk">Lens</span><div class="chips">
+        <button data-lens="today" aria-pressed="${VIEW==='today'}">Moving today</button>
+        <button data-lens="aftermath" aria-pressed="${VIEW==='aftermath'}">After a spike</button>
+      </div></div>`
+    +(VIEW==='today'?`<div class="ctlrow"><span class="ctlk">Day</span>
         <select id="day2" class="dsel" aria-label="Archive date">${dayOptions()}</select></div>`:'')
     +`<div class="ctlrow"><span class="ctlk">Sort</span><div class="chips">${sorts.map(([k,l])=>
        `<button data-sort="${k}" aria-pressed="${SORT===k}">${l}</button>`).join('')}</div></div>`
@@ -1303,7 +1317,18 @@ function marketHTML(){
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
+  const lens=e.target.closest('[data-lens]');
+  if(lens){
+    if(lens.dataset.lens!==VIEW){VIEW=lens.dataset.lens;SEL=null;ONLY='';SHOWN=40;render();}
+    return;
+  }
   const v=e.target.closest('[data-v]');
+  if(v&&v.dataset.v==='stocks'){
+    /* Returns to whichever lens was last used rather than always the board — coming
+       back should land where you left. */
+    if(VIEW!=='today'&&VIEW!=='aftermath'){VIEW=LASTLENS;SEL=null;SHOWN=40;render();}
+    return;
+  }
   if(v){
     /* Carry the ticker across, but not the same way in both directions.
     
