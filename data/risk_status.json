@@ -4,5 +4,5 @@
  "spy": "ok cboe spot-append (2026-08-09 = 773); stooq: could not convert string to float: 'e.encode(c+n))'; yahoo: HTTP Error 429: Too Many Requests",
  "skew": "ok cboe (499d)",
  "gex": "ok cboe (+3.03B)",
- "last_run": "2026-08-09T17:49:19+00:00"
+ "last_run": "2026-08-09T19:03:26+00:00"
 }
