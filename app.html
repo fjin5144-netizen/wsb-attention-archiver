@@ -44,13 +44,18 @@ button{cursor:pointer}
 .up{color:var(--up)} .dn{color:var(--dn)} .mut{color:var(--ink3)}
 
 /* ---- shell: the whole point. Nothing outside .pane ever scrolls. ---- */
-.app{height:100dvh;display:grid;grid-template-columns:1fr;
+.app{height:100dvh;display:grid;
+  /* minmax(0,·) not 1fr. A 1fr track's floor is the min-content of what sits in it, and
+     the claim sentence is one nowrap line ~690px wide — so on a 375px phone the whole
+     app laid out at 735px and body{overflow-x:hidden} quietly cropped the right half:
+     the Market tab, and the track-record column of every row, were simply gone. */
+  grid-template-columns:minmax(0,1fr);
   grid-template-rows:var(--top) auto 1fr;grid-template-areas:"top" "claim" "pane"}
 
 /* One line, foldable, spanning the width. Collapsed it states the result; expanded it
    is the same block that used to occupy the left column. Either way the leftmost
    column below is the ticker list. */
-.claim{grid-area:claim;background:var(--sunk);border-bottom:1px solid var(--line)}
+.claim{grid-area:claim;background:var(--sunk);border-bottom:1px solid var(--line);min-width:0}
 .claimBar{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;
   padding:9px 16px;text-align:left;color:var(--ink2);font-size:12.5px}
 .claimBar:hover{background:var(--card)}
@@ -72,7 +77,7 @@ button{cursor:pointer}
 /* Controls-then-list in one column, so the controls sit against the thing they filter
    and only the rows scroll under them. They used to live in the rail, 200px away
    across the screen and below a paragraph of prose. */
-.listcol{grid-area:list;display:grid;grid-template-rows:auto 1fr;min-height:0;
+.listcol{grid-area:list;display:grid;grid-template-rows:auto 1fr;min-height:0;min-width:0;
   border-right:1px solid var(--line)}
 .listctl{border-bottom:1px solid var(--line);background:var(--sunk);padding:9px 12px;
   display:flex;flex-direction:column;gap:7px}
@@ -263,7 +268,7 @@ h3:first-child{margin-top:0}
 .railClose{display:none}
 @media (max-width:900px){
   :root{--top:50px}
-  .app{grid-template-columns:1fr;grid-template-rows:var(--top) auto 1fr auto;
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:var(--top) auto 1fr auto;
     grid-template-areas:"top" "claim" "pane" "tabs"}
   .claimBar{padding:8px 12px}
   .claimBar .cw{display:none}
@@ -287,7 +292,8 @@ h3:first-child{margin-top:0}
   .listctl{padding:8px 10px}
   .pane.single{grid-template-areas:"detail"}
   .pane.single .detail{display:block}
-  .mtabs{grid-area:tabs;display:grid;grid-auto-flow:column;background:var(--sunk);
+  .mtabs{grid-area:tabs;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);
+    min-width:0;background:var(--sunk);
     border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
   .mtabs button{border:0;background:none;color:var(--ink3);font:550 11px/1 var(--sans);
     padding:11px 4px 12px;display:grid;gap:5px;justify-items:center}
@@ -356,7 +362,7 @@ const HOT_FLOOR=30, HOT_X=3, CLOSE_UTC=21;
 const BASKET=new Set(["GME","AMC","MSTR","PLTR","RKLB","SOFI","TSLA","NVDA","AMD","INTC","HOOD","COIN","RDDT","SMCI","IONQ","RGTI","QUBT","BBAI","SOUN","AI","CRWV","NBIS","TEM","ACHR","JOBY","LUNR","ASTS","SPCE","OKLO","SMR","MARA","RIOT","CLSK","WULF","DJT","OPEN","CVNA","UPST","AFRM","HIMS","TLRY","RUM","QS","BB","NOK","NIO","RIVN","LCID","PLUG","W","NVAX"]);
 const WINS={'5d':5,'10d':10,'20d':20,'all':null};
 
-let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},PXH=null,RISK=null,DIXROWS=null,MWIN='2Y',LASTLENS='today',SNAP={},DAY='',
+let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},PXH=null,RISK=null,DIXROWS=null,MWIN='2Y',TWIN='3M',TWINSET=false,LASTLENS='today',SNAP={},DAY='',
     VIEW='today',SEL=null,Q='',WIN='10d',SORT='res',ONLY='',SHOWN=40;
 
 const $=id=>document.getElementById(id);
@@ -379,6 +385,12 @@ const MAPS={};
 const mapOf=d=>{if(d in MAPS)return MAPS[d];
   const m={};for(const r of rowsOf(d))m[r.ticker]=r.mentions;return MAPS[d]=m;};
 const mOf=(d,tk)=>mapOf(d)[tk]||0;
+/* mOf answers 0 for a ticker that simply was not on the board, which is a different
+   statement from "nobody mentioned it" — the crawls only carry the top 100, so a name
+   sitting at rank 140 reads as silence. Fine for a 40-day chart where every day is a
+   top-500 read; a lie on a five-year one. This returns null for absent so the chart
+   can draw nothing rather than a zero. */
+const mAt=(d,tk)=>{const m=mapOf(d); return tk in m?m[tk]:null;};
 
 /* Sessions, read off the price series — the same fix the main chart needed. A window
    counted in calendar days cannot contain the return it is captioned with, because a
@@ -484,6 +496,7 @@ function stateURL(){
   if(Q)p.set('q',Q);
   if(WIN!=='10d')p.set('w',WIN);
   if(MWIN!=='2Y')p.set('mw',MWIN);
+  if(TWIN!=='3M'||TWINSET)p.set('tw',TWIN);
   if(SORT!=='res')p.set('sort',SORT);
   if(ONLY)p.set('only',ONLY);
   if(DAY!==DAYS[DAYS.length-1])p.set('d',DAY);
@@ -514,8 +527,17 @@ function readURL(){
   const p=new URLSearchParams(location.search);
   if(['today','aftermath','market','method'].includes(p.get('v')))VIEW=p.get('v');
   SEL=p.get('sel')||null; Q=(p.get('q')||'').toUpperCase();
-  if(p.get('w') in WINS)WIN=p.get('w');
+  /* hasOwnProperty, not `in`: `'constructor' in TWINS` is true through the prototype,
+     so ?tw=constructor set TWIN to a function, backFrom threw RangeError, and the throw
+     came out of readURL during boot — a blank page from a hand-typed URL. */
+  const own=(o,k)=>k!=null&&Object.prototype.hasOwnProperty.call(o,k);
+  if(own(WINS,p.get('w')))WIN=p.get('w');
   if(['3M','1Y','2Y','5Y','ALL'].includes(p.get('mw')))MWIN=p.get('mw');
+  /* Reset when absent, or Back cannot undo a range change: readURL left the old TWIN
+     standing, popstate re-rendered with it, and writeURL(false) then rewrote the very
+     history entry the browser had just navigated to. */
+  if(own(TWINS,p.get('tw'))){TWIN=p.get('tw');TWINSET=true;}
+  else{TWIN='3M';TWINSET=false;}
   if(['res','new','old','worst','best','mentions'].includes(p.get('sort')))SORT=p.get('sort');
   ONLY=p.get('only')||'';
   /* Deep links must reach the crawl days too, or the 2021-2026 half of the picker
@@ -625,24 +647,41 @@ const CHARTS={}; let CHID=0;
    zero axis — the whole point of GEX is which side of zero it is on, and one flat
    purple line said nothing about that. */
 function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$',opts={}){
-  const padL=44,padR=mentions?44:14,padT=12,padB=22;
+  const padL=44,padR=mentions?44:14,padT=opts.spikes&&opts.spikes.length?19:12,padB=22;
   const iw=w-padL-padR, ih=h-padT-padB;
   const n=days.length; if(!n)return '';
-  const mMax=mentions?Math.max(1,...mentions):1;
+  const mMax=mentions?Math.max(1,...mentions.map(v=>v||0)):1;
   const pv=prices.filter(v=>v!=null);
   const pMin=pv.length?Math.min(...pv):0, pMax=pv.length?Math.max(...pv):1;
   const pSpan=(pMax-pMin)||1;
-  const x=i=>padL+(n===1?iw/2:i*iw/(n-1));
-  const bw=Math.max(2,Math.min(11,iw/n*0.55));
+  /* Index spacing is only honest when the points are evenly spaced in time. Once a
+     range mixes daily reads with crawls years apart — or trading sessions with the
+     weekend reads that have no session — equal spacing draws a 2021 crawl and a 2026
+     Tuesday the same width apart, and the eye reads a trend that is an artefact of
+     sampling. On a time axis every point sits at its real date and the gaps are the
+     data. */
+  const ms=d=>Date.parse(d+'T00:00:00Z');
+  const t0=ms(days[0]), tSpan=(ms(days[n-1])-t0)||1;
+  const xs=days.map((d,i)=>opts.timeAxis&&n>1
+    ? padL+(ms(d)-t0)/tSpan*iw
+    : padL+(n===1?iw/2:i*iw/(n-1)));
+  const x=i=>xs[i];
+  /* Width from the tightest real gap, not from n: on a time axis the points bunch,
+     and a width averaged over the range would overlap them into a solid block. */
+  let gap=iw;
+  for(let i=1;i<n;i++)gap=Math.min(gap,xs[i]-xs[i-1]);
+  const bw=Math.max(1.5,Math.min(11,(n===1?iw*0.3:gap)*0.72));
+  const SPK=new Set(opts.spikes||[]);
   let bars='',line='';
   if(mentions)days.forEach((d,i)=>{
+    if(mentions[i]==null)return;   // absent from the board ≠ mentioned zero times
     const bh=mentions[i]/mMax*ih*0.82;
-    const isSpike=d===spikeDay;
+    const isSpike=d===spikeDay||SPK.has(d);
     const ok=settled(d);
     const col=isSpike?'var(--dn)':'var(--bar)';
-    bars+=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${(padT+ih-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,1.5).toFixed(1)}" rx="1.5"`
+    bars+=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${(padT+ih-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,1.5).toFixed(1)}" rx="${bw<3?0.5:1.5}"`
        +(ok?` fill="${col}"`:` fill="none" stroke="${col}" stroke-width="1"`)
-       +`><title>${d} · ${mentions[i]} mentions · read ${capLabel(d)}${ok?' (after the close)':' (BEFORE the close — rolling 24h window, not comparable)'}</title></rect>`;
+       +`><title>${d} · ${mentions[i]} mentions${isSpike?' · CONFIRMED SPIKE':''} · read ${capLabel(d)}${ok?' (after the close)':' (BEFORE the close — rolling 24h window, not comparable)'}</title></rect>`;
   });
   const yOf=v=>padT+ih-((v-pMin)/pSpan)*ih*0.92-ih*0.04;
   let segs='';
@@ -680,25 +719,52 @@ function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$',opts={}){
   }
   const si=days.indexOf(spikeDay);
   const marker=si>=0?`<line x1="${x(si).toFixed(1)}" y1="${padT}" x2="${x(si).toFixed(1)}" y2="${padT+ih}" stroke="var(--dn)" stroke-width="1" stroke-dasharray="3 3" opacity=".8"/>`:'';
+  /* Every confirmed spike in view gets a caret on the price line. The spikes were only
+     ever listed in a table below the chart, so "did the price do anything after this
+     one went loud" — the question the whole project asks — had to be answered by
+     reading a date out of the table and finding it by eye on the axis. */
+  let spikeMarks='';
+  (opts.spikes||[]).forEach(sd=>{
+    const k=days.indexOf(sd); if(k<0||sd===spikeDay)return;
+    const cx=x(k);
+    spikeMarks+=`<line x1="${cx.toFixed(1)}" y1="${padT}" x2="${cx.toFixed(1)}" y2="${(padT+ih).toFixed(1)}" stroke="var(--dn)" stroke-width="1" stroke-dasharray="2 4" opacity=".38"/>`
+      +`<path d="M${(cx-4).toFixed(1)} ${padT-7} L${(cx+4).toFixed(1)} ${padT-7} L${cx.toFixed(1)} ${padT-1} Z" fill="var(--dn)" opacity=".95"><title>${sd} · confirmed spike</title></path>`;
+  });
   const yl=(v,y)=>`<text x="${padL-7}" y="${y}" text-anchor="end" font-size="9.5" fill="var(--ink3)">${v}</text>`;
   const yr=(v,y)=>`<text x="${w-padR+7}" y="${y}" font-size="9.5" fill="var(--ink3)">${v}</text>`;
-  const xl=[0,Math.floor((n-1)/2),n-1].filter((v,i,a)=>a.indexOf(v)===i).map(i=>
-    `<text x="${x(i).toFixed(1)}" y="${h-6}" text-anchor="middle" font-size="9.5" fill="var(--ink3)">${days[i].slice(5)}</text>`).join('');
+  /* MM-DD is unreadable the moment a range crosses a year — "07-18" on a five-year
+     axis could be any of five. */
+  const long=(ms(days[n-1])-ms(days[0]))>400*864e5;
+  const lab=d=>long?d.slice(0,7):d.slice(5);
+  /* The middle tick was chosen by array index and then drawn at its time position.
+     Those are the same place only when the points are evenly spaced — on a five-year
+     axis whose points bunch into the last three months, index n/2 lands near the right
+     edge and its label prints on top of the end one. Pick by position, and drop it if
+     it still crowds an end. */
+  const midX=padL+iw/2;
+  let mi=0; for(let i=1;i<n;i++)if(Math.abs(xs[i]-midX)<Math.abs(xs[mi]-midX))mi=i;
+  const room=(long?7:5)*6;
+  const picks=[0];
+  if(mi>0&&mi<n-1&&xs[mi]-xs[0]>room&&xs[n-1]-xs[mi]>room)picks.push(mi);
+  if(n>1)picks.push(n-1);
+  const xl=picks.map((i,k,a)=>
+    `<text x="${x(i).toFixed(1)}" y="${h-6}" text-anchor="${k===0?'start':k===a.length-1?'end':'middle'}" font-size="9.5" fill="var(--ink3)">${lab(days[i])}</text>`).join('');
+
   /* Only the extremes were labelled, so every value between them was drawn and
      unreadable. The crosshair reads the series back out at whatever day the pointer
      is over — price and mentions together, which is the pair the whole page is about. */
   const id=++CHID;
   const py=v=>padT+ih-((v-pMin)/pSpan)*ih*0.92-ih*0.04;
-  CHARTS[id]={days,mentions,prices,unit,w,padL,iw,n,padT,ih,py,x};
+  CHARTS[id]={days,mentions,prices,unit,w,padL,iw,n,padT,ih,py,x,xs,spikes:SPK};
   const dots=prices.map((v,i)=>v==null?'':
     `<circle class="chDot" data-i="${i}" cx="${x(i).toFixed(1)}" cy="${py(v).toFixed(1)}" r="3.2" fill="var(--acc)" opacity="0"/>`).join('');
 
   return `<svg viewBox="0 0 ${w} ${h}" data-ch="${id}" role="img" aria-label="Mentions and price around the spike">
     <line x1="${padL}" y1="${padT+ih}" x2="${w-padR}" y2="${padT+ih}" stroke="var(--line)"/>
-    ${marker}${refs}${bars}
+    ${marker}${spikeMarks}${refs}${bars}
     ${line?`<path d="${line}" fill="none" stroke="var(--acc)" stroke-width="1.8" stroke-linejoin="round"/>`:''}${segs}
     ${pv.length?yl(unit+pMax.toFixed(pMax<10?2:0),padT+10)+yl(unit+pMin.toFixed(pMin<10?2:0),padT+ih-2):''}
-    ${mentions?yr(mMax,padT+10)+yr('0',padT+ih-2):''}${xl}
+    ${mentions&&bars?yr(mMax,padT+10)+yr('0',padT+ih-2):''}${xl}
     <line class="chCross" x1="0" y1="${padT}" x2="0" y2="${padT+ih}" stroke="var(--ink3)" stroke-width="1" opacity="0"/>
     ${dots}
     <rect class="chHit" x="${padL}" y="${padT}" width="${iw}" height="${ih}" fill="transparent"/>
@@ -789,7 +855,14 @@ function surgeTiers(rows){
     [`Cheap surges · under $${CHEAP_MAX}, climbed ≥15 into top 100`,cheap],
   ].filter(([,l])=>l.length);
 }
-function lastClose(tk){const p=pxOf(tk,DAY);return p&&p.c&&p.c.length?p.c[p.c.length-1]:null;}
+/* The close at or before the day on screen, not the newest one in the file. Picking
+   the series by date and then reading its last element put an August 2026 price beside
+   every row of a 2021 crawl board. Walks back, so a weekend or holiday gets the prior
+   session, and a day before the series starts gets nothing rather than a wrong number. */
+function lastClose(tk){const p=pxOf(tk,DAY);
+  if(!p||!p.c||!p.c.length)return null;
+  let i=p.d.length-1; while(i>=0&&p.d[i]>DAY)i--;
+  return i>=0?p.c[i]:null;}
 
 function boardRows(){
   /* A crawl day has no prior-20 window in this dataset — the daily archive starts in
@@ -860,11 +933,14 @@ function render(push=true){
 
 /* Shared by the board's control row. Two groups so provenance stays visible. */
 function dayOptions(){
-  const wb=WBDAYS.filter(d=>!DAYS.includes(d)).slice().reverse()
+  /* Counted off the filtered list, not off WBDAYS: two crawl dates are also daily
+     archive days, so the label said 230 above 228 options. */
+  const wbd=WBDAYS.filter(d=>!DAYS.includes(d));
+  const wb=wbd.slice().reverse()
     .map(d=>`<option value="${d}"${d===DAY?' selected':''}>${d}${WBSUSPECT.has(d)?' · frozen':''}</option>`).join('');
   return `<optgroup label="daily archive (${DAYS.length})">`
     +DAYS.slice().reverse().map(d=>`<option value="${d}"${d===DAY?' selected':''}>${d}</option>`).join('')
-    +`</optgroup>`+(wb?`<optgroup label="archive.org crawls (${WBDAYS.length}, sparse)">${wb}</optgroup>`:'');
+    +`</optgroup>`+(wb?`<optgroup label="archive.org crawls (${wbd.length}, sparse)">${wb}</optgroup>`:'');
 }
 
 function renderClaim(){
@@ -1038,6 +1114,15 @@ function renderDetail(){
   if(!SEL){$('detail').innerHTML='<div class="empty">Pick a row.</div>';return;}
   $('detail').innerHTML=(VIEW==='aftermath'?eventDetail():boardDetail())||'<div class="empty">Not in this view.</div>';
   fillLive();
+  /* A range can be set by a chip, a deep link, Back, the day picker, or the crawl-day
+     widen in boardDetail — so the data a range needs is fetched where the range is
+     drawn, not at the single entry point that used to do it. Every other route was
+     charting whatever happened to be in memory and printing the shortfall as fact. */
+  if($('detail').querySelector('[data-twin]')){
+    const tk=SEL,day=DAY,tw=TWIN;
+    ensureRange(tk,DAY).then(more=>{
+      if(more&&SEL===tk&&DAY===day&&TWIN===tw)renderDetail();});
+  }
 }
 
 /* Filled after paint, never awaited. A quote is a nicety; the panel must not wait on
@@ -1080,6 +1165,94 @@ function winDays(tk,day,sess){
   }
   return {days:DAYS.slice(Math.max(0,di-pre),end+1),have,priced};
 }
+/* How far back the ticker chart reaches. Calendar spans rather than a point count:
+   the count was fixed at 40, which is six weeks of daily archive but *four years* of
+   crawls, and the axis said neither. */
+const TWINS={'1M':30,'3M':90,'6M':182,'1Y':365,'5Y':1826,'MAX':null};
+const backFrom=(d,n)=>{const x=new Date(d+'T00:00:00Z');x.setUTCDate(x.getUTCDate()-n);
+  return x.toISOString().slice(0,10);};
+
+/* The axis is the union of two clocks that do not line up, which is why it is built
+   here once rather than improvised at each call site: price moves on trading sessions,
+   attention is read every calendar day including weekends, and the crawls land on
+   whatever days archive.org happened to visit. Union — not intersection — because
+   dropping the weekend reads would throw away attention, and dropping sessions with no
+   read would break the price line. The time axis is what makes the union legible. */
+function tkSeries(tk,endDay,win){
+  const R=TWINS[win===undefined?TWIN:win];
+  const start=R==null?'0000':backFrom(endDay,R);
+  const inR=d=>d>=start&&d<=endDay;
+  /* Both price files, merged, rather than asking pxOf to pick one. pxOf answers "which
+     series covers this day", and for an unbounded range there is no such day: a probe
+     older than both makes neither cover, pxOf falls through to prices.json, and MAX
+     drew four months where 5Y drew five years. The two also disagree at the other end
+     — prices.json runs one session ahead of prices_hist.json — so whichever single file
+     is chosen loses one end or the other. Long file first, fresh file second, so the
+     newer close wins wherever they overlap. */
+  const hist=PXH&&PXH[tk], cur=PRICES[tk];
+  const pmap={};
+  const add=v=>{if(v&&v.d)v.d.forEach((d,i)=>{if(inR(d)&&v.c[i]!=null)pmap[d]=v.c[i];});};
+  add(hist); add(cur);
+  const sess=Object.keys(pmap).sort();
+  const st=[hist,cur].filter(v=>v&&v.d&&v.d.length).map(v=>v.d[0]).sort();
+  const pxStart=st.length?st[0]:null;
+  /* Only days this ticker actually appears on. A day it was absent from is not a zero
+     — it is below whatever the board's cutoff was — so it earns no slot. */
+  /* Deduped: 2026-05-12 and 2026-07-18 exist in both lists, and counting them twice
+     would overstate coverage in the note by exactly the amount nobody would notice. */
+  const reads=[...new Set([...DAYS,...WBDAYS])].filter(d=>inR(d)&&mAt(d,tk)!=null).sort();
+  const days=[...new Set([...sess,...reads])].sort();
+  return {days,
+    mentions:days.map(d=>mAt(d,tk)),
+    prices:days.map(d=>pmap[d]??null),
+    reads:reads.length, sess:sess.length,
+    /* Crawl days carry rank and mentions but only the top 100, and they are not
+       spike-detected — worth saying when a range reaches back into them. */
+    crawls:reads.filter(d=>!DAYS.includes(d)).length,
+    pxStart, covered:!!(pxStart&&pxStart<=start)};
+}
+/* Everything a range needs that is not already in memory. The five-year price file is
+   3.4 MB and the crawl snapshots are 230 separate fetches, so neither is paid for by a
+   visitor who never leaves the default. */
+/* The chart can be honestly empty in three different ways — the archive starts after
+   the range, the price file does not reach back that far, or the name simply never
+   went loud — and a bare span line answered none of them. SPY is the case that made
+   this necessary: five years of price, 101 days of attention, zero spikes. */
+function rangeNote(tk,S,inView){
+  if(!S.days.length)return `Nothing in this range for ${tk}.`;
+  const span=`${S.days[0]} → ${S.days[S.days.length-1]}`;
+  const bits=[`<b>${span}</b>`,
+    `${S.sess} session${S.sess===1?'':'s'} priced`,
+    `${S.reads} day${S.reads===1?'':'s'} with a board reading${S.crawls?` (${S.crawls} from archive.org crawls — top 100 only, no spike detection)`:''}`];
+  bits.push(inView.length
+    ? `<b class="dn">${inView.length} confirmed spike${inView.length===1?'':'s'}</b> marked ▲`
+    : `no confirmed spike here — needs ≥30 mentions and ≥3× the prior 20-day median`);
+  /* days[0] is the first day of the *union* — often a board reading with no session
+     behind it — so quoting it as the date price history begins was asserting something
+     the price file never said, and asserting it even for tickers with no price at all. */
+  if(!S.covered)
+    bits.push(S.pxStart?`price history starts ${S.pxStart}, so the price line is shorter than the range`
+                       :`no price history for ${tk}`);
+  return bits.join(' · ')+'.';
+}
+async function ensureRange(tk,endDay){
+  const R=TWINS[TWIN];
+  const start=R==null?'0000':backFrom(endDay,R);
+  const jobs=[];
+  /* Gated on the file being absent, not on how wide the window is. `R>100` asked the
+     wrong question — 60 of the 101 archive days have a 3M window reaching behind
+     prices.json's 2026-04-01 start — and it also never went false, which is what makes
+     the difference here: gated on !PXH this returns false once everything is loaded, so
+     it is safe to call from the render path without the repaint re-triggering itself. */
+  const cur=PRICES[tk];
+  if(!PXH&&(R==null||!cur||!cur.d||!cur.d.length||start<cur.d[0]))jobs.push(ensureHist());
+  const need=WBDAYS.filter(d=>d>=start&&d<=endDay&&!(d in SNAP));
+  if(need.length)jobs.push(loadDays(need));
+  if(!jobs.length)return false;
+  await Promise.all(jobs);
+  return true;
+}
+
 /* A dead end otherwise: "pending" says the window has not closed but not when it
    will, and the answer is knowable — count the sessions still owed and add them at
    five a week. */
@@ -1126,7 +1299,11 @@ function eventDetail(){
     ${st('after 20',e.r20==null?'—':pct(e.r20),cls(e.r20))}
   </div>
   <div class="liveSlot" data-tk="${e.tk}"></div>
-  <div class="chartbox">${chart(days,mm,pl,e.d)}
+  ${/* The focal spike keeps the solid dashed rule; the ticker's other spikes inside
+        the same window get carets. A name that goes loud every three weeks reads very
+        differently from one that went loud once, and the window was hiding that. */''}
+  <div class="chartbox">${chart(days,mm,pl,e.d,760,230,'$',
+      {spikes:EVENTS.filter(v=>v.tk===e.tk&&v.d!==e.d&&days.includes(v.d)).map(v=>v.d)})}
     <div class="cLegend"><span><i style="background:var(--acc)"></i>price</span>
       <span><i style="background:var(--bar)"></i>mentions</span>
       <span><i style="background:var(--dn)"></i>spike day</span>
@@ -1142,12 +1319,13 @@ function boardDetail(){
   const r=boardRows().find(x=>x.ticker===SEL); if(!r)return '';
   /* Chart from whichever series this date belongs to. Filtering DAYS on a 2021 date
      returns nothing, so the chart came out empty beside a board full of numbers. */
-  const series=DAYS.includes(DAY)?DAYS:WBDAYS;
-  const prior=series.filter(d=>d<=DAY).slice(-40);
-  const mm=prior.map(d=>mOf(d,r.ticker));
-  const p=pxOf(r.ticker,prior[0]);
-  const pl=prior.map(d=>{const k=p?p.d.indexOf(d):-1;return k>=0?p.c[k]:null;});
+  /* Three months of daily archive is ~90 points; three months of archive.org crawls
+     can be two. So a crawl day opens wide unless the range was chosen by hand. */
+  if(!TWINSET&&!DAYS.includes(DAY)&&TWIN==='3M')TWIN='5Y';
+  const S=tkSeries(r.ticker,DAY);
+  const prior=S.days, mm=S.mentions, pl=S.prices;
   const mine=EVENTS.filter(e=>e.tk===r.ticker);
+  const inView=mine.filter(e=>prior.includes(e.d)).map(e=>e.d);
   const st=(k,v,c='')=>`<div class="stat"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`;
   const d24=r.mentions-r.mentions_24h_ago;
   /* On a crawl day the detail is still a real board, but three things behind it are
@@ -1173,12 +1351,17 @@ function boardDetail(){
     ${st('past spikes',r.ctx===false?'n/a':mine.length)}
   </div>
   <div class="liveSlot" data-tk="${r.ticker}"></div>
-  <div class="chartbox">${chart(prior,mm,pl,r.hot?DAY:'')}
+  <div class="chartbox">${prior.length?chart(prior,mm,pl,r.hot?DAY:'',760,230,'$',{timeAxis:true,spikes:inView})
+      :'<p class="note">No price or attention data in this range.</p>'}
     <div class="cLegend"><span><i style="background:var(--acc)"></i>price</span>
       <span><i style="background:var(--bar)"></i>mentions</span>
-      <span><i style="border:1px solid var(--bar)"></i>read before the close</span></div>
-    <p class="note">Last 40 ${DAYS.includes(DAY)?'archive':'crawled'} days through ${DAY}${
-      DAYS.includes(DAY)?'':' — crawls are sparse, so these 40 points span years, not weeks'}.</p></div>
+      ${inView.length?'<span><i style="background:var(--dn)"></i>confirmed spike</span>':''}
+      <span><i style="border:1px solid var(--bar)"></i>read before the close</span>
+      <span class="hoverHint">hover for any day's price and mentions</span></div>
+    <div class="winbar"><span class="mut" style="font-size:11.5px">range</span>
+      <div class="chips">${Object.keys(TWINS).map(k=>
+        `<button data-twin="${k}" aria-pressed="${TWIN===k}">${k}</button>`).join('')}</div></div>
+    <p class="note">${rangeNote(r.ticker,S,inView)}</p></div>
   ${mine.length?`<h3>Past confirmed spikes</h3><div class="tblwrap"><table>
     <thead><tr><th>date</th><th class="n">mentions</th><th class="n">×</th><th class="n">5d</th><th class="n">10d</th><th class="n">20d</th></tr></thead>
     <tbody>${mine.slice().sort((a,b)=>b.d.localeCompare(a.d)).map(e=>{
@@ -1383,6 +1566,13 @@ document.addEventListener('click',e=>{
   if(mw){MWIN=mw.dataset.mwin;$('detail').innerHTML=marketHTML();writeURL(true);return;}
   const w=e.target.closest('[data-win]');
   if(w){WIN=w.dataset.win;renderDetail();writeURL(true);return;}
+  const tw=e.target.closest('[data-twin]');
+  if(tw){
+    /* Paints what is in memory at once — a five-year range wants a 3.4 MB price file
+       and up to 230 crawl snapshots — and renderDetail schedules the rest. */
+    TWIN=tw.dataset.twin; TWINSET=true; renderDetail(); writeURL(true);
+    return;
+  }
   if(e.target.closest('#more')){SHOWN+=40;renderList();return;}
   if(e.target.closest('#csv')){exportCSV();return;}
   const row=e.target.closest('.row');
@@ -1401,7 +1591,12 @@ function chartHover(e){
   /* The SVG scales to the container, so client pixels have to go back through the
      viewBox before they mean anything in chart coordinates. */
   const vx=(e.clientX-r.left)/r.width*C.w;
-  const i=Math.max(0,Math.min(C.n-1,Math.round((vx-C.padL)/(C.iw||1)*(C.n-1))));
+  /* Nearest by actual x, not by inverting even spacing. The old arithmetic assumed
+     every point was the same distance from its neighbour, which stops being true the
+     moment a chart uses a time axis — the crosshair would land days or, on a
+     five-year range, months from the pointer. */
+  let i=0,best=Infinity;
+  for(let k=0;k<C.n;k++){const dd=Math.abs(C.xs[k]-vx); if(dd<best){best=dd;i=k;}}
   const d=C.days[i], px=C.prices[i], mn=C.mentions?C.mentions[i]:null;
 
   const cross=svg.querySelector('.chCross');
@@ -1411,11 +1606,13 @@ function chartHover(e){
   let tip=box.querySelector('.chTip');
   if(!tip){tip=document.createElement('div');tip.className='chTip';box.appendChild(tip);}
   const ok=settled(d);
-  tip.innerHTML=`<div class="d">${d}</div>`
+  const isSpk=C.spikes&&C.spikes.has(d);
+  tip.innerHTML=`<div class="d">${d}${isSpk?' <span class="warn">▲ spike</span>':''}</div>`
     +(px!=null?`<div>${C.unit==='$'?'price':'value'} <span class="v">${C.unit}${px.toFixed(px<10?2:2)}</span></div>`
-              :`<div class="mut">no price that day</div>`)
-    +(mn!=null?`<div>mentions <span class="v">${mn.toLocaleString()}</span></div>`:'')
-    +(C.mentions?`<div class="${ok?'mut':'warn'}">read ${capLabel(d)}${ok?'':' · before the close'}</div>`:'');
+              :`<div class="mut">no session that day</div>`)
+    +(C.mentions?(mn!=null?`<div>mentions <span class="v">${mn.toLocaleString()}</span></div>`
+       :`<div class="mut">not on the board that day</div>`):'')
+    +(C.mentions&&mn!=null?`<div class="${ok?'mut':'warn'}">read ${capLabel(d)}${ok?'':' · before the close'}</div>`:'');
   tip.classList.add('on');
   /* Clamp inside the box so the readout never gets cut off at either edge. */
   const bw=box.getBoundingClientRect(), tw=tip.offsetWidth||150;
