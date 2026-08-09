@@ -216,6 +216,16 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .cLegend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--ink3);margin:10px 0 0}
 .cLegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .hoverHint{margin-left:auto;color:var(--ink3);opacity:.75}
+/* The number, its sign and what the sign means, together. Reading GEX off an unlabelled
+   line was the complaint. */
+.gauge{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:0 0 10px;
+  padding:12px 14px;background:var(--sunk);border:1px solid var(--line);
+  border-left:3px solid var(--line2);border-radius:var(--r)}
+.gauge.gpos{border-left-color:var(--up)}
+.gauge.gneg{border-left-color:var(--dn)}
+.gauge .gv{font:650 24px/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.gauge .gtxt{font-size:12.5px;color:var(--ink3);line-height:1.5;flex:1;min-width:220px}
+.gauge .gtxt b{color:var(--ink2)}
 .winbar{display:flex;align-items:center;gap:8px;margin:12px 0 0;flex-wrap:wrap}
 .note{font-size:12px;line-height:1.6;color:var(--ink3);margin:11px 0 0}
 .empty{display:grid;place-items:center;height:100%;color:var(--ink3);font-size:13px;text-align:center;padding:30px}
@@ -329,7 +339,7 @@ const HOT_FLOOR=30, HOT_X=3, CLOSE_UTC=21;
 const BASKET=new Set(["GME","AMC","MSTR","PLTR","RKLB","SOFI","TSLA","NVDA","AMD","INTC","HOOD","COIN","RDDT","SMCI","IONQ","RGTI","QUBT","BBAI","SOUN","AI","CRWV","NBIS","TEM","ACHR","JOBY","LUNR","ASTS","SPCE","OKLO","SMR","MARA","RIOT","CLSK","WULF","DJT","OPEN","CVNA","UPST","AFRM","HIMS","TLRY","RUM","QS","BB","NOK","NIO","RIVN","LCID","PLUG","W","NVAX"]);
 const WINS={'5d':5,'10d':10,'20d':20,'all':null};
 
-let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},PXH=null,RISK=null,SNAP={},DAY='',
+let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},PXH=null,RISK=null,DIXROWS=null,MWIN='2Y',SNAP={},DAY='',
     VIEW='today',SEL=null,Q='',WIN='10d',SORT='res',ONLY='',SHOWN=40;
 
 const $=id=>document.getElementById(id);
@@ -370,6 +380,14 @@ const pxOf=(tk,day)=>{
   if(covers(b))return b;
   return a||b||null;
 };
+async function ensureDix(){
+  try{
+    const txt=await (await fetch(`${BASE}data/DIX.csv`)).text();
+    DIXROWS=txt.trim().split(/\r?\n/).slice(1).map(l=>l.split(','))
+      .filter(r=>r.length>=4&&r[3]!==''&&!isNaN(+r[3]));
+  }catch(e){DIXROWS=[];}
+}
+
 async function ensureHist(){
   if(PXH)return;
   try{PXH=await gj(`${BASE}data/prices_hist.json`);}catch(e){PXH={};}
@@ -448,6 +466,7 @@ function stateURL(){
   if(SEL)p.set('sel',SEL);
   if(Q)p.set('q',Q);
   if(WIN!=='10d')p.set('w',WIN);
+  if(MWIN!=='2Y')p.set('mw',MWIN);
   if(SORT!=='res')p.set('sort',SORT);
   if(ONLY)p.set('only',ONLY);
   if(DAY!==DAYS[DAYS.length-1])p.set('d',DAY);
@@ -479,6 +498,7 @@ function readURL(){
   if(['today','aftermath','market','method'].includes(p.get('v')))VIEW=p.get('v');
   SEL=p.get('sel')||null; Q=(p.get('q')||'').toUpperCase();
   if(p.get('w') in WINS)WIN=p.get('w');
+  if(['3M','1Y','2Y','5Y','ALL'].includes(p.get('mw')))MWIN=p.get('mw');
   if(['res','new','old','worst','best','mentions'].includes(p.get('sort')))SORT=p.get('sort');
   ONLY=p.get('only')||'';
   /* Deep links must reach the crawl days too, or the 2021-2026 half of the picker
@@ -584,7 +604,11 @@ async function quote(tk){
    replaces the SVG wholesale and the market view holds two at once. */
 const CHARTS={}; let CHID=0;
 
-function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$'){
+/* opts: {sign:true} colours the line by the sign of each segment and draws a heavy
+   zero axis — the whole point of GEX is which side of zero it is on, and one flat
+   purple line said nothing about that. {guides:[[value,colour,label]]} draws dashed
+   reference levels, which is how DIX's 0.45 / 0.40 bands read on the original. */
+function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$',opts={}){
   const padL=44,padR=mentions?44:14,padT=12,padB=22;
   const iw=w-padL-padR, ih=h-padT-padB;
   const n=days.length; if(!n)return '';
@@ -604,12 +628,47 @@ function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$'){
        +(ok?` fill="${col}"`:` fill="none" stroke="${col}" stroke-width="1"`)
        +`><title>${d} · ${mentions[i]} mentions · read ${capLabel(d)}${ok?' (after the close)':' (BEFORE the close — rolling 24h window, not comparable)'}</title></rect>`;
   });
-  let started=false;
-  prices.forEach((v,i)=>{
-    if(v==null)return;
-    const py=padT+ih-((v-pMin)/pSpan)*ih*0.92-ih*0.04;
-    line+=(started?'L':'M')+x(i).toFixed(1)+' '+py.toFixed(1)+' ';started=true;
-  });
+  const yOf=v=>padT+ih-((v-pMin)/pSpan)*ih*0.92-ih*0.04;
+  let segs='';
+  if(opts.sign){
+    /* Drawn as runs rather than one path so each stretch carries its own colour. A
+       single stroke would have to pick one, and the sign is the reading. */
+    let run=[],runPos=null;
+    const flush=()=>{
+      if(run.length<2){run=[];return;}
+      segs+=`<path d="${run.map((pt,k)=>(k?'L':'M')+pt[0].toFixed(1)+' '+pt[1].toFixed(1)).join(' ')}"
+        fill="none" stroke="${runPos?'var(--up)':'var(--dn)'}" stroke-width="1.8" stroke-linejoin="round"/>`;
+      run=[run[run.length-1]];
+    };
+    prices.forEach((v,i)=>{
+      if(v==null){flush();run=[];runPos=null;return;}
+      const pos=v>=0;
+      if(runPos!==null&&pos!==runPos){flush();runPos=pos;}
+      else if(runPos===null)runPos=pos;
+      run.push([x(i),yOf(v)]);
+    });
+    flush();
+  }else{
+    let started=false;
+    prices.forEach((v,i)=>{
+      if(v==null)return;
+      line+=(started?'L':'M')+x(i).toFixed(1)+' '+yOf(v).toFixed(1)+' ';started=true;
+    });
+  }
+  let refs='';
+  if(opts.sign&&pMin<0&&pMax>0){
+    const zy=yOf(0);
+    refs+=`<line x1="${padL}" y1="${zy.toFixed(1)}" x2="${w-padR}" y2="${zy.toFixed(1)}"
+      stroke="var(--ink3)" stroke-width="1.4" opacity=".85"/>`
+      +`<text x="${w-padR-2}" y="${(zy-4).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--ink3)">0</text>`;
+  }
+  for(const [v,col,lab] of (opts.guides||[])){
+    if(v<pMin||v>pMax)continue;
+    const gy=yOf(v);
+    refs+=`<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}"
+      stroke="${col}" stroke-width="1" stroke-dasharray="4 3" opacity=".7"/>`
+      +`<text x="${padL+4}" y="${(gy-4).toFixed(1)}" font-size="9" fill="${col}" opacity=".9">${lab}</text>`;
+  }
   const si=days.indexOf(spikeDay);
   const marker=si>=0?`<line x1="${x(si).toFixed(1)}" y1="${padT}" x2="${x(si).toFixed(1)}" y2="${padT+ih}" stroke="var(--dn)" stroke-width="1" stroke-dasharray="3 3" opacity=".8"/>`:'';
   const yl=(v,y)=>`<text x="${padL-7}" y="${y}" text-anchor="end" font-size="9.5" fill="var(--ink3)">${v}</text>`;
@@ -627,8 +686,8 @@ function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$'){
 
   return `<svg viewBox="0 0 ${w} ${h}" data-ch="${id}" role="img" aria-label="Mentions and price around the spike">
     <line x1="${padL}" y1="${padT+ih}" x2="${w-padR}" y2="${padT+ih}" stroke="var(--line)"/>
-    ${marker}${bars}
-    ${line?`<path d="${line}" fill="none" stroke="var(--acc)" stroke-width="1.8" stroke-linejoin="round"/>`:''}
+    ${marker}${refs}${bars}
+    ${line?`<path d="${line}" fill="none" stroke="var(--acc)" stroke-width="1.8" stroke-linejoin="round"/>`:''}${segs}
     ${pv.length?yl(unit+pMax.toFixed(pMax<10?2:0),padT+10)+yl(unit+pMin.toFixed(pMin<10?2:0),padT+ih-2):''}
     ${mentions?yr(mMax,padT+10)+yr('0',padT+ih-2):''}${xl}
     <line class="chCross" x1="0" y1="${padT}" x2="0" y2="${padT+ih}" stroke="var(--ink3)" stroke-width="1" opacity="0"/>
@@ -715,7 +774,13 @@ function render(push=true){
   $('pane').classList.toggle('single',VIEW==='market'||VIEW==='method');
   renderClaim();
   if(VIEW==='method'){$('detail').innerHTML=methodHTML();writeURL(push);return;}
-  if(VIEW==='market'){$('detail').innerHTML=marketHTML();writeURL(push);return;}
+  if(VIEW==='market'){
+    $('detail').innerHTML=marketHTML();writeURL(push);
+    /* 3,840 sessions back to 2011 in a 250KB CSV — worth fetching, not worth fetching
+       for every visitor who never opens Market. */
+    if(DIXROWS===null){DIXROWS=false;ensureDix().then(()=>{if(VIEW==='market')$('detail').innerHTML=marketHTML();});}
+    return;
+  }
   renderList();
   renderDetail();
   writeURL(push);
@@ -1083,28 +1148,63 @@ function rankHTML(){
 }
 
 function marketHTML(){
-  if(!RISK)return `<div class="dHead"><div><div class="dTk">Market</div>
+  if(!RISK&&!DIXROWS)return `<div class="dHead"><div><div class="dTk">Market</div>
     <p class="dSub">Systemic gauges, independent of the attention archive.</p></div></div>
     <p class="note">Loading market gauges…</p>`;
-  const gauge=(title,dates,vals,note,unit='')=>{
-    if(!dates||!dates.length)return '';
-    const last=vals[vals.length-1];
-    const lo=Math.min(...vals),hi=Math.max(...vals);
-    const p=Math.round((vals.filter(v=>v<last).length/vals.length)*100);
-    return `<h3>${title}</h3>
-      <div class="stats"><div class="stat"><div class="k">latest · ${dates[dates.length-1]}</div>
-        <div class="v">${unit}${last.toFixed(2)}</div></div>
-        <div class="stat"><div class="k">percentile in window</div><div class="v">P${p}</div></div>
-        <div class="stat"><div class="k">range</div><div class="v">${lo.toFixed(1)} – ${hi.toFixed(1)}</div></div></div>
-      <div class="chartbox">${chart(dates,null,vals,'',760,190,unit)}
-        <p class="note">${note}</p></div>`;
-  };
-  return `<div class="dHead"><div><div class="dTk">Market</div>
-      <p class="dSub">Systemic gauges, independent of the attention archive.</p></div></div>`
-    +gauge('SKEW · black-swan index',RISK.dates.slice(-90),RISK.skew.slice(-90),
-        'Deliberately not about WSB attention. It is here so a result can be read against the regime it happened in.')
-    +gauge('GEX · dealer gamma ($bn)',(RISK.gex_dates||[]).slice(-60),(RISK.gex_bn||[]).slice(-60),
-        'Billions of dollars of dealer gamma. Positive suppresses volatility; negative amplifies it.');
+
+  const R=({'3M':63,'1Y':252,'2Y':504,'5Y':1260,'ALL':null})[MWIN];
+  const cut=a=>R==null?a:a.slice(-R);
+  const bar=`<div class="winbar"><span class="mut" style="font-size:11.5px">range</span>
+    <div class="chips">${['3M','1Y','2Y','5Y','ALL'].map(k=>
+      `<button data-mwin="${k}" aria-pressed="${MWIN===k}">${k}</button>`).join('')}</div></div>`;
+
+  let out=`<div class="dHead"><div><div class="dTk">Market</div>
+    <p class="dSub">Systemic gauges, independent of the attention archive.</p></div></div>${bar}`;
+
+  if(DIXROWS&&DIXROWS.length){
+    const rows=cut(DIXROWS);
+    const d=rows.map(r=>r[0]), gx=rows.map(r=>+r[3]/1e9), dx=rows.map(r=>+r[2]);
+    const g=gx[gx.length-1], dv=dx[dx.length-1];
+    const pos=g>=0;
+    /* The sign is the whole reading, so it is stated in colour, in words and by the
+       zero axis on the chart. One flat line and a bare number said none of it. */
+    out+=`<h3>GEX · dealer gamma <span class="mut" style="font-weight:400">(SqueezeMetrics official)</span></h3>
+      <div class="gauge ${pos?'gpos':'gneg'}">
+        <div class="gv ${pos?'up':'dn'}">${pos?'+':''}${g.toFixed(1)}B</div>
+        <div class="gtxt"><b>${pos?'Positive gamma':'Negative gamma'}</b> —
+          ${pos?'hedging flows dampen moves; the market tends to pin':'hedging flows amplify moves; a fragile regime'}
+          <span class="mut">· as of ${d[d.length-1]}</span></div>
+      </div>
+      <div class="chartbox">${chart(d,null,gx,'',760,200,'',{sign:true})}
+        <div class="cLegend"><span><i style="background:var(--up)"></i>above zero · volatility suppressed</span>
+          <span><i style="background:var(--dn)"></i>below zero · volatility amplified</span>
+          <span class="hoverHint">hover for any day's value</span></div>
+        <p class="note">${rows.length} sessions · ${d[0]} → ${d[d.length-1]} ·
+          ${gx.filter(v=>v<0).length} of them below zero.</p></div>`;
+
+    const zone=dv>=0.45?['strong (dark-pool accumulation)','up']:dv<0.40?['weak','dn']:['neutral','mut'];
+    out+=`<h3>DIX · dark-pool index <span class="mut" style="font-weight:400">(SqueezeMetrics official)</span></h3>
+      <div class="gauge"><div class="gv ${zone[1]}">${dv.toFixed(3)}</div>
+        <div class="gtxt"><b>${zone[0]}</b> — buying intensity 0–1.
+          <span class="mut">· range over this window [${Math.min(...dx).toFixed(2)}, ${Math.max(...dx).toFixed(2)}] · ${d[d.length-1]}</span></div></div>
+      <div class="chartbox">${chart(d,null,dx,'',760,180,'',{guides:[[0.45,'var(--up)','0.45'],[0.40,'var(--dn)','0.40']]})}
+        <p class="note">Per its authors, ≥0.45 has typically preceded strength and &lt;0.40 weakness —
+          their statistical observation, not this site's endorsement.</p></div>`;
+  }
+
+  if(RISK&&RISK.dates&&RISK.dates.length){
+    const dd=cut(RISK.dates), sk=cut(RISK.skew);
+    const last=sk[sk.length-1];
+    const p=Math.round(sk.filter(v=>v<last).length/sk.length*100);
+    out+=`<h3>SKEW · black-swan index</h3>
+      <div class="gauge"><div class="gv">${last.toFixed(2)}</div>
+        <div class="gtxt">P${p} over this window · long-run centre is about 120; ≥140 means crowded
+          tail-hedge demand. <span class="mut">· ${dd[dd.length-1]}</span></div></div>
+      <div class="chartbox">${chart(dd,null,sk,'',760,180,'')}
+        <p class="note">The price of panic insurance. Its predictive power for forward returns has
+          always been weak — an environment gauge, not a signal.</p></div>`;
+  }
+  return out;
 }
 
 /* ---------- events ---------- */
@@ -1153,6 +1253,8 @@ document.addEventListener('click',e=>{
     render();$('pane').classList.add('showDetail');
     const r=$('list').querySelector(`[data-k="${CSS.escape(SEL)}"]`);
     if(r)r.scrollIntoView({block:'center'});return;}
+  const mw=e.target.closest('[data-mwin]');
+  if(mw){MWIN=mw.dataset.mwin;$('detail').innerHTML=marketHTML();writeURL(true);return;}
   const w=e.target.closest('[data-win]');
   if(w){WIN=w.dataset.win;renderDetail();writeURL(true);return;}
   if(e.target.closest('#more')){SHOWN+=40;renderList();return;}
