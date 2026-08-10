@@ -82,7 +82,35 @@ def get(url, timeout=90):
 
 
 def survey():
-    """Every crawl of the board, as {date: [(timestamp, url), ...]}."""
+    """Every crawl of the board, as {date: [(timestamp, url), ...]}.
+
+    The URL pattern is deliberately narrow, and the obvious widening is a trap worth
+    documenting because it looks like free data.
+
+    `apewisdom.io/` — the bare homepage — is archived on 264 days against this pattern's
+    196, and 108 of those are days no other source covers. It parses cleanly: same
+    columns (#, Name, Symbol, Mentions, 24h, Trend, Upvotes), same 100 rows, same
+    /stocks/<TK>/ links, no crypto anywhere. Adding it here would have grown the crawl
+    archive by about half, and nothing in the parser or the validator would have
+    objected.
+
+    It is not this board. On the 128 days where both were crawled, only 11-20% of the
+    tickers they share carry the same mention count, and the two disagree on rank order.
+    The decisive pair is 2021-06-08, crawled five seconds apart:
+
+        homepage 15:40:51   BB 4199  CLOV 4061  GME 2309  AMC 2144
+        r/wsb    15:40:56   BB 4309  CLOV 4284  GME 2196  AMC 1890
+
+    A rolling 24-hour count does not move by 110 in five seconds, and the differences do
+    not run one way — BB is lower on the homepage, GME higher — so it is not a superset
+    of this board either. It is a different aggregation wearing the same table.
+
+    So the homepage stays out. This is the same failure the crawl backfill already hit
+    twice, in two other costumes: a gzipped `id_` response that parsed to an empty board
+    without erroring, and a Mentions column that carries the class `th-votes`. Data that
+    looks right and is not is the expensive kind here, because the whole archive is
+    numbers nobody can check against anything else.
+    """
     q = urllib.parse.urlencode({
         "url": "apewisdom.io/wallstreetbets*", "output": "json",
         "fl": "timestamp,original,statuscode", "filter": "statuscode:200",
