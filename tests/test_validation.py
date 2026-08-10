@@ -346,3 +346,54 @@ def test_the_browser_scan_reproduces_the_python_away_from_the_default():
                     ["node", os.path.join(ROOT, "scripts", "crosscheck_scan.js"), ref]):
             r = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT)
             assert r.returncode == 0, f"{os.path.basename(cmd[1])} failed:\n{r.stdout}\n{r.stderr}"
+
+
+def test_price_shards_align_with_the_research_pack():
+    """data/px/ is a display-only price history for every ticker the archive has seen —
+    the research pack covers only the ~155 that spike, so 70% of the board opened to a
+    chart with no line. Two things can go wrong silently.
+
+    The first is the shared calendar. Every shard stores `i`, an index into
+    data/px/_dates.json, so a date inserted into the middle of that file would move every
+    shard's closes to the wrong days without changing a single shard. Sorted and unique
+    is the invariant that makes `i` mean anything.
+
+    The second is the numbers. Where a ticker exists in both, the shard and
+    prices_hist.json must agree — they are the same source read by two scripts, and two
+    readers of one endpoint that quietly disagree is how half a pack ends up wrong while
+    looking fine.
+    """
+    px = os.path.join(ROOT, "data", "px")
+    dates_file = os.path.join(px, "_dates.json")
+    if not os.path.exists(dates_file):
+        return
+    with open(dates_file) as f:
+        dates = json.load(f)
+    assert dates == sorted(set(dates)), "data/px/_dates.json must be sorted and unique"
+
+    with open(os.path.join(ROOT, "data", "prices_hist.json")) as f:
+        hist = json.load(f)
+
+    checked = mismatches = 0
+    for name in sorted(os.listdir(px)):
+        if name.startswith("_") or not name.endswith(".json"):
+            continue
+        tk = name[:-5]
+        with open(os.path.join(px, name)) as f:
+            sh = json.load(f)
+        assert sh["i"] >= 0 and sh["i"] + len(sh["c"]) <= len(dates), (
+            f"{tk} runs off the end of the calendar: i={sh['i']} len={len(sh['c'])}")
+        if tk not in hist:
+            continue
+        old = dict(zip(hist[tk]["d"], hist[tk]["c"]))
+        for k, v in enumerate(sh["c"]):
+            if v is None:
+                continue
+            d = dates[sh["i"] + k]
+            if d in old:
+                checked += 1
+                if abs(v - old[d]) > 0.011:
+                    mismatches += 1
+    assert mismatches == 0, (
+        f"{mismatches} of {checked} shared closes disagree between data/px and "
+        f"prices_hist.json")

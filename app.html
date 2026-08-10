@@ -477,6 +477,39 @@ async function ensureDix(){
   }catch(e){DIXROWS=[];}
 }
 
+/* One file per ticker under data/px/, closes aligned to a shared session calendar.
+   The research pack (prices.json / prices_hist.json) covers the 155 tickers that spike
+   under the default definition; the board is 500 deep and the archive has seen 1,868, so
+   70% of what you can click on had no line at all.
+
+   Display only, and deliberately narrow about it: shards feed tkSeries and nothing else.
+   ret(), track(), the event outcomes and the headline all go through priceIdx -> pxOf,
+   which still sees only the research pack — a number in the finding must not depend on
+   which shards a visitor happened to open. They are also not fed to lastClose, whose
+   value decides membership of the cheap-stock tier: a filter whose population depends on
+   what has been lazily fetched is not a filter. */
+let PXDATES=null, PXMISS=null;
+const PXSH={};
+async function ensureShard(tk){
+  if(tk in PXSH)return PXSH[tk];
+  if(!PXDATES){
+    try{PXDATES=await gj(`${BASE}data/px/_dates.json`);}catch(e){PXDATES=[];}
+    try{PXMISS=await gj(`${BASE}data/px/_missing.json`);}catch(e){PXMISS={};}
+  }
+  if(!PXDATES.length||(PXMISS&&tk in PXMISS))return PXSH[tk]=null;
+  try{
+    const s=await gj(`${BASE}data/px/${encodeURIComponent(tk)}.json`);
+    const d=[],c=[];
+    /* Nulls are halted or pre-listing sessions, kept in the shard so `i` stays an index
+       into the shared calendar rather than a per-ticker offset. Dropped on expansion. */
+    s.c.forEach((v,k)=>{if(v!=null){d.push(PXDATES[s.i+k]);c.push(v);}});
+    return PXSH[tk]=d.length?{d,c}:null;
+  }catch(e){return PXSH[tk]=null;}
+}
+/* Whether a ticker is known to have no price at all, as opposed to not fetched yet —
+   the difference between "we looked and there is nothing" and silence. */
+const pxUnresolvable=tk=>!!(PXMISS&&tk in PXMISS);
+
 async function ensureHist(){
   if(PXH)return;
   try{PXH=await gj(`${BASE}data/prices_hist.json`);}catch(e){PXH={};}
@@ -1613,12 +1646,14 @@ function tkSeries(tk,endDay,win){
      — prices.json runs one session ahead of prices_hist.json — so whichever single file
      is chosen loses one end or the other. Long file first, fresh file second, so the
      newer close wins wherever they overlap. */
-  const hist=PXH&&PXH[tk], cur=PRICES[tk];
+  const hist=PXH&&PXH[tk], cur=PRICES[tk], sh=PXSH[tk];
   const pmap={};
   const add=v=>{if(v&&v.d)v.d.forEach((d,i)=>{if(inR(d)&&v.c[i]!=null)pmap[d]=v.c[i];});};
-  add(hist); add(cur);
+  /* Shard first: it is the deepest but the least fresh, written once and never
+     rewritten, so the research pack's newer bars win where they overlap. */
+  add(sh); add(hist); add(cur);
   const sess=Object.keys(pmap).sort();
-  const st=[hist,cur].filter(v=>v&&v.d&&v.d.length).map(v=>v.d[0]).sort();
+  const st=[sh,hist,cur].filter(v=>v&&v.d&&v.d.length).map(v=>v.d[0]).sort();
   const pxStart=st.length?st[0]:null;
   /* Only days this ticker actually appears on. A day it was absent from is not a zero
      — it is below whatever the board's cutoff was — so it earns no slot. */
@@ -1665,8 +1700,11 @@ function rangeNote(tk,S,inView){
        500-deep board has never been priced, and a name reached through a rank-move
        filter like Deep risers routinely has no line at all. Saying which set a ticker
        failed to join is the difference between a broken chart and an explained one. */
-    :`<b>no price for ${tk}</b> — prices are fetched only for tickers that spike under
-      the default definition, and this one never has`);
+    :pxUnresolvable(tk)
+       ? `<b>no price series exists for ${tk}</b> — the symbol does not resolve at the
+          price source. ApeWisdom's tail carries strings that are not securities.`
+       : `<b>no price for ${tk} yet</b> — the per-ticker history is fetched in the
+          background; this one has not landed.`);
   const cuts=(S.cuts||[]);
   if(cuts.length)bits.push(cuts.map(c=>`the archived board went <b>top ${c.from} → top ${c.to}</b>
     on ${c.d}</b>, so bars starting there may be collection rather than attention`).join(' · '));
@@ -1683,6 +1721,10 @@ async function ensureRange(tk,endDay){
      it is safe to call from the render path without the repaint re-triggering itself. */
   const cur=PRICES[tk];
   if(!PXH&&(R==null||!cur||!cur.d||!cur.d.length||start<cur.d[0]))jobs.push(ensureHist());
+  /* Fetched for anything the research pack does not already cover deeply. Resolves once
+     per ticker per session — a null result is cached too, so a name with no price is
+     asked for once. */
+  if(!(tk in PXSH)&&!(PXH&&PXH[tk]))jobs.push(ensureShard(tk));
   const need=WBDAYS.filter(d=>d>=start&&d<=endDay&&!(d in SNAP));
   if(need.length)jobs.push(loadDays(need));
   if(!jobs.length)return false;
