@@ -26,8 +26,17 @@ Two decisions carry the design.
     job, and the live quote covers today.
 
 Tickers that do not resolve are recorded in data/px/_missing.json rather than retried
-every run. ApeWisdom's tail is full of things that are not securities, and a site that
-cannot tell "no price exists" from "not fetched yet" tells the reader neither.
+every run, so the page can distinguish "we looked and there is nothing" from "not fetched
+yet" — which had been the same blank.
+
+Fourteen of 1,872 land there, and they are not the junk the first draft of this comment
+assumed. Retried three times each against a control group that answered normally, so the
+400s are the endpoint's and not a rate limit: BK returns nothing while BNY returns five
+years, because Bank of New York Mellon retired the one for the other. APE converted into
+AMC; ABB and CBD delisted their ADRs. The archive keeps mentions of tickers that have
+stopped existing, and the price source only knows what trades today. Some of the fourteen
+are genuinely not securities — AUD, CN, CO — but the file cannot tell them apart, so
+nothing downstream claims to.
 
 **Display only.** Nothing here reaches prices.json, events.json or finding.json. The
 research pack stays the research pack; these exist so a chart can show a line.
@@ -124,6 +133,25 @@ def main():
         size = sum(os.path.getsize(os.path.join(OUT, n)) for n in os.listdir(OUT))
         print(f"data/px is {size/1e6:.1f} MB")
         return
+
+    if "--retry-missing" in sys.argv:
+        # A 400 during a long unattended run is ambiguous: the endpoint answering "no such
+        # symbol", or it having had enough of us. The first is permanent and the second is
+        # not, and the site says something different about each — so the list is re-asked
+        # with a control alongside it. If the control fails, this run proves nothing and
+        # says so rather than confirming the entries.
+        ctrl = fetch("AAPL")
+        if not ctrl:
+            sys.exit("control ticker AAPL did not resolve either — the source is refusing "
+                     "us, so nothing can be concluded about the missing list right now")
+        todo = sorted(missing)
+        print(f"re-asking {len(todo)} unresolved (control AAPL: {len(ctrl)} bars)")
+        for tk in list(todo):
+            if fetch(tk):
+                del missing[tk]
+                print(f"  {tk} resolves after all")
+            time.sleep(PAUSE)
+        todo = [t for t in todo if t not in missing]
 
     if "--refresh" in sys.argv:
         todo = [a.upper() for a in sys.argv[sys.argv.index("--refresh") + 1:]

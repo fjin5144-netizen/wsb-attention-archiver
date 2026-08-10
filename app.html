@@ -1701,8 +1701,10 @@ function rangeNote(tk,S,inView){
        filter like Deep risers routinely has no line at all. Saying which set a ticker
        failed to join is the difference between a broken chart and an explained one. */
     :pxUnresolvable(tk)
-       ? `<b>no price series exists for ${tk}</b> — the symbol does not resolve at the
-          price source. ApeWisdom's tail carries strings that are not securities.`
+       ? `<b>the price source does not know ${tk}</b> — it may have been renamed or
+          delisted, or never have been a security. BK is the clear case: Bank of New York
+          Mellon retired that symbol for BNY, so the archive holds mentions of a ticker
+          that no longer exists to be priced.`
        : `<b>no price for ${tk} yet</b> — the per-ticker history is fetched in the
           background; this one has not landed.`);
   const cuts=(S.cuts||[]);
