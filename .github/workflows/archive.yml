@@ -73,12 +73,16 @@ jobs:
       # 变化 —— 但事件集会,所以跟着一起重算,免得站点上两个数字来自不同时刻。
       - name: Recompute the cross-period check
         run: python3 scripts/finding_rank.py
-      # 每天给新上榜的票补价格分片。研究价格包(prices.json)只覆盖按默认定义 spike 过的票 ——
-      # 那是对的,结论就该只在那个集合上测 —— 但 500 深的榜里 70% 的票点开是没有线的空图。
-      # 分片是纯展示用的:一票一文件、日期共用一份日历、写一次就不再动,所以它不像 prices.json
-      # 那样每天重写整包。限量是为了让每天的增量有上界:新面孔一天十几个,60 够用还有富余。
-      - name: Shard prices for tickers new to the board
-        run: python3 scripts/shard_prices.py --limit 60
+      # 展示用的逐票价格历史。研究价格包(prices.json)只覆盖按默认定义 spike 过的 155 只 ——
+      # 那是对的,结论就该只在那个集合上测 —— 但 500 深的榜里 70% 的票点开是空图。
+      #
+      # --daily 做三件事:把交易日历往后接、给新上榜的票补分片、把当日榜上落后的分片追平。
+      # 每天重写几百个分片听起来很贵,实测不是:分片只在尾部增长,正是 git delta 最擅长的
+      # 情形 —— 7 天 × 500 只、原始写入 30.8 MB,打包后 244 KiB。所以瓶颈是抓取不是磁盘。
+      # 退市的票会被记进 _ends.json,否则它们永远"落后"、每天都被重抓且永远追不上,
+      # 还把真正该刷新的票挤出队列(WFH 2021 年就停牌了,一度排在队首)。
+      - name: Keep the per-ticker price shards current
+        run: python3 scripts/shard_prices.py --daily
       # 浏览器里那份扫描是 precompute_events.py 和 finding.py 的 JS 重写,滑块一动就跑它。
       # selfCheck() 只在默认参数下比对 —— 而默认恰恰是唯一有黄金文件的那一组。这一步在
       # 40 组定义上把两边逐条对齐(事件集 + describe() 的每个字段),抓到过一个黄金文件

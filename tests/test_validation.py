@@ -374,7 +374,8 @@ def test_price_shards_align_with_the_research_pack():
     with open(os.path.join(ROOT, "data", "prices_hist.json")) as f:
         hist = json.load(f)
 
-    checked = mismatches = 0
+    checked = 0
+    disagree = {}
     for name in sorted(os.listdir(px)):
         if name.startswith("_") or not name.endswith(".json"):
             continue
@@ -390,10 +391,46 @@ def test_price_shards_align_with_the_research_pack():
             if v is None:
                 continue
             d = dates[sh["i"] + k]
-            if d in old:
+            if d in old and old[d]:
                 checked += 1
                 if abs(v - old[d]) > 0.011:
-                    mismatches += 1
-    assert mismatches == 0, (
-        f"{mismatches} of {checked} shared closes disagree between data/px and "
-        f"prices_hist.json")
+                    disagree.setdefault(tk, []).append(round(old[d] / v, 4))
+
+    # Not "they must be equal". They were, until the shards started being refreshed, and
+    # then IBM's 61 pre-2021-11-03 closes moved by a constant factor of 0.956 — the
+    # Kyndryl spinoff, re-based in one series and not the other. That is a corporate
+    # action, not a bug, and it has a signature: every disagreeing close for the ticker
+    # shifts by the *same* ratio. A parsing fault or a mixed-up field would not.
+    #
+    # So the ratio is what gets asserted. A ticker whose disagreements scatter is a real
+    # defect and still fails; one that moves as a block is a re-basing and is allowed,
+    # with the tickers named so a new one is noticed rather than absorbed.
+    scattered = {tk: sorted(set(r))[:5] for tk, r in disagree.items()
+                 if len(set(r)) > 1 or not r}
+    assert not scattered, (
+        f"closes disagree between data/px and prices_hist.json by inconsistent ratios, "
+        f"which no corporate action explains: {scattered}")
+    assert checked > 50_000, f"only {checked} closes compared — the check is not running"
+    assert set(disagree) <= {"IBM"}, (
+        f"a new ticker was re-based between the two price series: "
+        f"{ {tk: (len(r), r[0]) for tk, r in disagree.items()} }")
+
+    # _ends.json is what stops the daily job chasing delisted tickers forever: a name that
+    # stopped trading is permanently behind the calendar, so it sorts to the front of the
+    # stale queue every run, gets refetched, does not move, and crowds out the shards that
+    # would actually gain a session. The entry is only meaningful if it names the date the
+    # shard really ends on — a stale entry would let a live ticker go unrefreshed instead.
+    ends_file = os.path.join(px, "_ends.json")
+    if os.path.exists(ends_file):
+        with open(ends_file) as f:
+            ends = json.load(f)
+        for tk, claimed in ends.items():
+            path = os.path.join(px, f"{tk}.json")
+            if not os.path.exists(path):
+                continue
+            with open(path) as f:
+                sh = json.load(f)
+            real = next((dates[sh["i"] + k] for k in range(len(sh["c"]) - 1, -1, -1)
+                         if sh["c"][k] is not None), None)
+            assert real == claimed, (
+                f"_ends says {tk} ends {claimed} but its shard ends {real}")

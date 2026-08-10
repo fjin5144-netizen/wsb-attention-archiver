@@ -19,11 +19,17 @@ Two decisions carry the design.
     held, not one of them trades on a session SPY does not, so an index built from SPY
     never has to be inserted into, which would invalidate every shard's `i`.
 
-  * One file per ticker, written once. The daily job rewrites prices.json — 264 KB a
-    day, and git keeps every version. A 14 MB pack rewritten daily would be 5 GB a year.
-    Shards are history: written when a ticker first appears, refreshed only when asked
-    for by --refresh, and otherwise never touched. The recent window stays prices.json's
-    job, and the live quote covers today.
+  * One file per ticker, and refreshing them daily is cheap — which is the opposite of
+    what this comment said first. The estimate was "14 MB rewritten daily is 5 GB a
+    year", arrived at by multiplying and not by measuring. Measured: seven days of
+    rewriting 500 shards, 30.8 MB of raw writes, packs to 244 KiB. A shard only ever
+    grows at the tail, which is the case git's delta compression is best at, so the
+    honest figure is about 35 KiB a day for 500 tickers.
+
+    So the constraint is the fetch, not the disk: --daily extends the calendar, fills in
+    tickers new to the board, and refreshes the shards of tickers on the newest board
+    that have fallen behind it. Off-board names keep whatever history they were written
+    with, because nobody is looking at them and they are history either way.
 
 Tickers that do not resolve are recorded in data/px/_missing.json rather than retried
 every run, so the page can distinguish "we looked and there is nothing" from "not fetched
@@ -45,6 +51,9 @@ research pack stays the research pack; these exist so a chart can show a line.
     python3 scripts/shard_prices.py                 # everything missing
     python3 scripts/shard_prices.py --refresh AAPL  # re-fetch specific tickers
     python3 scripts/shard_prices.py --status        # what is covered, fetch nothing
+    python3 scripts/shard_prices.py --daily         # what the workflow runs: extend the
+                                                    # calendar, add new tickers, catch up
+                                                    # the board's stale shards
 """
 import json, os, re, subprocess, sys, time
 
@@ -110,6 +119,7 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     dates_path = os.path.join(OUT, "_dates.json")
     missing_path = os.path.join(OUT, "_missing.json")
+    ends_path = os.path.join(OUT, "_ends.json")
 
     dates = load(dates_path, None)
     if not dates:
@@ -120,9 +130,40 @@ def main():
         with open(dates_path, "w") as f:
             json.dump(dates, f, separators=(",", ":"))
         print(f"calendar: {len(dates)} sessions {dates[0]}..{dates[-1]}")
+    if "--daily" in sys.argv or "--extend-calendar" in sys.argv:
+        # Appending is safe and inserting is not: every shard's `i` is an offset into this
+        # list, so a date landing in the middle would silently move every close in every
+        # file to the wrong day. Asserted rather than assumed.
+        cal = fetch(CAL)
+        if cal and dates:
+            fresh = sorted(cal)
+            # range=5Y is a rolling window: it gains a session at the tail and drops one
+            # from the head, so the stored calendar is not a prefix of it and comparing
+            # them as prefixes fails on the first run. (It did. The guard below is what
+            # caught it.) The invariant that matters is narrower — where the two overlap
+            # they must agree exactly, and growth is only ever appended, because `i` in
+            # every shard is an offset from index 0.
+            overlap = [d for d in fresh if d <= dates[-1]]
+            mine = [d for d in dates if d >= fresh[0]]
+            if overlap != mine:
+                sys.exit(f"the calendar disagrees with the stored one over their shared "
+                         f"range ({len(overlap)} vs {len(mine)} sessions) — refusing to "
+                         f"touch _dates.json, because every shard's `i` indexes into it")
+            added = [d for d in fresh if d > dates[-1]]
+            if added:
+                dates = dates + added
+                with open(dates_path, "w") as f:
+                    json.dump(dates, f, separators=(",", ":"))
+                print(f"calendar +{len(added)}: {added[0]}..{added[-1]} ({len(dates)} total)")
     idx = {d: i for i, d in enumerate(dates)}
 
     missing = load(missing_path, {})
+    # Tickers whose history genuinely stops before the calendar does. Without this the
+    # daily job chases them forever: a delisted name is permanently "behind", so it sorts
+    # to the front of the stale list every run, gets refetched, does not move, and crowds
+    # out the shards that would actually gain a session. WFH stopped trading in 2021 and
+    # was first in the queue.
+    ends = load(ends_path, {})
     uni = universe()
     have = {n[:-5] for n in os.listdir(OUT) if n.endswith(".json") and not n.startswith("_")}
 
@@ -153,10 +194,50 @@ def main():
             time.sleep(PAUSE)
         todo = [t for t in todo if t not in missing]
 
-    if "--refresh" in sys.argv:
+    def newest_board():
+        """Tickers on the most recent archived board — the ones anyone is going to click."""
+        days = sorted(n for n in os.listdir(ARCHIVE)
+                      if re.fullmatch(r"\d{4}-\d\d-\d\d\.json", n))
+        if not days:
+            return []
+        with open(os.path.join(ARCHIVE, days[-1])) as f:
+            snap = json.load(f)
+        return [r["ticker"] for r in (snap.get("filters") or {}).get("wallstreetbets") or []]
+
+    def last_date(tk):
+        try:
+            with open(os.path.join(OUT, f"{tk}.json")) as f:
+                sh = json.load(f)
+        except Exception:
+            return None
+        for k in range(len(sh["c"]) - 1, -1, -1):
+            if sh["c"][k] is not None:
+                return dates[sh["i"] + k] if sh["i"] + k < len(dates) else None
+        return None
+
+    def behind(tk):
+        """Sessions a shard could still gain, or 0 if its history is known to end."""
+        d = last_date(tk)
+        if d is None or ends.get(tk) == d:
+            return 0
+        return sum(1 for x in dates if x > d)
+
+    if "--daily" in sys.argv:
+        # New tickers first — an empty chart is worse than a slightly stale one — then the
+        # board's stalest shards with whatever budget is left.
+        cap = int(sys.argv[sys.argv.index("--limit") + 1]) if "--limit" in sys.argv else 600
+        fresh_todo = [t for t in uni if t not in have and t not in missing][:min(cap, 100)]
+        board = [t for t in newest_board() if t in have]
+        stale = sorted(((behind(t) or 0, t) for t in board), reverse=True)
+        todo = fresh_todo + [t for n, t in stale if n > 0][:max(0, cap - len(fresh_todo))]
+        have -= set(todo)          # so the writer below does not skip the refreshes
+        print(f"daily: {len(fresh_todo)} new · "
+              f"{len(todo) - len(fresh_todo)} of {sum(1 for n, _ in stale if n > 0)} "
+              f"stale board shards")
+    elif "--refresh" in sys.argv:
         todo = [a.upper() for a in sys.argv[sys.argv.index("--refresh") + 1:]
                 if not a.startswith("-")]
-    else:
+    elif "--retry-missing" not in sys.argv:
         todo = [t for t in uni if t not in have and t not in missing]
         if "--limit" in sys.argv:
             todo = todo[:int(sys.argv[sys.argv.index("--limit") + 1])]
@@ -185,15 +266,24 @@ def main():
             arr[p - lo] = c
         with open(os.path.join(OUT, f"{tk}.json"), "w") as f:
             json.dump({"i": lo, "c": arr}, f, separators=(",", ":"))
+        # Freshly fetched and still short of the calendar means this is where its history
+        # ends, not that the fetch failed. Recorded so the next run does not ask again.
+        newest = dates[pos[-1][0]]
+        if newest < dates[-1]:
+            ends[tk] = newest
+        else:
+            ends.pop(tk, None)
         ok += 1
         if n % 100 == 0:
             print(f"  {n}/{len(todo)} · {ok} written · {bad} unresolved", flush=True)
 
     with open(missing_path, "w") as f:
         json.dump(missing, f, indent=0, sort_keys=True)
+    with open(ends_path, "w") as f:
+        json.dump(ends, f, indent=0, sort_keys=True)
     size = sum(os.path.getsize(os.path.join(OUT, n)) for n in os.listdir(OUT))
     print(f"{ok} written · {bad} unresolved · data/px now {size/1e6:.1f} MB"
-          + (f" · {off} sessions outside the calendar" if off else ""))
+          + (f" · {off} closes before the calendar begins, dropped" if off else ""))
 
 
 if __name__ == "__main__":

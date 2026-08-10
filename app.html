@@ -734,6 +734,20 @@ async function quoteArchived(tk){
           src:'archived', archived:true};
 }
 
+/* The last tier: the ticker's own shard. data/quotes/latest.json only carries the top 40
+   of the board, so for the other 460 a bad afternoon at both live sources left the panel
+   blank — while a close from yesterday sat in the repo unused. Not a quote and does not
+   pretend to be one: it is a close, labelled as one, with the date it belongs to. */
+async function quoteShard(tk){
+  const s=await ensureShard(tk);
+  if(!s||!s.d.length)return null;
+  const n=s.d.length-1, prev=n>0?s.c[n-1]:null;
+  return {p:s.c[n], prev,
+    chg:prev!=null?+(s.c[n]-prev).toFixed(2):null,
+    chgPct:prev?+((s.c[n]/prev-1)*100).toFixed(2):null,
+    at:s.d[n], src:'data/px', archived:true, closeOnly:true};
+}
+
 async function quote(tk){
   const hit=QUOTES[tk];
   if(hit&&Date.now()-hit.at<QUOTE_TTL)return hit.q;
@@ -755,7 +769,7 @@ async function quote(tk){
     /* Three tiers. Every source this project has relied on has eventually died —
        tradestie, the backfill repo, stooq, and Yahoo's crumb dance this week — so the
        question is not whether but what happens after. */
-    for(const next of [quoteCNBC, quoteArchived]){
+    for(const next of [quoteCNBC, quoteArchived, quoteShard]){
       try{
         const q=await next(tk);
         if(q){QUOTES[tk]={at:Date.now(), q};return q;}
@@ -1383,10 +1397,13 @@ async function fillLive(){
   still.innerHTML=`<div class="live ${up?'':'dnb'}">
     <span class="lp">$${q.p.toFixed(2)}</span>
     <span class="lc ${up?'up':'dn'}">${up?'+':''}${(q.chg??0).toFixed(2)} (${up?'+':''}${(q.chgPct??0).toFixed(2)}%)</span>
-    <span class="lk">${q.archived?'last archived':'live'} · ${q.src||'?'} · market ${q.status||'?'}<br>${q.at||''}</span>
+    <span class="lk">${q.closeOnly?'last close in the archive':q.archived?'last archived':'live'} · ${q.src||'?'}${
+      q.closeOnly?'':` · market ${q.status||'?'}`}<br>${q.at||''}</span>
     ${q.extP?`<span class="lx">${q.extLabel||'Extended'} <b>$${q.extP.toFixed(2)}</b>
        ${(q.extPct??0)>=0?'+':''}${(q.extPct??0).toFixed(2)}% · ${q.extAt||''}</span>`:''}
-    <span class="lx">Quoted live from stockanalysis, ${stale?'<b>ahead of the archive</b> — ':''}not part of
+    ${q.closeOnly?`<span class="lx">Both live sources were unreachable, so this is the most
+      recent session close held in this repository — not a quote, and not today's price.</span>`:''}
+    <span class="lx">${q.closeOnly?'Served from the archive. ':'Quoted live from stockanalysis, '}${stale?'<b>ahead of the archive</b> — ':''}not part of
       the archive and not used in any figure on this site. Every return here is measured
       on session closes.</span>
   </div>`;
