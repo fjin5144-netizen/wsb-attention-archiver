@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Daily WSB attention archiver (v3.3).
-- ApeWisdom: top ~300 (3 pages) for wallstreetbets + all-stocks -> data/apewisdom/{UTC date}.json
+- ApeWisdom: top 500 (5 pages) for wallstreetbets + all-stocks -> data/apewisdom/{UTC date}.json
+  Three pages until 2026-07-19, five from 2026-07-20. The archive therefore has a seam:
+  a ticker in the tail is absent before that date and present after, for a reason that
+  has nothing to do with how often it was mentioned. app.html detects the change from
+  the snapshots themselves and marks it on any chart that spans it.
   Same UTC day overwrites: the last run of the day (23:45 UTC cron) becomes the daily record;
   the midday run is a fallback so a failed late run still leaves a partial-day snapshot.
 - Tradestie revival probe: if api.tradestie.com ever answers again, capture it automatically
