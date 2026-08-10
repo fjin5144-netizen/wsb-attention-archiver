@@ -73,6 +73,14 @@ jobs:
       # 变化 —— 但事件集会,所以跟着一起重算,免得站点上两个数字来自不同时刻。
       - name: Recompute the cross-period check
         run: python3 scripts/finding_rank.py
+      # 浏览器里那份扫描是 precompute_events.py 和 finding.py 的 JS 重写,滑块一动就跑它。
+      # selfCheck() 只在默认参数下比对 —— 而默认恰恰是唯一有黄金文件的那一组。这一步在
+      # 40 组定义上把两边逐条对齐(事件集 + describe() 的每个字段),抓到过一个黄金文件
+      # 永远碰不到的分歧:Python 的 round() 五舍六入到偶数,Math.round 逢五进一。
+      - name: Cross-check the browser scan against the Python
+        run: |
+          python3 scripts/crosscheck_scan.py "$RUNNER_TEMP/scan_ref.json"
+          node scripts/crosscheck_scan.js "$RUNNER_TEMP/scan_ref.json"
       # continue-on-error 不是在放过失败 —— 下面「Fail if the golden tests failed」
       # 照样把这次运行判红、照样告警。它换来的是:测试挂掉时原始档案仍然落地。
       - name: Golden-value tests

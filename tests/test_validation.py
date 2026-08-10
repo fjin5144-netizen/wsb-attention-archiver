@@ -326,3 +326,23 @@ def test_the_browser_scan_starts_from_the_same_definition_as_the_precompute():
     assert (floor, mult, gap) == (const("HOT_FLOOR"), float(const("HOT_X")), const("GAP")), (
         f"default spike definition differs: app.html {(floor, mult, gap)} vs "
         f"precompute_events.py {(const('HOT_FLOOR'), const('HOT_X'), const('GAP'))}")
+
+
+def test_the_browser_scan_reproduces_the_python_away_from_the_default():
+    """scripts/crosscheck_scan.{py,js} run app.html's own scan against this Python at 40
+    definitions. The workflow runs them as their own step; this makes them reachable from
+    `pytest` too, because a check nobody runs locally is a check that breaks on a Friday.
+
+    Skipped rather than failed without node: the archive job must never go red over a
+    missing local toolchain, and CI has node.
+    """
+    import shutil, subprocess, tempfile
+    if not shutil.which("node"):
+        import pytest
+        pytest.skip("node not installed")
+    with tempfile.TemporaryDirectory() as tmp:
+        ref = os.path.join(tmp, "scan_ref.json")
+        for cmd in (["python3", os.path.join(ROOT, "scripts", "crosscheck_scan.py"), ref],
+                    ["node", os.path.join(ROOT, "scripts", "crosscheck_scan.js"), ref]):
+            r = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT)
+            assert r.returncode == 0, f"{os.path.basename(cmd[1])} failed:\n{r.stdout}\n{r.stderr}"

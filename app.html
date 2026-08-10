@@ -110,6 +110,7 @@ button{cursor:pointer}
 .spkCell.pos .v{color:var(--up)}
 .spkCell:hover{border-color:var(--ink3)}
 .spkCell.on{border-color:var(--acc);background:rgba(124,108,246,.14)}
+.spkGrid.stale{opacity:.4}
 .spkCell .thin{position:absolute;top:1px;right:3px;font-size:13px;line-height:1;color:var(--warn,#e0a33e);opacity:.9}
 .spkCell{position:relative}
 .spkNote{margin:8px 0 0;font-size:11px;line-height:1.55;color:var(--ink3)}
@@ -1002,9 +1003,6 @@ function spikeCtl(){
   const num=(k,min,max,step,suffix)=>
     `<label class="spkN"><input type="range" data-spk="${k}" min="${min}" max="${max}" step="${step}"
        value="${SPK[k]}" ${rdy?'':'disabled'} aria-label="${k}"><b>${SPK[k]}${suffix||''}</b></label>`;
-  const g=spkGrid&&rdy?spkGrid():null;
-  const cur=g&&g.find(x=>x.floor===SPK.floor&&x.mult===SPK.mult);
-  const gaps=g?g.map(x=>x.gap).filter(v=>v!=null):[];
   return `<div class="ctlrow spk${SPKLIVE?' on':''}">
     <span class="ctlk">Spike is</span>
     <div class="spkBody">
@@ -1017,10 +1015,14 @@ function spikeCtl(){
       <div class="spkRead">${spkReadout()}</div>
     </div></div>`;
 }
-function spkReadout(){
+function spkReadout(live){
   const rdy=SCANOK!==null;
-  const g=rdy?spkGrid():null;
-  const cur=g&&g.find(x=>x.floor===SPK.floor&&x.mult===SPK.mult);
+  const g=rdy?spkGrid(live):null;
+  /* Only the sweep is deferred. The event count, the gap and the bias warning are
+     recomputed every step, because watching those move is what a drag is for. */
+  const stale=rdy&&!g&&GRID?GRID.rows:null;
+  const G=g||stale;
+  const cur=G&&G.find(x=>x.floor===SPK.floor&&x.mult===SPK.mult);
   const gaps=g?g.map(x=>x.gap).filter(v=>v!=null):[];
   return `${rdy?`<div class="spkOut">
           <b>${EVENTS.length}</b> events${SPKLIVE?` <span class="mut">(default: ${EVENTS0.length})</span>`:''}
@@ -1032,9 +1034,10 @@ function spkReadout(){
               should not be a matter of trust. */''}
         <div class="spkCap">20-session gap · mentions floor × median multiple${
             SPK.look!==SPK0.look||SPK.gap!==SPK0.gap
-              ? `, held at your ${SPK.look}-day lookback and ${SPK.gap}-day gap`:''}</div>
-        <div class="spkGrid" role="table" aria-label="20-session gap across thresholds">
-          ${g.map(x=>{const on=x===cur;
+              ? `, held at your ${SPK.look}-day lookback and ${SPK.gap}-day gap`:''}${
+            stale?' · <b class="warn">recomputing when you let go</b>':''}</div>
+        <div class="spkGrid${stale?' stale':''}" role="table" aria-label="20-session gap across thresholds">
+          ${(G||[]).map(x=>{const on=x===cur;
             return `<button class="spkCell${on?' on':''}${x.gap<0?' neg':' pos'}"
               data-spkset="${x.floor}|${x.mult}"
               title="≥${x.floor} mentions, ≥${x.mult}× median → ${x.total} spikes, ${x.n} scored, gap ${x.gap==null?'—':x.gap.toFixed(2)+'pp'}${x.unpriced?` · ${x.unpriced} have no price series`:''}">
@@ -1411,6 +1414,14 @@ function scanEvents(cfg){
 
 /* finding.py, in the browser: median and trimmed mean side by side, and a benchmark
    that is the same tickers on a non-event day rather than zero. */
+/* Python's round() breaks a tie to the nearest EVEN integer; JS's Math.round breaks it
+   upward. It takes an exact half to tell them apart, and an integer percentage supplies
+   those routinely — 2 winners out of 16 is 12.5, where finding.py writes 12 and
+   Math.round would write 13. Caught by sweeping 40 threshold settings against the
+   Python, at 185/3.5x/40/5; nothing at the default reaches a tie, so the golden check
+   would never have shown it. */
+const pyRound=x=>{const f=Math.floor(x),d=x-f;
+  return d>0.5?f+1:d<0.5?f:(Math.abs(f%2)===0?f:f+1);};
 const trimmedMean=(v,pct)=>{const s=[...v].sort((a,b)=>a-b),k=Math.floor(s.length*(pct??0.10));
   const t=s.length-2*k>0?s.slice(k,s.length-k):s;
   return t.reduce((a,b)=>a+b,0)/t.length;};
@@ -1427,7 +1438,7 @@ function scanFinding(events,horizons){
   const desc=v=>({n:v.length,median:+median(v).toFixed(2),
     trimmed_mean:+trimmedMean(v).toFixed(2),
     mean:+(v.reduce((a,b)=>a+b,0)/v.length).toFixed(2),
-    win_rate:Math.round(v.filter(x=>x>0).length/v.length*100)});
+    win_rate:pyRound(v.filter(x=>x>0).length/v.length*100)});
   const rows=[];
   for(const n of (horizons||[5,10,20])){
     const real=[],plac=[];
@@ -1467,13 +1478,19 @@ function selfCheck(){
 /* Sensitivity, computed once and cached: the same grid the thresholds live in, so the
    answer to "did you pick 30 and 3 because they gave the best number" is on screen
    instead of being a fair thing to wonder. */
-function spkGrid(){
+function spkGrid(peek){
   /* Keyed on the two axes the grid does NOT vary. It sweeps floor and multiple while
      holding lookback and gap at whatever is set, so a cache that ignored those went
      stale the moment either slider moved — showing gaps from a definition nobody had
      selected, under labels that implied they were current. */
   const key=SPK.look+'/'+SPK.gap;
   if(GRID&&GRID.key===key)return GRID.rows;
+  /* A sweep is 15 scans — about 180ms over 1,860 tickers, against 17ms for one scan.
+     The floor and mult sliders leave this key alone and stay cheap; lookback and gap
+     invalidate it every step, so dragging one from 20 to 40 was 3.5 seconds of frozen
+     main thread. Mid-drag the caller peeks: it gets nothing rather than paying, and
+     shows the previous sweep greyed until the gesture ends. */
+  if(peek)return null;
   const rows=[];
   for(const floor of [10,20,30,50,100])for(const mult of [2,3,5]){
     const ev=scanEvents({...SPK,floor,mult});
@@ -1559,7 +1576,10 @@ function rangeNote(tk,S,inView){
     `${S.reads} day${S.reads===1?'':'s'} with a board reading${S.crawls?` (${S.crawls} from archive.org crawls — top 100 only, no spike detection)`:''}`];
   bits.push(inView.length
     ? `<b class="dn">${inView.length} confirmed spike${inView.length===1?'':'s'}</b> marked ▲`
-    : `no confirmed spike here — needs ≥30 mentions and ≥3× the prior 20-day median`);
+    /* The live definition, not the shipped one. It named 30 and 3× while the sliders
+       said something else, so a chart with no carets explained itself by a rule it was
+       not being judged against. */
+    : `no confirmed spike here — needs ≥${SPK.floor} mentions and ≥${SPK.mult}× the prior ${SPK.look}-day median`);
   /* days[0] is the first day of the *union* — often a board reading with no session
      behind it — so quoting it as the date price history begins was asserting something
      the price file never said, and asserting it even for tickers with no price at all. */
@@ -1983,7 +2003,7 @@ document.addEventListener('input',e=>{
   const lab=r.parentElement.querySelector('b');
   if(lab)lab.textContent=r.value+(r.dataset.spk==='mult'?'×':'');
   const read=document.querySelector('.spkRead');
-  if(read)read.innerHTML=spkReadout();
+  if(read)read.innerHTML=spkReadout(true);
   const f=FINDING&&(FINDING.horizons||[]).find(h=>h.sessions===(FINDING.headline_sessions||20));
   $('claimLine').innerHTML=claimLineHTML(f);
   renderList();
@@ -1991,7 +2011,17 @@ document.addEventListener('input',e=>{
 /* On release, not during: a full render refreshes the group counts the drag left stale
    and writes one history entry for the whole gesture. */
 document.addEventListener('change',e=>{
-  if(e.target.closest?.('[data-spk]'))render(true);
+  const r=e.target.closest?.('[data-spk]'); if(!r)return;
+  /* Chrome commits a range on every arrow keypress, so the keyboard fires change per
+     press — and render() rebuilds #listctl, replacing this element and dropping focus to
+     <body>. That did more than make the next press inert: with the target no longer an
+     input, the global ArrowLeft binding took over and ran history.back(), restoring the
+     value just set. Arrow keys oscillated 37→36→37 and filled the history with it.
+     Re-focusing is a no-op unless the element had focus, which is exactly the keyboard
+     case — a pointer drag is unaffected. */
+  const k=r.dataset.spk, keep=document.activeElement===r;
+  render(true);
+  if(keep)document.querySelector(`[data-spk="${k}"]`)?.focus();
 });
 document.addEventListener('pointermove',chartHover);
 document.addEventListener('pointerleave',()=>hideTip(),true);
