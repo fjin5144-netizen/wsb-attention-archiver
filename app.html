@@ -88,6 +88,32 @@ button{cursor:pointer}
 /* The lens decides what every control under it means, so it reads first and heavier. */
 .ctlrow.lens{padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:1px}
 .ctlrow.lens .chips button{font-size:12px;padding:6px 11px}
+/* The definition control reads as machinery, not as another filter: it changes what
+   every number on the page means. */
+.ctlrow.spk{align-items:flex-start;border-top:1px solid var(--line);padding-top:9px;margin-top:2px}
+.ctlrow.spk.on .ctlk{color:var(--dn)}
+.spkBody{flex:1;min-width:0}
+.spkLine{font-size:12px;color:var(--ink2);line-height:2.1}
+.spkN{display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
+.spkN input{width:74px;accent-color:var(--acc)}
+.spkN b{font-variant-numeric:tabular-nums;color:var(--ink);min-width:26px}
+.spkOut{margin-top:7px;font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.spkRst{background:none;border:1px solid var(--line);border-radius:5px;color:var(--ink3);
+  font:inherit;font-size:11px;padding:2px 7px;cursor:pointer}
+.spkRst:hover{color:var(--ink);border-color:var(--ink3)}
+.spkCap{margin-top:9px;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3)}
+.spkGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;margin-top:8px}
+.spkCell{background:var(--card);border:1px solid var(--line);border-radius:5px;cursor:pointer;
+  padding:4px 2px;display:grid;gap:1px;font:inherit;color:var(--ink3)}
+.spkCell .k{font-size:9.5px;opacity:.75}
+.spkCell .v{font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--dn)}
+.spkCell.pos .v{color:var(--up)}
+.spkCell:hover{border-color:var(--ink3)}
+.spkCell.on{border-color:var(--acc);background:rgba(124,108,246,.14)}
+.spkCell .thin{position:absolute;top:1px;right:3px;font-size:13px;line-height:1;color:var(--warn,#e0a33e);opacity:.9}
+.spkCell{position:relative}
+.spkNote{margin:8px 0 0;font-size:11px;line-height:1.55;color:var(--ink3)}
+
 .fchip{background:rgba(139,124,246,.14);border:1px solid rgba(139,124,246,.35);
   color:var(--acc);border-radius:6px;padding:4px 8px;font-size:11px}
 .fchip:hover{background:rgba(139,124,246,.24)}
@@ -446,6 +472,9 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
     gj(`${BASE}data/wayback/quality.json`).catch(()=>null),
   ]);
   EVENTS=ev;FINDING=fi;PRICES=px;RANK=rk;
+  /* Kept so a custom definition can be undone, and so the scan has something to be
+     checked against. */
+  EVENTS0=ev;FINDING0=fi;
   if(wq){WBDAYS=wq.days_list||[];WBSUSPECT=new Set(Object.keys(wq.suspect||{}));}
   DAY=DAYS[DAYS.length-1];
   await loadDays([DAY]);
@@ -470,7 +499,11 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
   render();
   /* The rest streams in behind the shell: mention history needs every snapshot, but
      nothing on first paint does. */
-  loadDays(DAYS).then(()=>{if(VIEW!=='market')render();});
+  loadDays(DAYS).then(()=>{
+    /* Only now is the archive whole. The definition control stays disabled until it
+       is, because a scan over a partial archive would quietly return fewer spikes. */
+    selfCheck(); applySpike();
+    if(VIEW!=='market')render();});
   gj(`${BASE}data/risk.json`).then(r=>{RISK=r;if(VIEW==='market')render();}).catch(()=>{});
 })();
 
@@ -497,6 +530,7 @@ function stateURL(){
   if(WIN!=='10d')p.set('w',WIN);
   if(MWIN!=='2Y')p.set('mw',MWIN);
   if(TWIN!=='3M'||TWINSET)p.set('tw',TWIN);
+  if(spkCustom())p.set('spk',[SPK.floor,SPK.mult,SPK.look,SPK.gap].join('-'));
   if(SORT!=='res')p.set('sort',SORT);
   if(ONLY)p.set('only',ONLY);
   if(DAY!==DAYS[DAYS.length-1])p.set('d',DAY);
@@ -518,6 +552,11 @@ function writeURL(push){
 
 window.addEventListener('popstate',async()=>{
   readURL();
+  /* readURL just reassigned SPK, and EVENTS/FINDING are downstream of it. Without this,
+     Back restored the sliders, the grid highlight and the "your definition" badge to the
+     default while the list, the counts and the headline still held the abandoned scan —
+     a custom result presented as the published one, with the reset button gone. */
+  if(SCANOK!==null)applySpike();
   if(!DAYS.includes(DAY)&&WBDAYS.includes(DAY))await ensureHist();
   await loadDays([DAY]);
   syncChrome();
@@ -538,6 +577,19 @@ function readURL(){
      history entry the browser had just navigated to. */
   if(own(TWINS,p.get('tw'))){TWIN=p.get('tw');TWINSET=true;}
   else{TWIN='3M';TWINSET=false;}
+  /* Bounded on the way in. These four numbers drive a scan over every snapshot, and a
+     lookback of 0 or a negative floor from a hand-edited URL would not fail loudly —
+     it would return a plausible number of spikes computed from nonsense. */
+  const sp=(p.get('spk')||'').split('-').map(Number);
+  /* Integral where it indexes. `look` and `gap` are counted in archive days and slice
+     the dates array; a fractional one from a hand-edited URL does not fail, it just
+     returns a differently wrong number of spikes. `mult` is the one that is genuinely
+     continuous — the slider steps it by 0.5. */
+  const cl=(v,lo,hi,dflt,int)=>Number.isFinite(v)&&v>=lo&&v<=hi&&(!int||Number.isInteger(v))?v:dflt;
+  SPK=sp.length===4&&sp.every(Number.isFinite)
+    ? {floor:cl(sp[0],5,200,SPK0.floor,1),mult:cl(sp[1],1.5,8,SPK0.mult),
+       look:cl(sp[2],5,40,SPK0.look,1),gap:cl(sp[3],0,20,SPK0.gap,1)}
+    : {...SPK0};
   if(['res','new','old','worst','best','mentions'].includes(p.get('sort')))SORT=p.get('sort');
   ONLY=p.get('only')||'';
   /* Deep links must reach the crawl days too, or the 2021-2026 half of the picker
@@ -943,13 +995,117 @@ function dayOptions(){
     +`</optgroup>`+(wb?`<optgroup label="archive.org crawls (${wbd.length}, sparse)">${wb}</optgroup>`:'');
 }
 
+/* The definition, as four numbers you can move. It sits under the aftermath lens
+   because that lens's unit *is* an event, and these are what make one. */
+function spikeCtl(){
+  const rdy=SCANOK!==null;
+  const num=(k,min,max,step,suffix)=>
+    `<label class="spkN"><input type="range" data-spk="${k}" min="${min}" max="${max}" step="${step}"
+       value="${SPK[k]}" ${rdy?'':'disabled'} aria-label="${k}"><b>${SPK[k]}${suffix||''}</b></label>`;
+  const g=spkGrid&&rdy?spkGrid():null;
+  const cur=g&&g.find(x=>x.floor===SPK.floor&&x.mult===SPK.mult);
+  const gaps=g?g.map(x=>x.gap).filter(v=>v!=null):[];
+  return `<div class="ctlrow spk${SPKLIVE?' on':''}">
+    <span class="ctlk">Spike is</span>
+    <div class="spkBody">
+      <div class="spkLine">mentions ≥ ${num('floor',5,200,5)}
+        and ≥ ${num('mult',1.5,8,0.5,'×')} the prior ${num('look',5,40,1)}-day median,
+        min gap ${num('gap',0,20,1)} days</div>
+      ${/* Everything that changes during a drag lives in here and nothing else does.
+           Re-rendering the whole control on `input` replaced the very <input> the
+           pointer was holding, so a drag ended after one pixel. */''}
+      <div class="spkRead">${spkReadout()}</div>
+    </div></div>`;
+}
+function spkReadout(){
+  const rdy=SCANOK!==null;
+  const g=rdy?spkGrid():null;
+  const cur=g&&g.find(x=>x.floor===SPK.floor&&x.mult===SPK.mult);
+  const gaps=g?g.map(x=>x.gap).filter(v=>v!=null):[];
+  return `${rdy?`<div class="spkOut">
+          <b>${EVENTS.length}</b> events${SPKLIVE?` <span class="mut">(default: ${EVENTS0.length})</span>`:''}
+          ${(()=>{const h=(FINDING.horizons||[]).find(x=>x.sessions===20);
+            return h?` · 20-session gap <b class="${h.gap_median<0?'dn':'up'}">${h.gap_median.toFixed(2)}pp</b> <span class="mut">n=${h.spike.n}</span>`:'';})()}
+          ${SPKLIVE?'<button class="spkRst" data-spkrst="1">reset</button>':''}
+        </div>
+        ${/* Cross-threshold, because "why 30 and 3" is a fair question and the answer
+              should not be a matter of trust. */''}
+        <div class="spkCap">20-session gap · mentions floor × median multiple${
+            SPK.look!==SPK0.look||SPK.gap!==SPK0.gap
+              ? `, held at your ${SPK.look}-day lookback and ${SPK.gap}-day gap`:''}</div>
+        <div class="spkGrid" role="table" aria-label="20-session gap across thresholds">
+          ${g.map(x=>{const on=x===cur;
+            return `<button class="spkCell${on?' on':''}${x.gap<0?' neg':' pos'}"
+              data-spkset="${x.floor}|${x.mult}"
+              title="≥${x.floor} mentions, ≥${x.mult}× median → ${x.total} spikes, ${x.n} scored, gap ${x.gap==null?'—':x.gap.toFixed(2)+'pp'}${x.unpriced?` · ${x.unpriced} have no price series`:''}">
+              ${x.unpriced?'<span class="thin" title="part of this cell is unscoreable">·</span>':''}
+              <span class="k">${x.floor}·${x.mult}×</span>
+              <span class="v">${x.gap==null?'—':x.gap.toFixed(1)}</span></button>`;}).join('')}
+        </div>
+        ${/* Every clause below is derived from the grid that is actually on screen. The
+              first draft asserted "all negative" and "the default sits at the strong end"
+              as prose, which is true at the shipped lookback and gap and becomes a claim
+              the page cannot support the moment either slider moves. */''}
+        <p class="spkNote">${(()=>{
+          if(!gaps.length)return '';
+          const neg=gaps.filter(v=>v<0).length;
+          const lo=Math.min(...gaps), hi=Math.max(...gaps);
+          const d=g.find(x=>x.floor===SPK0.floor&&x.mult===SPK0.mult);
+          const rank=d&&d.gap!=null?gaps.filter(v=>v<d.gap).length:null;
+          const where=rank==null?''
+            : rank===0?` The default (30·3×) is the <b>most negative cell in the grid</b> — worth
+                         knowing when reading the headline.`
+            : rank<gaps.length/3?` The default (30·3×) sits near the <b>strong end</b> of that range.`
+            : rank>gaps.length*2/3?` The default (30·3×) sits near the <b>weak end</b> of that range.`
+            : ` The default (30·3×) sits mid-range.`;
+          /* The price pack is built by refresh_prices.py --top-up, which adds a ticker
+             when it spikes under the DEFAULT definition. So the default scores 254 of
+             254 events by construction, a tighter definition scores a subset of those,
+             and a looser one reaches tickers that were never priced — dropping them
+             silently, and not at random: they are exactly the names that never went
+             loud enough to qualify before. A gap computed on 66% of the events it
+             claims is not the same measurement, and the page has to say so. */
+          const un=EVENTS.filter(e=>!PRICES[e.tk]).length;
+          const bias=un?`<b class="warn">${un} of ${EVENTS.length} events
+              (${Math.round(un/EVENTS.length*100)}%) have no price series</b> and are dropped from
+              the numbers above. The price pack was built from the default definition, so
+              loosening it reaches tickers that were never priced — the ones that never
+              went loud enough to qualify. What is scored here is a biased subset, not
+              this definition's event set. `:'';
+          return bias+(neg===gaps.length
+            ? `All ${gaps.length} threshold pairs above are <b class="dn">negative</b>, ${hi.toFixed(2)} to ${lo.toFixed(2)}pp —
+               the result is not an artefact of the two numbers being swept.`
+            : `<b>${neg} of ${gaps.length}</b> threshold pairs above are negative (${lo.toFixed(2)} to ${hi.toFixed(2)}pp) —
+               the sign is <b class="warn">not stable</b> across the definition.`)+where;
+        })()}
+          ${SCANOK&&(!SCANOK.ev||!SCANOK.fi)
+            ? ` <b class="warn">This scan does not reproduce the shipped files</b>
+                (${SCANOK.n} events against ${SCANOK.want}) — treat these numbers as broken, not as a result.`
+            : ` <span class="mut">Recomputed in your browser; at the default it reproduces
+                data/events.json and data/finding.json exactly.</span>`}</p>`
+      : `<div class="spkOut mut">${spkCustom()
+            ? 'applying your definition — loading the full archive…'
+            : 'loading the full archive…'}</div>`}`;
+}
+
+/* Its own function because a slider drag needs this line to move without rebuilding the
+   control the pointer is holding. SPKLIVE rather than spkCustom(): between a shared
+   ?spk= link being read and the archive finishing its stream, the definition is chosen
+   but not yet applied, and badging the shipped numbers as "your definition" would label
+   them as something they are not. */
+function claimLineHTML(f){
+  if(!f)return 'no finding computed yet';
+  const d=f.gap_median<0;
+  return `spikes run <b class="${d?'dn':'up'}">${Math.abs(f.gap_median).toFixed(1)} points</b>
+    ${d?'below':'above'} the same tickers on a random day, over ${f.sessions} sessions ·
+    <b>n=${f.spike.n}</b> · ${FINDING.archive_days} days of archive, not a finding${
+    SPKLIVE?' · <b class="warn">your definition</b>':''}`;
+}
 function renderClaim(){
   const f=FINDING&&(FINDING.horizons||[]).find(h=>h.sessions===(FINDING.headline_sessions||20));
   /* Collapsed line first: the result in a sentence. The rest is the same block that
      was in the rail, revealed only when asked for. */
-  $('claimLine').innerHTML=f
-    ? `spikes run <b class="dn">${f.gap_median.toFixed(1)} points</b> below the same tickers on a random day, over ${f.sessions} sessions · <b>n=${f.spike.n}</b> · 100 days of archive, not a finding`
-    : 'no finding computed yet';
+  $('claimLine').innerHTML=claimLineHTML(f);
   const findingHTML=f?`
     <div class="finding">
       <p class="rk">How this is measured<button class="rkq" data-v="method" title="How these numbers are measured">?</button></p>
@@ -1008,6 +1164,7 @@ function renderClaim(){
        `<button data-sort="${k}" aria-pressed="${SORT===k}">${l}</button>`).join('')}</div></div>`
     +`<div class="ctlrow"><span class="ctlk">Show</span><div class="chips">${onlys.map(([k,l,c])=>
        `<button data-only="${k}" aria-pressed="${ONLY===k}"${c===0?' disabled':''}>${l}<span class="cnt">${c}</span></button>`).join('')}</div></div>`
+    +(VIEW==='aftermath'?spikeCtl():'')
     +activeFiltersHTML()
     +(VIEW==='aftermath'?`<div class="ctlrow"><span class="ctlk"></span><button class="railBtn" id="csv">Export what is listed (CSV)</button></div>`:'');
 }
@@ -1165,6 +1322,182 @@ function winDays(tk,day,sess){
   }
   return {days:DAYS.slice(Math.max(0,di-pre),end+1),have,priced};
 }
+/* ---------- the spike definition, made movable ----------
+
+   "≥30 mentions and ≥3× the prior 20-day median" is four arbitrary numbers, and the
+   headline is computed on top of them. A reader cannot tell whether -8.98pp is a
+   property of the data or of those four choices, and the honest answer is knowable in
+   milliseconds: the browser already holds every snapshot and the price pack.
+
+   Everything below has one hard constraint — at the default settings it must reproduce
+   data/events.json and data/finding.json exactly, or the site would be showing two
+   different numbers for the same claim. selfCheck() asserts it at boot. */
+const SPK0={floor:30,mult:3,look:20,gap:5};
+let SPK={...SPK0}, EVENTS0=null, FINDING0=null, SCANOK=null, GRID=null, SPKLIVE=false;
+const spkCustom=()=>Object.keys(SPK0).some(k=>SPK[k]!==SPK0[k]);
+
+/* SHA-256, because finding.py picks each placebo day by hashing (ticker, date,
+   horizon) rather than at random — that is what makes the artefact reproducible and
+   its golden test meaningful. Reproducing the sampling means reproducing the hash, so
+   this is the Python's `int(sha256(...).hexdigest(),16) % len(pool)` and not a cheaper
+   one. Synchronous rather than crypto.subtle: this runs inside a slider drag, and an
+   async digest per event would put a promise chain in the render path. */
+const K256=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+function sha256hex(str){
+  const bytes=new TextEncoder().encode(str);
+  const bl=bytes.length, wl=(((bl+8)>>6)+1)<<4, m=new Int32Array(wl);
+  for(let i=0;i<bl;i++)m[i>>2]|=bytes[i]<<(24-(i&3)*8);
+  m[bl>>2]|=0x80<<(24-(bl&3)*8); m[wl-1]=bl<<3;
+  const H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const w=new Int32Array(64);
+  const rr=(x,n)=>(x>>>n)|(x<<(32-n));
+  for(let i=0;i<wl;i+=16){
+    let [a,b,c,d,e,f,g,h]=H;
+    for(let j=0;j<64;j++){
+      if(j<16)w[j]=m[i+j];
+      else{const s0=rr(w[j-15],7)^rr(w[j-15],18)^(w[j-15]>>>3),
+             s1=rr(w[j-2],17)^rr(w[j-2],19)^(w[j-2]>>>10);
+           w[j]=(w[j-16]+s0+w[j-7]+s1)|0;}
+      const S1=rr(e,6)^rr(e,11)^rr(e,25), ch=(e&f)^(~e&g),
+            t1=(h+S1+ch+K256[j]+w[j])|0,
+            S0=rr(a,2)^rr(a,13)^rr(a,22), mj=(a&b)^(a&c)^(b&c),
+            t2=(S0+mj)|0;
+      h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;
+    }
+    H[0]=(H[0]+a)|0;H[1]=(H[1]+b)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;
+    H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0;
+  }
+  return H.map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');
+}
+const HCACHE={};
+/* The hash is a property of (ticker, day, horizon) alone, so it survives every change
+   of threshold — only the pool it indexes into moves. */
+function placeboIdx(tk,day,n,len){
+  const k=tk+'|'+day+'|'+n;
+  const v=HCACHE[k]||(HCACHE[k]=BigInt('0x'+sha256hex(k)));
+  return Number(v%BigInt(len));
+}
+
+/* precompute_events.py, in the browser. Same order of operations, including the two
+   things its docstring warns about: the universe is every ticker seen in any snapshot
+   (not the price file's keys, which would be circular), and basket members are in. */
+function scanEvents(cfg){
+  const c=cfg||SPK;
+  const dates=DAYS.filter(d=>rowsOf(d).length);
+  const uni=new Set();
+  for(const d of dates)for(const tk in mapOf(d))uni.add(tk);
+  const out=[];
+  for(const tk of [...uni].sort()){
+    let last=-99;
+    for(let i=c.look;i<dates.length;i++){
+      const m=mapOf(dates[i])[tk]||0;
+      if(m<c.floor||(i-last)<=c.gap)continue;
+      const prior=[];
+      for(let k=i-c.look;k<i;k++)prior.push(mapOf(dates[k])[tk]||0);
+      const med=median(prior);
+      if(m>=c.mult*Math.max(med,1)){out.push({tk,d:dates[i],m,med});last=i;}
+    }
+  }
+  out.sort((a,b)=>b.d.localeCompare(a.d));
+  return out;
+}
+
+/* finding.py, in the browser: median and trimmed mean side by side, and a benchmark
+   that is the same tickers on a non-event day rather than zero. */
+const trimmedMean=(v,pct)=>{const s=[...v].sort((a,b)=>a-b),k=Math.floor(s.length*(pct??0.10));
+  const t=s.length-2*k>0?s.slice(k,s.length-k):s;
+  return t.reduce((a,b)=>a+b,0)/t.length;};
+function fwd(tk,day,n){
+  const p=PRICES[tk]; if(!p)return null;
+  let i=p.d.indexOf(day);
+  if(i<0)i=p.d.findIndex(x=>x>day);
+  if(i<0||i+n>=p.c.length||!p.c[i])return null;
+  return (p.c[i+n]/p.c[i]-1)*100;
+}
+function scanFinding(events,horizons){
+  const evd={};
+  for(const e of events)(evd[e.tk]||(evd[e.tk]=new Set())).add(e.d);
+  const desc=v=>({n:v.length,median:+median(v).toFixed(2),
+    trimmed_mean:+trimmedMean(v).toFixed(2),
+    mean:+(v.reduce((a,b)=>a+b,0)/v.length).toFixed(2),
+    win_rate:Math.round(v.filter(x=>x>0).length/v.length*100)});
+  const rows=[];
+  for(const n of (horizons||[5,10,20])){
+    const real=[],plac=[];
+    for(const e of events){
+      const r=fwd(e.tk,e.d,n); if(r!=null)real.push(r);
+      const pool=DAYS.filter(d=>!evd[e.tk].has(d));
+      if(!pool.length)continue;
+      const q=fwd(e.tk,pool[placeboIdx(e.tk,e.d,n,pool.length)],n);
+      if(q!=null)plac.push(q);
+    }
+    if(!real.length||!plac.length)continue;
+    const row={sessions:n,spike:desc(real),placebo:desc(plac)};
+    row.gap_median=+(row.spike.median-row.placebo.median).toFixed(2);
+    rows.push(row);
+  }
+  return {events:events.length,archive_days:DAYS.length,
+    span:DAYS.length?[DAYS[0],DAYS[DAYS.length-1]]:[],
+    headline_sessions:20,horizons:rows};
+}
+
+/* The whole feature rests on the claim that this reproduces the pipeline, so it says
+   out loud whether it does rather than asking to be trusted. Runs once, after the last
+   snapshot streams in — before that the scan is working from a partial archive and
+   would disagree for a reason that is not a bug. */
+function selfCheck(){
+  if(SCANOK!==null||!EVENTS0||!FINDING0)return;
+  const mine=scanEvents(SPK0);
+  const key=a=>a.map(e=>e.tk+'|'+e.d).sort().join(',');
+  const evOK=key(mine)===key(EVENTS0);
+  const f=scanFinding(mine,(FINDING0.horizons||[]).map(h=>h.sessions));
+  const g=s=>((f.horizons.find(h=>h.sessions===s)||{}).gap_median);
+  const fiOK=(FINDING0.horizons||[]).every(h=>g(h.sessions)===h.gap_median);
+  SCANOK={ev:evOK,fi:fiOK,n:mine.length,want:EVENTS0.length};
+  if(!evOK||!fiOK)console.warn('spike scan does not reproduce the shipped files',SCANOK);
+}
+
+/* Sensitivity, computed once and cached: the same grid the thresholds live in, so the
+   answer to "did you pick 30 and 3 because they gave the best number" is on screen
+   instead of being a fair thing to wonder. */
+function spkGrid(){
+  /* Keyed on the two axes the grid does NOT vary. It sweeps floor and multiple while
+     holding lookback and gap at whatever is set, so a cache that ignored those went
+     stale the moment either slider moved — showing gaps from a definition nobody had
+     selected, under labels that implied they were current. */
+  const key=SPK.look+'/'+SPK.gap;
+  if(GRID&&GRID.key===key)return GRID.rows;
+  const rows=[];
+  for(const floor of [10,20,30,50,100])for(const mult of [2,3,5]){
+    const ev=scanEvents({...SPK,floor,mult});
+    const h=scanFinding(ev,[20]).horizons[0];
+    rows.push({floor,mult,n:h?h.spike.n:0,gap:h?h.gap_median:null,
+      /* Not cosmetic: a cell looser than the default scores a biased subset, so the
+         grid has to be able to say which of its own numbers to trust less. */
+      unpriced:ev.filter(e=>!PRICES[e.tk]).length,total:ev.length});
+  }
+  GRID={key,rows};
+  return rows;
+}
+/* Recompute everything downstream of the definition. EVENTS and FINDING are what the
+   rest of the page reads, so swapping them is the whole mechanism — the lists, the
+   chart carets, the board badges and the headline all follow without knowing. */
+function applySpike(){
+  /* Only ever true once a custom definition has actually been scanned, so nothing on
+     screen can claim to be showing one before it is. */
+  SPKLIVE=spkCustom()&&SCANOK!==null;
+  if(SPKLIVE){EVENTS=scanEvents();FINDING=scanFinding(EVENTS,[5,10,20]);}
+  else{EVENTS=EVENTS0;FINDING=FINDING0;}
+  TRACK=null;
+}
+
 /* How far back the ticker chart reaches. Calendar spans rather than a point count:
    the count was fixed at 40, which is six weeks of daily archive but *four years* of
    crawls, and the axis said neither. */
@@ -1500,6 +1833,13 @@ function marketHTML(){
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
+  /* No writeURL here — render() ends in writeURL(push=true) already, and calling both
+        pushed the same URL twice, so the first press of Back appeared to do nothing. */
+  const cell=e.target.closest('[data-spkset]');
+  if(cell){const[f,m]=cell.dataset.spkset.split('|').map(Number);
+    SPK.floor=f;SPK.mult=m;applySpike();SEL=null;SHOWN=40;render();return;}
+  if(e.target.closest('[data-spkrst]')){
+    SPK={...SPK0};applySpike();SEL=null;SHOWN=40;render();return;}
   const lens=e.target.closest('[data-lens]');
   if(lens){
     if(lens.dataset.lens!==VIEW){VIEW=lens.dataset.lens;SEL=null;ONLY='';SHOWN=40;render();}
@@ -1555,7 +1895,10 @@ document.addEventListener('click',e=>{
     return;
   }
   const hz=e.target.closest('[data-hz]');
-  if(hz){VIEW='aftermath';WIN=hz.dataset.hz+'d';ONLY='closed';SORT='worst';
+  /* '' rather than 'closed': no filter branch handles 'closed', so it fell through to
+     an unfiltered list under a chip row where nothing was pressed. Sorting by worst
+     already puts the resolved ones first, which is what the row promised. */
+  if(hz){VIEW='aftermath';WIN=hz.dataset.hz+'d';ONLY='';SORT='worst';
     SEL=null;SHOWN=40;render();return;}
   const jp=e.target.closest('[data-jump]');
   if(jp){VIEW='aftermath';SEL=jp.dataset.jump;SHOWN=40;ONLY='';Q='';$('q').value='';
@@ -1626,6 +1969,30 @@ function hideTip(box){
   document.querySelectorAll('svg[data-ch] .chCross').forEach(c=>c.setAttribute('opacity','0'));
   document.querySelectorAll('svg[data-ch] .chDot').forEach(c=>c.setAttribute('opacity','0'));
 }
+/* `input`, not `change`: the point of a slider here is watching the event count and
+   the gap move while you drag. The scan is a few milliseconds over 1,860 tickers, so
+   it can keep up — but writeURL is deliberately left to `change`, or a single drag
+   would push forty history entries and bury the real steps. */
+document.addEventListener('input',e=>{
+  const r=e.target.closest?.('[data-spk]'); if(!r)return;
+  if(SCANOK===null)return;
+  SPK[r.dataset.spk]=+r.value; applySpike(); SEL=null; SHOWN=40;
+  /* Deliberately not render(): that rebuilds #listctl — destroying this very input —
+     and its writeURL defaults to push, so one drag would bury the real steps under
+     forty history entries. The three things a drag changes are updated in place. */
+  const lab=r.parentElement.querySelector('b');
+  if(lab)lab.textContent=r.value+(r.dataset.spk==='mult'?'×':'');
+  const read=document.querySelector('.spkRead');
+  if(read)read.innerHTML=spkReadout();
+  const f=FINDING&&(FINDING.horizons||[]).find(h=>h.sessions===(FINDING.headline_sessions||20));
+  $('claimLine').innerHTML=claimLineHTML(f);
+  renderList();
+});
+/* On release, not during: a full render refreshes the group counts the drag left stale
+   and writes one history entry for the whole gesture. */
+document.addEventListener('change',e=>{
+  if(e.target.closest?.('[data-spk]'))render(true);
+});
 document.addEventListener('pointermove',chartHover);
 document.addEventListener('pointerleave',()=>hideTip(),true);
 document.addEventListener('pointerdown',chartHover);

@@ -288,3 +288,41 @@ def test_price_universe_covers_every_event_ticker():
         f"{len(gaps)} tickers exempted from pricing — that is a broken fetcher, not dead symbols"
     missing = {tk for _, tk in archive_events()} - prices - gaps
     assert not missing, f"{len(missing)} event tickers have no price series: {sorted(missing)[:10]}"
+
+
+def test_the_browser_scan_starts_from_the_same_definition_as_the_precompute():
+    """app.html now recomputes the spike set client-side so the definition can be moved,
+    and the whole feature rests on the two implementations agreeing at the default. They
+    are verified to agree on the numbers by selfCheck() in the browser and by an
+    out-of-band diff against this Python at eight settings, but neither of those runs in
+    CI — and the cheapest way to break the agreement is to edit one constant here and
+    forget the other. So: the four numbers, asserted equal across the two files.
+
+    Lookback is not a named constant on the Python side; it is the literal 20 in both
+    `range(20, len(dates))` and `dates[i-20:i]`, which is exactly why it is worth
+    pinning — an unnamed number is the one nobody remembers to change twice.
+    """
+    import re
+    app = os.path.join(ROOT, "app.html")
+    if not os.path.exists(app):
+        return
+    with open(app) as f:
+        m = re.search(r"const SPK0=\{floor:(\d+),mult:([\d.]+),look:(\d+),gap:(\d+)\}", f.read())
+    assert m, "could not read SPK0 out of app.html"
+    floor, mult, look, gap = int(m.group(1)), float(m.group(2)), int(m.group(3)), int(m.group(4))
+
+    src = os.path.join(ROOT, "scripts", "precompute_events.py")
+    with open(src) as f:
+        py = f.read()
+    def const(name):
+        c = re.search(rf"^{name}\s*=\s*(\d+)", py, re.M)
+        assert c, f"could not read {name} out of precompute_events.py"
+        return int(c.group(1))
+
+    lookbacks = set(re.findall(r"range\((\d+), len\(dates\)\)", py)) \
+              | set(re.findall(r"dates\[i - (\d+):i\]", py))
+    assert lookbacks == {str(look)}, (
+        f"app.html scans a {look}-day lookback; precompute_events.py uses {sorted(lookbacks)}")
+    assert (floor, mult, gap) == (const("HOT_FLOOR"), float(const("HOT_X")), const("GAP")), (
+        f"default spike definition differs: app.html {(floor, mult, gap)} vs "
+        f"precompute_events.py {(const('HOT_FLOOR'), const('HOT_X'), const('GAP'))}")
