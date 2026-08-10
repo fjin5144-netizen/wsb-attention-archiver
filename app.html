@@ -93,9 +93,17 @@ button{cursor:pointer}
   border-right:1px solid var(--line)}
 .listctl{border-bottom:1px solid var(--line);background:var(--sunk);padding:9px 12px;
   display:flex;flex-direction:column;gap:7px}
-.ctlrow{display:flex;align-items:center;gap:9px;min-width:0}
+/* flex-start, not center. Sort's chips fit one line and Show's wrap to three, so
+   centring put the word SHOW beside the *second* line — leaving its first line of chips
+   sitting under SORT with nothing claiming them, which is exactly how the two rows read
+   as one. The label now sits against the first chip either way. */
+.ctlrow{display:flex;align-items:flex-start;gap:9px;min-width:0}
 .ctlk{font:600 10px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
-  color:var(--ink3);width:52px;flex:none}
+  color:var(--ink3);width:52px;flex:none;padding-top:9px}
+/* Sort reorders what you are looking at; Show changes what it is. Different operations,
+   and the counts hanging off Show's chips make it read as data next to Sort's pure
+   presentation — so they get a line between them rather than 7px of gap. */
+.ctlrow.sep{border-top:1px solid var(--line);padding-top:8px;margin-top:1px}
 .ctlrow.active{border-top:1px solid var(--line);padding-top:7px}
 /* The lens decides what every control under it means, so it reads first and heavier. */
 .ctlrow.lens{padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:1px}
@@ -1240,7 +1248,7 @@ function renderClaim(){
         <select id="day2" class="dsel" aria-label="Archive date">${dayOptions()}</select></div>`:'')
     +`<div class="ctlrow"><span class="ctlk">Sort</span><div class="chips">${sorts.map(([k,l])=>
        `<button data-sort="${k}" aria-pressed="${SORT===k}">${l}</button>`).join('')}</div></div>`
-    +`<div class="ctlrow"><span class="ctlk">Show</span><div class="chips">${onlys.map(([k,l,c])=>
+    +`<div class="ctlrow sep"><span class="ctlk">Show</span><div class="chips">${onlys.map(([k,l,c])=>
        `<button data-only="${k}" aria-pressed="${ONLY===k}"${c===0?' disabled':''}>${l}<span class="cnt">${c}</span></button>`).join('')}</div></div>`
     +(VIEW==='aftermath'?spikeCtl():'')
     +activeFiltersHTML()
