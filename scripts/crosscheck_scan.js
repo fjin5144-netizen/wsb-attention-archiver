@@ -51,12 +51,15 @@ const sandbox = {
 const factory = new Function(...Object.keys(sandbox), `
 ${m[1]}
 ;return {
-  scanEvents, scanFinding, sha256hex, pyRound, SPK0,
+  scanEvents, scanFinding, sha256hex, pyRound, SPK0, PXSH, ret, pxOf,
   load(days, snaps, prices){
     DAYS = days; PRICES = prices;
     for (const k in MAPS) delete MAPS[k];
     for (const k in snaps) SNAP[k] = snaps[k];
   },
+  /* Used by the display-boundary check below: pretend a visitor opened these tickers
+     and their per-ticker shards loaded. */
+  fakeShards(map){ for (const k in map) PXSH[k] = map[k]; },
 };`)
 const app = factory(...Object.values(sandbox))
 
@@ -119,10 +122,61 @@ function sha256check(a) {
   return true
 }
 
+/* data/px shards are display-only. They exist so a chart can draw a line for the 70% of
+ * the board the research pack never priced, and the moment one reaches the return
+ * calculation the outcomes start depending on which tickers a visitor happened to click.
+ *
+ * The obvious assertion — that scanFinding does not move — is worthless here, and was
+ * written that way first: scanFinding reads PRICES directly through fwd(), so wiring
+ * PXSH into pxOf leaves it untouched and the check passes on broken code. Verified by
+ * doing exactly that. The path that actually runs through pxOf is ret(), which produces
+ * every r5/r10/r20 in the aftermath list, every outcome group's membership and every
+ * board row's track record. That is what gets pinned. */
+const evPath = path.join(ROOT, 'data/events.json')
+const evts = fs.existsSync(evPath) ? JSON.parse(fs.readFileSync(evPath, 'utf8')) : []
+const returns = () => JSON.stringify(evts.map(e => [e.tk, e.d,
+  app.ret(e.tk, e.d, 5), app.ret(e.tk, e.d, 10), app.ret(e.tk, e.d, 20)]))
+const baseline = returns() + '|' + JSON.stringify(app.scanFinding(app.scanEvents(app.SPK0), [5, 10, 20]))
+const outside = []
+if (fs.existsSync(path.join(ROOT, 'data/px'))) {
+  const dp = path.join(ROOT, 'data/px/_dates.json')
+  if (fs.existsSync(dp)) {
+    const cal = JSON.parse(fs.readFileSync(dp, 'utf8'))
+    const fake = {}
+    for (const n of fs.readdirSync(path.join(ROOT, 'data/px'))) {
+      if (n.startsWith('_') || !n.endsWith('.json')) continue
+      const tk = n.slice(0, -5)
+      if (prices[tk]) continue
+      const sh = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/px', n), 'utf8'))
+      const d = [], c = []
+      sh.c.forEach((v, k) => { if (v != null) { d.push(cal[sh.i + k]); c.push(v) } })
+      if (d.length) { fake[tk] = { d, c }; outside.push(tk) }
+      if (outside.length >= 200) break
+    }
+    app.fakeShards(fake)
+  }
+}
+if (outside.length) {
+  const after = returns() + '|' + JSON.stringify(app.scanFinding(app.scanEvents(app.SPK0), [5, 10, 20]))
+  if (after !== baseline) {
+    console.error(`event returns or the finding moved after loading ${outside.length} ` +
+                  `display-only shards — data/px has reached the research path`)
+    process.exit(1)
+  }
+  /* And directly: a ticker with a shard but no research price must still be unpriced. */
+  const leak = outside.filter(tk => app.pxOf(tk, '2026-01-01'))
+  if (leak.length) {
+    console.error(`pxOf resolves ${leak.length} shard-only tickers (${leak.slice(0, 5)}) — ` +
+                  `display data is reaching the research lookup`)
+    process.exit(1)
+  }
+}
+
 if (bad.length) {
   console.error(`${bad.length} of ${checked} definitions disagree with the Python:\n`)
   for (const b of bad.slice(0, 10)) console.error(`  ${b.key}\n    ${b.diffs.join('\n    ')}`)
   process.exit(1)
 }
 console.log(`app.html reproduces the Python at all ${checked} definitions ` +
-            `(event sets and every describe() field, both sides)`)
+            `(event sets and every describe() field, both sides)` +
+            (outside.length ? `; ${evts.length} event returns unmoved by ${outside.length} display-only shards` : ''))
