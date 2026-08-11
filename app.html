@@ -129,6 +129,8 @@ button{cursor:pointer}
 .ctlrow.active{border-top:1px solid var(--line);padding-top:8px}
 /* The lens decides what every control under it means, so it reads first and heavier. */
 .ctlrow.lens{padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:1px}
+/* No label beside it, so the switch itself carries the row. */
+.ctlrow.lens .chips{flex:1}
 .ctlrow.lens .chips button{font-size:12px;padding:6px 12px}
 /* The date picker used to sit in .tbctl and was styled by `.tbctl select`. Moving it
    into the list controls left the rule behind, so it fell back to a native control:`button,select,input{color:inherit}` gave it near-white text and nothing gave it a
@@ -242,7 +244,21 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 /* ---- list ---- */
 .listHead{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);
   padding:8px 16px;font-size:12px;color:var(--ink3);display:flex;gap:8px;align-items:center}
-.srcTag{margin-left:auto;padding:2px 8px;border-radius:4px;font-size:11px;
+/* Pushed to the right of the count it orders, and set as a plain inline select rather
+   than a row of buttons — the visual weight of a control should track what it changes,
+   and this one changes nothing about which rows exist. */
+.sortSel{margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--ink3);
+  font-size:11px;white-space:nowrap}
+.sortSel select{background:none;border:0;color:var(--ink2);font:500 11px/16px var(--sans);
+  padding:2px 16px 2px 4px;border-radius:4px;cursor:pointer;-webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink3) 50%),
+                   linear-gradient(135deg,var(--ink3) 50%,transparent 50%);
+  background-position:calc(100% - 8px) 55%,calc(100% - 4px) 55%;
+  background-size:4px 4px,4px 4px;background-repeat:no-repeat}
+.sortSel select:hover{background-color:var(--sunk);color:var(--ink)}
+.sortSel select:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.sortSel option{background:var(--sunk);color:var(--ink)}
+.srcTag{padding:2px 8px;border-radius:4px;font-size:11px;
   background:rgba(139,124,246,.16);color:var(--acc);white-space:nowrap}
 .srcTag.bad{background:rgba(237,161,0,.16);color:var(--warn)}
 .wbNote{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);
@@ -1368,14 +1384,15 @@ function renderClaim(){
      one. It lives in that view's own control row now, and the tab is called Board. */
   const ctl=$('listctl');
   if(ctl)ctl.innerHTML=
-     `<div class="ctlrow lens"><span class="ctlk">Lens</span><div class="chips">
+     /* No label. A two-option segmented switch is self-describing, and calling it
+        "LENS" in the same 10px/600 grey as DAY and SHOW put the control that changes
+        what a row *is* on a level with the one that changes their order. */
+     `<div class="ctlrow lens"><div class="chips">
         <button data-lens="today" aria-pressed="${VIEW==='today'}">Moving today</button>
         <button data-lens="aftermath" aria-pressed="${VIEW==='aftermath'}">After a spike</button>
       </div></div>`
     +(VIEW==='today'?`<div class="ctlrow"><span class="ctlk">Day</span>
         <select id="day2" class="dsel" aria-label="Archive date">${dayOptions()}</select></div>`:'')
-    +`<div class="ctlrow"><span class="ctlk">Sort</span><div class="chips">${sorts.map(([k,l])=>
-       `<button data-sort="${k}" aria-pressed="${SORT===k}">${l}</button>`).join('')}</div></div>`
     +`<div class="ctlrow sep"><span class="ctlk">Show</span><div class="chips">${onlys.map(([k,l,c])=>
        `<button data-only="${k}" aria-pressed="${ONLY===k}"${c===0?' disabled':''}>${l}<span class="cnt">${c}</span></button>`).join('')}</div></div>`
     +(VIEW==='aftermath'?spikeCtl():'')
@@ -1393,10 +1410,14 @@ function activeFiltersHTML(){
     'new':'new faces',track:'has a record',crash:'fell ≥25%',fell:'fell 5–25%',
     flat:'flat ±5%',rose:'rose ≥5%',pending:'no outcome yet'};
   if(ONLY)bits.push([LBL[ONLY]||ONLY,'only']);
-  if(SORT!=='res')bits.push([`sorted · ${SORT}`,'sort']);
+  /* Sort is deliberately not here. This row lists what is being *withheld* from you —
+     each chip removes something that is hiding rows — and sorting hides nothing. It read
+     as "sorted · mentions ×" beside real filters, which is the same category error the
+     chip row above used to make, and now the sort control sits in the list header where
+     its effect is visible anyway. */
   if(VIEW==='today'&&DAY!==DAYS[DAYS.length-1])bits.push([`day · ${DAY}`,'day']);
   if(!bits.length)return '';
-  return `<div class="ctlrow active"><span class="ctlk">Filtering</span><div class="chips">`
+  return `<div class="ctlrow active"><span class="ctlk">Hiding</span><div class="chips">`
     +bits.map(([label,k])=>`<button class="fchip" data-drop="${k}">${label}<span aria-hidden="true"> ×</span></button>`).join('')
     +`<button class="fchip clr" data-drop="all">Clear all</button></div></div>`;
 }
@@ -1408,8 +1429,19 @@ function renderList(){
      hour vs a post-close read, and no spike detection behind it either way. */
   const wb=VIEW==='today'&&!DAYS.includes(DAY);
   const src=wb?`<span class="srcTag${WBSUSPECT.has(DAY)?' bad':''}">archive.org crawl${WBSUSPECT.has(DAY)?' · frozen page':''}</span>`:'';
+  /* Sort lives on the list, not in the filter stack above it. It was a fourth row of
+     chips identical to Show's — same 12px, same 4px 8px, same 4px radius — for a control
+     that does a different kind of thing: Show changes which rows exist, Sort only changes
+     their order. Reading as peers, with the weaker one placed first, is most of what made
+     that block feel flat. Here it also sits beside the count it orders. */
+  const sorts=VIEW==='aftermath'
+    ? [['res','Newest resolved'],['new','Newest'],['old','Oldest'],['worst','Worst 10d'],['best','Best 10d'],['mentions','Most mentions']]
+    : [['res','Rank'],['mentions','Mentions'],['best','Multiple'],['worst','Worst record']];
   const head=`<div class="listHead"><b>${L.length}</b> ${VIEW==='aftermath'?'spikes':'tickers'}
-    ${Q?`· filter ${esc(Q)}`:''}${ONLY?` · ${ONLY}`:''}${src}</div>`;
+    ${Q?`· filter ${esc(Q)}`:''}${ONLY?` · ${ONLY}`:''}${src}
+    <label class="sortSel"><span>sorted by</span>
+      <select id="sortsel" aria-label="Sort order">${sorts.map(([k,l])=>
+        `<option value="${k}"${SORT===k?' selected':''}>${l}</option>`).join('')}</select></label></div>`;
   if(!L.length){$('list').innerHTML=head+`<div class="empty">Nothing matches.</div>`;return;}
   /* Page far enough to actually contain the selection. Without this, jumping to a
      spike that sorts to position 300 — or opening a ?sel= deep link to one — landed
@@ -2160,17 +2192,16 @@ document.addEventListener('click',e=>{
     render();return;
   }
   if(e.target.closest('[data-back]')){$('pane').classList.remove('showDetail');return;}
-  const s=e.target.closest('[data-sort]');
-  if(s){SORT=s.dataset.sort;SHOWN=40;render();return;}
   const o=e.target.closest('[data-only]');
   if(o){ONLY=o.dataset.only;SHOWN=40;render();return;}
   const drop=e.target.closest('[data-drop]');
   if(drop){
     const k=drop.dataset.drop;
-    if(k==='all'){Q='';ONLY='';SORT='res';if(DAYS.length)DAY=DAYS[DAYS.length-1];}
+    /* "Clear all" leaves the sort alone. It clears what is hiding rows; resetting the
+       order as a side effect of unhiding them is a second, unasked-for change. */
+    if(k==='all'){Q='';ONLY='';if(DAYS.length)DAY=DAYS[DAYS.length-1];}
     if(k==='q')Q='';
     if(k==='only')ONLY='';
-    if(k==='sort')SORT='res';
     if(k==='day'&&DAYS.length)DAY=DAYS[DAYS.length-1];
     SHOWN=40;SEL=null;
     (async()=>{await loadDays([DAY]);render();})();
@@ -2319,6 +2350,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft'){history.back();e.preventDefault();}
 });
 document.addEventListener('change',async e=>{
+  if(e.target&&e.target.id==='sortsel'){SORT=e.target.value;SHOWN=40;render();return;}
   if(e.target&&e.target.id==='day2'){
     DAY=e.target.value;SEL=null;
     if(!DAYS.includes(DAY)){await ensureHist();await loadDays([DAY,...WBDAYS.filter(d=>d<=DAY).slice(-40)]);}
