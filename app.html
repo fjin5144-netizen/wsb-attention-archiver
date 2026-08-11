@@ -117,12 +117,6 @@ button{cursor:pointer}
 .listcol{grid-area:list;display:grid;grid-template-rows:1fr;min-height:0;min-width:0;
   border-right:1px solid var(--line)}
 .listctl{background:var(--sunk);padding:12px;display:flex;flex-direction:column;gap:12px}
-/* In a column of its own the label goes above the chips rather than beside them: a
-   52px gutter out of 208px was a quarter of the rail spent on four words. */
-@media (min-width:1200px){
-  .ctlrow{flex-direction:column;gap:6px}
-  .ctlk{width:auto;padding-top:0}
-}
 /* The lens is a segmented control, not two buttons. Stacking them full-width in the rail
    made them read as two independent actions — the same mistake as giving them their own
    labels: what carries "these are two states of one thing, and you are in this one" is
@@ -149,6 +143,17 @@ button{cursor:pointer}
 .ctlrow.active{border-top:1px solid var(--line);padding-top:8px}
 /* The lens decides what every control under it means, so it reads first and heavier. */
 .ctlrow.lens{padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:1px}
+/* In a column of its own the label goes above the chips rather than beside them: a
+   52px gutter out of 208px was a quarter of the rail spent on four words. */
+@media (min-width:1200px){
+  /* stretch, not the base rule's flex-start. That value exists to top-align a label
+     against a block of chips beside it; once the row turns vertical it means "do not
+     grow sideways", and the tile grid collapsed to a single 104px column inside a 223px
+     rail because of it. */
+  .ctlrow{flex-direction:column;align-items:stretch;gap:6px}
+  .ctlk{width:auto;padding-top:0}
+}
+
 /* The date picker used to sit in .tbctl and was styled by `.tbctl select`. Moving it
    into the list controls left the rule behind, so it fell back to a native control:`button,select,input{color:inherit}` gave it near-white text and nothing gave it a
    background, which on this page means light-on-light. */
@@ -253,19 +258,34 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
   padding:4px 8px;font-size:12px;color:var(--ink2)}
 .chips button[aria-pressed=true]{background:var(--accfill);border-color:var(--accfill);color:#fff}
 .chips button[disabled]{opacity:.35;cursor:default}
-/* The glyph carries the meaning, so it gets the room to be read: 14px against 12px text,
-   and stroke rather than fill so it stays legible at that size. currentColor throughout —
-   one drawing serves the resting chip, the hover, the white-on-accent pressed state and
-   both themes. */
-.fbtn{display:inline-flex;align-items:center;gap:6px}
-.gly{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;
-  stroke-linecap:round;stroke-linejoin:round;opacity:.72;
+/* Tiles, not a wrapped row of pills. Seven filters flowing inline gave every one a
+   different width and broke across lines wherever the text happened to run out, so the
+   block had no shape to remember — which is worth more here than compactness, because
+   these are the same seven choices every visit. On a fixed grid each one keeps its
+   place, and the glyph gets room to be a drawing rather than a bullet.
+   
+   auto-fill rather than a hard column count, because the same block sits in three
+   different widths and wants a different shape in each. The rail is 223px and gets two
+   columns — the 2×4 this is drawn for. Between 901 and 1199 the block sits *above* the
+   list instead of beside it, where being tall costs list rows, so it spreads to three
+   and gets shorter. A phone gets three as well.
+
+   96px is the number that produces all of that from one rule: three tracks fit a 316px
+   container and two fit a 223px one, and "No outcome yet" still sets on one line at the
+   ~102px the tracks actually come out at. */
+.ctlrow.sep .chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+  gap:4px;flex:1;min-width:0}
+.fbtn{display:grid;justify-items:center;align-content:start;gap:4px;
+  padding:10px 6px;text-align:center;line-height:16px;min-height:74px}
+.fbtn .fl{font-size:11px}
+.fbtn .cnt{margin:0;font-size:12px;opacity:1}
+.gly{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;
+  stroke-linecap:round;stroke-linejoin:round;opacity:.7;
   transition:opacity .12s,transform .12s}
 .fbtn:hover .gly{opacity:1}
-.fbtn[aria-pressed=true] .gly{opacity:1}
 /* A pressed filter is the one thing on screen doing something, and its mark leans into
-   it a little. Held to 4% so the chip does not jump the row it sits in. */
-.fbtn[aria-pressed=true] .gly{transform:scale(1.04)}
+   it. Held small so the tile does not shift the grid around it. */
+.fbtn[aria-pressed=true] .gly{opacity:1;transform:scale(1.06)}
 @media (prefers-reduced-motion:reduce){.gly{transition:none}}
 .chips .cnt{margin-left:6px;font-variant-numeric:tabular-nums;opacity:.65;font-size:11px}
 .chips button[aria-pressed=true] .cnt{opacity:.85}
