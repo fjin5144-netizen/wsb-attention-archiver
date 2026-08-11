@@ -62,24 +62,29 @@ button{cursor:pointer}
      the claim sentence is one nowrap line ~690px wide — so on a 375px phone the whole
      app laid out at 735px and body{overflow-x:hidden} quietly cropped the right half:the Market tab, and the track-record column of every row, were simply gone. */
   grid-template-columns:minmax(0,1fr);
-  grid-template-rows:var(--top) auto 1fr;grid-template-areas:"top" "claim" "pane"}
+  grid-template-rows:var(--top) 1fr;grid-template-areas:"top" "pane"}
 
 /* One line, foldable, spanning the width. Collapsed it states the result; expanded it
    is the same block that used to occupy the left column. Either way the leftmost
    column below is the ticker list. */
 .claim{grid-area:claim;background:var(--sunk);border-bottom:1px solid var(--line);min-width:0}
-.claimBar{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;
-  padding:8px 16px;text-align:left;color:var(--ink2);font-size:12px}
-.claimBar:hover{background:var(--card)}
-.claimBar .cw{font:600 10px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
-  color:var(--ink3);flex:none}
-.claimBar .cl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.claimBar .cl b{color:var(--ink);font-weight:600}
-.claimBar .cl .dn{color:var(--dn)}
-.claimBar .cx{color:var(--ink3);transition:transform .15s;flex:none}
-.claimBar[aria-expanded=true] .cx{transform:rotate(180deg)}
-.claimBody{padding:0 16px 16px;max-width:940px}
-.claimBody .fLead{font-size:13px}
+/* The rumor page. Wide measure for prose, but capped — a claim read across 1200px of
+   monitor is a claim nobody finishes. */
+.rumor{max-width:680px;padding:24px 4px 48px}
+.rTag{font:600 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--warn);margin:0 0 12px}
+.rSay{font:400 26px/32px var(--sans);letter-spacing:-.015em;margin:0 0 8px;color:var(--ink)}
+.rSay b{font-weight:600}
+.rSub{margin:0 0 32px;font-size:12px;color:var(--ink3)}
+.rH{font:600 11px/16px var(--sans);letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink3);margin:32px 0 8px}
+.rumor .note{margin:0 0 12px}
+.rKill{margin:0;padding:0;list-style:none}
+.rKill li{font-size:13px;line-height:20px;color:var(--ink2);padding:12px 0;
+  border-top:1px solid var(--line)}
+.rKill li b{color:var(--ink);font-weight:600}
+.rEnd{margin:32px 0 0;padding-top:16px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--ink3)}
 .topbar{grid-area:top;display:flex;align-items:center;gap:16px;padding:0 16px;
   background:var(--sunk);border-bottom:1px solid var(--line);min-width:0}
 .rail{grid-area:rail;background:var(--sunk);border-right:1px solid var(--line);
@@ -343,10 +348,9 @@ h3:first-child{margin-top:0}
 @media (max-width:900px){
   :root{--top:50px}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:var(--top) auto 1fr auto;
-    grid-template-areas:"top" "claim" "pane" "tabs"}
-  .claimBar{padding:8px 12px}
-  .claimBar .cw{display:none}
-  .claimBody{padding:0 12px 12px}
+    grid-template-areas:"top" "pane" "tabs"}
+  .rumor{padding:16px 4px 32px}
+  .rSay{font-size:21px;line-height:28px}
   /* The rail becomes a sheet rather than a column. It holds the finding and the
      filters, which on a phone are a thing you open, decide, and close. */
   .rail{position:fixed;inset:var(--top) 0 0 0;z-index:40;border-right:0;
@@ -416,24 +420,16 @@ b,strong{font-weight:600}
            them) so the lens picks the unit and lives beside the groups it changes. -->
       <button role="tab" data-v="stocks" aria-selected="true" title="Attention and what followed it">Stocks</button>
       <button role="tab" data-v="market" aria-selected="false" title="Systemic gauges, unrelated to the archive">Market</button>
+      <button role="tab" data-v="rumor" aria-selected="false" title="What the archive claims, and what it rests on">Rumor</button>
     </div>
     <div class="spacer"></div>
     <div class="tbctl">
       <input id="q" type="search" placeholder="ticker" aria-label="Filter by ticker" autocomplete="off">
     </div>
   </header>
-  <!-- The claim used to own a 272px column down the left, permanently, mostly prose.
-       Leftmost belongs to the tickers — that is what a person came to navigate. This
-       is one line until you want the rest of it, and it stays put while the list
-       scrolls under it. -->
-  <section class="claim" id="claim">
-    <button class="claimBar" id="claimBar" aria-expanded="false" aria-controls="claimBody">
-      <span class="cw">What the archive says</span>
-      <span class="cl" id="claimLine">…</span>
-      <span class="cx" aria-hidden="true">▾</span>
-    </button>
-    <div class="claimBody" id="claimBody" hidden></div>
-  </section>
+  <!-- The claim used to be a foldable strip across the top of every screen: a headline
+       squeezed to one ellipsed line, and the reasoning folded away behind a chevron most
+       people never opened. It is a destination now — see the Rumor tab. -->
   <main class="pane" id="pane">
     <div class="listcol" id="listcol">
       <div class="listctl" id="listctl"></div>
@@ -444,6 +440,7 @@ b,strong{font-weight:600}
   <nav class="mtabs" id="mtabs" role="tablist">
     <button role="tab" data-v="stocks" aria-selected="true"><span class="g">▦</span>Stocks</button>
     <button role="tab" data-v="market" aria-selected="false"><span class="g">◈</span>Market</button>
+    <button role="tab" data-v="rumor" aria-selected="false"><span class="g">◊</span>Rumor</button>
     <!-- The fourth tab opened the rail. The rail is gone: filters sit above the list
          and the claim is a foldable bar across the top, reachable in both layouts
          without a tab of its own. -->
@@ -593,11 +590,6 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
     await loadDays([DAY,...WBDAYS.filter(d=>d<=DAY).slice(-40)]);
   }
   await loadDays([DAY]);
-  try{
-    if(localStorage.getItem('claimOpen')==='1'){
-      $('claimBar').setAttribute('aria-expanded','true');$('claimBody').hidden=false;
-    }
-  }catch(_){}
   $('boot').remove();
   render();
   /* The rest streams in behind the shell: mention history needs every snapshot, but
@@ -667,7 +659,7 @@ window.addEventListener('popstate',async()=>{
 });
 function readURL(){
   const p=new URLSearchParams(location.search);
-  if(['today','aftermath','market','method'].includes(p.get('v')))VIEW=p.get('v');
+  if(['today','aftermath','market','method','rumor'].includes(p.get('v')))VIEW=p.get('v');
   SEL=p.get('sel')||null; Q=(p.get('q')||'').toUpperCase();
   /* hasOwnProperty, not `in`: `'constructor' in TWINS` is true through the prototype,
      so ?tw=constructor set TWIN to a function, backFrom threw RangeError, and the throw
@@ -1083,7 +1075,10 @@ function boardRows(){
    picker drives Today alone, and neither it nor the search does anything in Market —
    both sat there enabled, implying otherwise. */
 function syncChrome(){
-  $('q').style.display=(VIEW==='market'||VIEW==='method')?'none':'';
+  /* The ticker filter belongs to the two lenses that list tickers, and to nothing else.
+     Rumor is prose about the whole archive; a search box beside it promises a filter it
+     does not have. */
+  $('q').style.display=(VIEW==='market'||VIEW==='method'||VIEW==='rumor')?'none':'';
   $('q').value=Q;
   /* One destination covers two lenses, so Stocks stays lit under either. */
   const dest=(VIEW==='today'||VIEW==='aftermath')?'stocks':VIEW;
@@ -1094,8 +1089,9 @@ function syncChrome(){
 
 function render(push=true){
   syncChrome();
-  $('pane').classList.toggle('single',VIEW==='market'||VIEW==='method');
+  $('pane').classList.toggle('single',VIEW==='market'||VIEW==='method'||VIEW==='rumor');
   renderClaim();
+  if(VIEW==='rumor'){$('detail').innerHTML=rumorHTML();writeURL(push);return;}
   if(VIEW==='method'){$('detail').innerHTML=methodHTML();writeURL(push);return;}
   if(VIEW==='market'){
     $('detail').innerHTML=marketHTML();writeURL(push);
@@ -1216,41 +1212,82 @@ function spkReadout(live){
             : 'loading the full archive…'}</div>`}`;
 }
 
-/* Its own function because a slider drag needs this line to move without rebuilding the
-   control the pointer is holding. SPKLIVE rather than spkCustom(): between a shared
-   ?spk= link being read and the archive finishing its stream, the definition is chosen
-   but not yet applied, and badging the shipped numbers as "your definition" would label
-   them as something they are not. */
-function claimLineHTML(f){
-  if(!f)return 'no finding computed yet';
+/* The claim, as a destination rather than a strip.
+   
+   It used to be one ellipsed line across the top of every screen with the reasoning
+   folded behind a chevron. That put the project's only conclusion in the least readable
+   place it owns and made everything behind it optional.
+   
+   Framed as a rumor because that is its actual epistemic status, and the site has been
+   saying so in small print for months: one quarter of archive, too short to split across
+   periods, and an earlier version of this result flipped sign the moment it finally
+   could be. A rumor is something being said, on evidence, that has not been confirmed —
+   which is exactly this. The page is laid out as: what is being said, what it rests on,
+   how much it moves, and what would kill it. */
+function rumorHTML(){
+  const f=FINDING&&(FINDING.horizons||[]).find(h=>h.sessions===(FINDING.headline_sessions||20));
+  if(!f)return '<div class="empty">No finding computed yet.</div>';
   const d=f.gap_median<0;
-  return `spikes run <b class="${d?'dn':'up'}">${Math.abs(f.gap_median).toFixed(1)} points</b>
-    ${d?'below':'above'} the same tickers on a random day, over ${f.sessions} sessions ·
-    <b>n=${f.spike.n}</b> · ${FINDING.archive_days} days of archive, not a finding${
-    SPKLIVE?' · <b class="warn">your definition</b>':''}`;
+  const g=SCANOK!==null?spkGrid():null;
+  const gaps=g?g.map(x=>x.gap).filter(v=>v!=null):[];
+  const neg=gaps.filter(v=>v<0).length;
+  return `<div class="rumor">
+    <p class="rTag">Rumor · unconfirmed${SPKLIVE?' · your definition':''}</p>
+
+    <h1 class="rSay">After r/wallstreetbets goes loud on a stock, the stock
+      <b class="${d?'dn':'up'}">falls ${Math.abs(f.gap_median).toFixed(1)} points ${d?'behind':'ahead of'}</b>
+      where the same stock goes on an ordinary day.</h1>
+    <p class="rSub">Median over ${f.sessions} sessions, ${f.spike.n} spikes,
+      ${FINDING.archive_days} days of archive.</p>
+
+    <h3 class="rH">What it rests on</h3>
+    <p class="note">The benchmark is never zero. These tickers beat the market on their
+      own, so "down after a spike" carries almost nothing — the comparison is the same
+      tickers on a day they were not loud, drawn by hash so it reproduces.</p>
+    ${(FINDING.horizons||[]).map(h=>`<button class="fRow" data-hz="${h.sessions}"
+        title="Show the ${h.spike.n} spikes behind this, chart set to +${h.sessions}d">
+        <span class="mut">${h.sessions} sessions · n=${h.spike.n} · spike ${pct(h.spike.median)} vs random day ${pct(h.placebo.median)}</span>
+        <span class="num ${h.gap_median<0?'dn':'up'}">${h.gap_median.toFixed(1)} pts ›</span></button>`).join('')}
+
+    ${g?`<h3 class="rH">How much it moves</h3>
+    <p class="note">The spike definition is four arbitrary numbers. Swept across fifteen
+      pairs of them, the gap runs ${Math.max(...gaps).toFixed(2)} to ${Math.min(...gaps).toFixed(2)}pp
+      and <b class="${neg===gaps.length?'dn':'warn'}">${neg===gaps.length?'stays negative in all fifteen':`is negative in ${neg} of ${gaps.length}`}</b>.
+      Move them yourself under <b>Stocks → After a spike</b>.</p>`:''}
+
+    <h3 class="rH">What would kill it</h3>
+    <ul class="rKill">
+      <li><b>Another quarter.</b> ${FINDING.archive_days} days cannot be split across
+        periods, and splitting is the test that matters. A previous version of this result
+        had p=0.000 and flipped sign the first time it could be split.</li>
+      ${/* The real per-year numbers, not "several years". They are sitting in
+            finding_rank.json and the first draft of this page said "several" beside
+            them — vague where the page has the figures, which is the one thing a claim
+            like this cannot afford. */''}
+      <li><b>The cross-period check already disagrees.</b> Run on five years of crawls
+        instead of this archive, with a definition that needs no lookback — a top-3 spot
+        against the same tickers on days they were not top-3 — the sign flips by year:
+        ${(()=>{const y=(RANK&&RANK.by_year)||[];
+          return y.length
+            ? y.map(x=>`<b class="${x.gap<0?'dn':'up'}">${x.era} ${x.gap>0?'+':''}${x.gap.toFixed(2)}</b>`).join(' · ')
+              +`. ${y.filter(x=>x.gap<0).length} of ${y.length} negative, on ${y.reduce((a,x)=>a+x.days,0)} crawl days.`
+            : 'not computed.';})()}</li>
+      <li><b>Survivorship in the price pack.</b> Prices are fetched for tickers that
+        spike, so loosening the definition reaches names that were never priced and
+        drops them — a different sample under the same label.</li>
+      <li><b>It is one subreddit, read once a day, through one tracker.</b> Nothing here
+        measures attention; it measures what ApeWisdom reported about one board.</li>
+    </ul>
+
+    <p class="rEnd">Not a finding. A thing to look at again in six months.
+      <button class="rkq" data-v="method" title="How these numbers are measured">?</button></p>
+  </div>`;
 }
+
 function renderClaim(){
   const f=FINDING&&(FINDING.horizons||[]).find(h=>h.sessions===(FINDING.headline_sessions||20));
   /* Collapsed line first: the result in a sentence. The rest is the same block that
      was in the rail, revealed only when asked for. */
-  $('claimLine').innerHTML=claimLineHTML(f);
-  const findingHTML=f?`
-    <div class="finding">
-      <p class="rk">How this is measured<button class="rkq" data-v="method" title="How these numbers are measured">?</button></p>
-      <p class="fLead">After a confirmed spike, the median return over
-        <b>${f.sessions} sessions</b> is <b class="dn">${pct(f.spike.median)}</b>.
-        The same tickers on a random day: <b>${pct(f.placebo.median)}</b>.</p>
-      ${/* Clickable, because the most important sentence on the screen used to be the
-            one thing you could not act on. A horizon row takes you to the spikes it
-            is made of, with the chart already on that window. */''}
-      ${(FINDING.horizons||[]).map(h=>`<button class="fRow" data-hz="${h.sessions}"
-        title="Show the ${h.spike.n} spikes behind this, chart set to +${h.sessions}d">
-        <span class="mut">${h.sessions} sessions · n=${h.spike.n}</span>
-        <span class="num ${h.gap_median<0?'dn':'up'}">${h.gap_median.toFixed(1)} pts ›</span></button>`).join('')}
-      <p class="fCav"><b>Not a finding.</b> ${FINDING.archive_days} days of archive is one quarter —
-        too short to split across periods, and that is the test an earlier result failed.</p>
-    </div>`:'';
-  $('claimBody').innerHTML=findingHTML;
   const sorts=VIEW==='aftermath'
     ? [['res','Newest resolved'],['new','Newest'],['old','Oldest'],['worst','Worst 10d'],['best','Best 10d'],['mentions','Most mentions']]
     : [['res','Rank'],['mentions','Mentions'],['best','Multiple'],['worst','Worst record']];
@@ -2071,15 +2108,6 @@ document.addEventListener('click',e=>{
     else if(carry&&VIEW==='today'&&from==='aftermath'){Q='';SEL=carry;}
     render();return;
   }
-  const cb=e.target.closest('#claimBar');
-  if(cb){
-    const open=cb.getAttribute('aria-expanded')!=='true';
-    cb.setAttribute('aria-expanded',String(open));
-    $('claimBody').hidden=!open;
-    /* Remembered, because a reader who folded it away meant it. */
-    try{localStorage.setItem('claimOpen',open?'1':'0');}catch(_){}
-    return;
-  }
   if(e.target.closest('[data-back]')){$('pane').classList.remove('showDetail');return;}
   const s=e.target.closest('[data-sort]');
   if(s){SORT=s.dataset.sort;SHOWN=40;render();return;}
@@ -2187,9 +2215,10 @@ document.addEventListener('input',e=>{
   if(lab)lab.textContent=r.value+(r.dataset.spk==='mult'?'×':'');
   const read=document.querySelector('.spkRead');
   if(read)read.innerHTML=spkReadout(true);
-  const f=FINDING&&(FINDING.horizons||[]).find(h=>h.sessions===(FINDING.headline_sessions||20));
-  $('claimLine').innerHTML=claimLineHTML(f);
   renderList();
+  /* The rumor page reads FINDING too, and a drag changes it. Repainted only when it is
+     the thing on screen. */
+  if(VIEW==='rumor')$('detail').innerHTML=rumorHTML();
 });
 /* On release, not during: a full render refreshes the group counts the drag left stale
    and writes one history entry for the whole gesture. */
