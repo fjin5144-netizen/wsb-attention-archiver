@@ -762,7 +762,10 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
   EVENTS0=ev;FINDING0=fi;
   if(wq){WBDAYS=wq.days_list||[];WBSUSPECT=new Set(Object.keys(wq.suspect||{}));}
   DAY=DAYS[DAYS.length-1];
-  await loadDays([DAY]);
+  /* The previous day too, from the first paint. Every board row's "X → Y" is read from
+     it wherever the API sent its sentinel, and rendering the sentinel for a second and
+     then correcting is worse than waiting one fetch. */
+  await loadDays([DAY,prevDayOf(DAY)].filter(Boolean));
   /* Land on a day that has rows. A run can commit before the fetch returns, and an
      empty newest day would blank the whole shell. */
   for(let i=DAYS.length-1;i>=0&&!rowsOf(DAY).length;i--){DAY=DAYS[i];await loadDays([DAY]);}
@@ -1195,7 +1198,9 @@ function groupBase(view){
    exactly as it did there. */
 const CHEAP_MAX=100;
 function surgeTiers(rows){
-  const cand=rows.filter(r=>Number.isFinite(r.rank_24h_ago));
+  /* >0, not isFinite. 0 is the API's "no value" and Number.isFinite(0) is true, so the
+     sentinel rows walked into every tier and produced a climb of (0 - rank). */
+  const cand=rows.filter(r=>r.rank_24h_ago>0);
   const seen=new Set();
   const take=(f,cap=8)=>{const out=cand.filter(r=>!seen.has(r.ticker)&&f(r))
       .sort((a,b)=>a.rank-b.rank).slice(0,cap);out.forEach(r=>seen.add(r.ticker));return out;};
@@ -1223,6 +1228,45 @@ function lastClose(tk){const p=pxOf(tk,DAY);
   let i=p.d.length-1; while(i>=0&&p.d[i]>DAY)i--;
   return i>=0?p.c[i]:null;}
 
+/* ApeWisdom uses 0 for "no value", not for zero, in mentions_24h_ago and rank_24h_ago —
+   7,985 of 35,499 archived rows carry it. On 2026-08-11 that was 193 of 499 board rows,
+   and for 172 of them this archive holds the real previous reading: VC was shown as
+   "mentions 0 → 16" when yesterday's own snapshot says 13, and SION as "0 → 7" when it
+   was 7 → 7, a flat day rendered as arriving from nothing.
+   
+   So the previous archived day is preferred over the API's field wherever the field is
+   the sentinel. That also matches what the row already claims to be showing: the line
+   reads as yesterday-to-today, and the archive is exactly that, where the API's figure
+   is a rolling 24h window from whenever the read happened.
+   
+   A ticker the previous day does not carry gets null, not zero. It was below the board's
+   cutoff, which is not the same statement as "nobody mentioned it". */
+function prevDayOf(d){
+  const src=DAYS.includes(d)?DAYS:WBDAYS;
+  const i=src.indexOf(d);
+  return i>0?src[i-1]:null;
+}
+function priorReading(tk,day){
+  const pd=prevDayOf(day); if(!pd)return null;
+  const rows=rowsOf(pd); if(!rows.length)return null;   // not fetched — say nothing
+  const r=rows.find(x=>x.ticker===tk);
+  return r?{mentions:r.mentions,rank:r.rank,day:pd}:{mentions:null,rank:null,day:pd};
+}
+/* Fills the sentinel in place so every consumer — the rows, the surge tiers, the filters,
+   the counts — sees one version of the truth rather than each deciding for itself. */
+function withPrior(rows,day){
+  return rows.map(r=>{
+    const needM=!(r.mentions_24h_ago>0), needR=!(r.rank_24h_ago>0);
+    if(!needM&&!needR)return r;
+    const p=priorReading(r.ticker,day);
+    if(!p)return r;
+    const o={...r,priorFrom:p.day};
+    if(needM)o.mentions_24h_ago=p.mentions;
+    if(needR)o.rank_24h_ago=p.rank;
+    return o;
+  });
+}
+
 function boardRows(){
   /* A crawl day has no prior-20 window in this dataset — the daily archive starts in
      2026, so `prior` came back empty, `med` fell to 0 and the multiple degenerated to
@@ -1230,7 +1274,7 @@ function boardRows(){
      under a banner saying spike detection does not run there. Compute nothing that
      cannot be computed, and let the row render without it. */
   const ctx=DAYS.includes(DAY);
-  let L=rowsOf(DAY).map(r=>{
+  let L=withPrior(rowsOf(DAY),DAY).map(r=>{
     if(!ctx)return {...r,med:null,x:null,hot:false,ctx:false};
     const prior=DAYS.filter(d=>d<DAY).slice(-20);
     const med=prior.length?median(prior.map(d=>mOf(d,r.ticker))):0;
@@ -1242,7 +1286,7 @@ function boardRows(){
      were a flat list of tickers with a chart, which is why they read as the same screen
      twice. These are the old site's own categories — "deep risers" is
      `beyond #150 → top 100` there too. */
-  const climb=r=>Number.isFinite(r.rank_24h_ago)?r.rank_24h_ago-r.rank:null;
+  const climb=r=>r.rank_24h_ago>0?r.rank_24h_ago-r.rank:null;
   if(ONLY==='basket')L=L.filter(r=>BASKET.has(r.ticker));
   if(ONLY==='hot')L=L.filter(r=>r.hot);
   if(ONLY==='t15')L=L.filter(r=>r.rank<=15&&climb(r)>=10);
@@ -1541,7 +1585,7 @@ function renderClaim(){
      someone click each group to discover the shape wastes the one screen that could
      have shown it. */
   const base=VIEW==='aftermath'?groupBase('aftermath'):groupBase('today');
-  const cl=r=>Number.isFinite(r.rank_24h_ago)?r.rank_24h_ago-r.rank:null;
+  const cl=r=>r.rank_24h_ago>0?r.rank_24h_ago-r.rank:null;
   const n=f=>base.filter(f).length;
   const onlys=VIEW==='aftermath'
     ? [['','All',base.length],
@@ -1670,7 +1714,8 @@ function boardRow(r){
   /* `mentions_24h_ago` and `rank_24h_ago` are API fields the crawls never carried, so
      the deltas read NaN. And the track record is built from 2026 events — printing it
      beside a 2021 board is future information sitting next to a past date. */
-  const d24=r.mentions-r.mentions_24h_ago, up=r.rank_24h_ago-r.rank;
+  const d24=r.mentions_24h_ago==null?null:r.mentions-r.mentions_24h_ago;
+  const up=r.rank_24h_ago>0?r.rank_24h_ago-r.rank:null;
   const t=r.ctx===false?null:track(r.ticker);
   /* The right-hand number is the track record, not the rank move. Rank churn is
      noise this project has no claim about; "the last N times this went loud, the
@@ -1687,8 +1732,13 @@ function boardRow(r){
       ${(()=>{const p=lastClose(r.ticker);return p!=null?`<span class="px">$${p<10?p.toFixed(2):Math.round(p)}</span>`:'';})()}</div>
     ${/* from → to, not a bare current value with an arrow. Where it came from is the
           reading — VOO at #9 says little; 22 → 9 says it moved. */''}
-    <div class="r2">${Number.isFinite(r.rank_24h_ago)
-        ? `rank <b>${r.rank_24h_ago} → ${r.rank}</b> · mentions ${r.mentions_24h_ago} → ${r.mentions}`
+    ${/* A null prior is "below the board's cutoff yesterday", which the row says instead
+          of printing a zero it does not have. */''}
+    <div class="r2">${Number.isFinite(r.rank_24h_ago)&&r.rank_24h_ago>0
+        ? `rank <b>${r.rank_24h_ago} → ${r.rank}</b> · mentions ${
+            r.mentions_24h_ago==null?'—':r.mentions_24h_ago} → ${r.mentions}`
+        : r.mentions_24h_ago==null&&r.priorFrom
+        ? `<b>new to the board</b> · ${r.mentions} mentions · was not in the top ${rowsOf(r.priorFrom).length||500} on ${r.priorFrom}`
         : `rank #${r.rank} · ${r.mentions} mentions${r.x!=null?` · ×${r.x.toFixed(1)}`:''}`}</div>
     ${rec}
   </div>`;
@@ -2186,7 +2236,7 @@ function boardDetail(){
   const mine=EVENTS.filter(e=>e.tk===r.ticker);
   const inView=mine.filter(e=>prior.includes(e.d)).map(e=>e.d);
   const st=(k,v,c='')=>`<div class="stat"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`;
-  const d24=r.mentions-r.mentions_24h_ago;
+  const d24=r.mentions_24h_ago==null?null:r.mentions-r.mentions_24h_ago;
   /* On a crawl day the detail is still a real board, but three things behind it are
      not the same, and a reader comparing it to a 2026 card would not know. */
   const wbn=!DAYS.includes(DAY)?`<div class="wbNote${WBSUSPECT.has(DAY)?' bad':''}">
@@ -2204,8 +2254,8 @@ function boardDetail(){
   <div class="stats">
     ${r.ctx===false?st('source','archive.org'):st('prior 20-day median',r.med.toFixed(1))}
     ${r.ctx===false?st('board depth','top '+rowsOf(DAY).length):st('multiple',' ×'+r.x.toFixed(1),r.hot?'dn':'')}
-    ${Number.isFinite(d24)?st('24h change',(d24>=0?'+':'')+d24,d24>0?'up':d24<0?'dn':''):st('read at',capLabel(DAY))}
-    ${Number.isFinite(r.rank_24h_ago)?st('rank 24h ago','#'+r.rank_24h_ago):st('rank','#'+r.rank)}
+    ${d24!=null?st('24h change',(d24>=0?'+':'')+d24,d24>0?'up':d24<0?'dn':''):st('read at',capLabel(DAY))}
+    ${r.rank_24h_ago>0?st('rank 24h ago','#'+r.rank_24h_ago):st('rank','#'+r.rank)}
     ${st('upvotes',r.upvotes!=null?r.upvotes:'—')}
     ${st('past spikes',r.ctx===false?'n/a':mine.length)}
   </div>
@@ -2238,6 +2288,17 @@ function methodHTML(){
   const last=DAYS[DAYS.length-1], t=capAt(last);
   return `<div class="dHead"><div><div class="dTk">How to read these numbers</div>
       <p class="dSub">What is measured, when it is read, and what that costs.</p></div></div>
+    ${/* Asked out loud, of WULF at "mentions 0 → 5": is 5 five mentions or five posts?
+          The page had no answer anywhere, and the answer is the source's own, quoted. */''}
+    <h3>One mention is one post or one comment</h3>
+    <p class="note">Not one occurrence. ApeWisdom's methodology: <i>"If a ticker is present
+      two or more times in a submission or a comment this will still be counted as a single
+      mention."</i> So 5 mentions is five distinct posts-or-comments that named the ticker,
+      however many times each of them said it.</p>
+    <p class="note">A ticker is detected when it is written in capitals — <code>AMD</code>,
+      <code>AAPL</code> — or with a dollar sign. Words that are also tickers are the exception:
+      <code>CFO</code> and <code>YOLO</code> only count as <code>$CFO</code> and <code>$YOLO</code>,
+      which means every board here undercounts them. The boards are scanned twice an hour.</p>
     <h3>Mentions is a rolling 24-hour count, not a daily total</h3>
     <p class="note">ApeWisdom reports how often a ticker was mentioned on r/wallstreetbets in
       the 24 hours <b>before the moment it is read</b>. A day's archived figure is whatever the
@@ -2245,6 +2306,14 @@ function methodHTML(){
       <b>[read time − 24h → read time]</b>, not the calendar day. It can fall as well as rise
       during the day: on 2026-08-05 three reads gave MU 403, then 364, then 348, while AMD went
       1090 → 1162 → 1171. A cumulative total could not do that.</p>
+    <h3>"0 →" on a row does not mean zero</h3>
+    <p class="note">The API sends <code>0</code> in <code>mentions_24h_ago</code> and
+      <code>rank_24h_ago</code> when it has no value, not when the value is zero — 7,985 of
+      35,499 archived rows carry it. This page used to print it: VC read
+      <b>"mentions 0 → 16"</b> on a day this archive's own previous snapshot says 13, and
+      SION read <b>"0 → 7"</b> when it had been 7 → 7. The previous archived day is used
+      instead wherever the sentinel appears, and a ticker that day does not carry is called
+      <b>new to the board</b> rather than given a zero it never had.</p>
     <h3>Which read wins</h3>
     <p class="note">Each run overwrites that date's file, so the value freezes at the last run
       before UTC midnight. Collection aims for after the US close — 14 attempts a day, five of
