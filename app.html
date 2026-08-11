@@ -122,8 +122,19 @@ button{cursor:pointer}
 @media (min-width:1200px){
   .ctlrow{flex-direction:column;gap:6px}
   .ctlk{width:auto;padding-top:0}
-  .ctlrow.lens .chips button{width:100%;justify-content:center}
 }
+/* The lens is a segmented control, not two buttons. Stacking them full-width in the rail
+   made them read as two independent actions — the same mistake as giving them their own
+   labels: what carries "these are two states of one thing, and you are in this one" is
+   the shared track with the selection sitting inside it. Same construction as the top
+   bar's Stocks/Market switch, which is the point. */
+.ctlrow.lens .chips{display:grid;grid-template-columns:1fr 1fr;gap:2px;width:100%;
+  background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:2px}
+.ctlrow.lens .chips button{border:0;background:none;border-radius:4px;
+  font:500 12px/16px var(--sans);padding:6px 4px;justify-content:center;text-align:center;
+  color:var(--ink3);white-space:nowrap}
+.ctlrow.lens .chips button:hover{color:var(--ink)}
+.ctlrow.lens .chips button[aria-pressed=true]{background:var(--accfill);color:#fff}
 /* flex-start, not center. Sort's chips fit one line and Show's wrap to three, so
    centring put the word SHOW beside the *second* line — leaving its first line of chips
    sitting under SORT with nothing claiming them, which is exactly how the two rows read
@@ -138,9 +149,6 @@ button{cursor:pointer}
 .ctlrow.active{border-top:1px solid var(--line);padding-top:8px}
 /* The lens decides what every control under it means, so it reads first and heavier. */
 .ctlrow.lens{padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:1px}
-/* No label beside it, so the switch itself carries the row. */
-.ctlrow.lens .chips{flex:1}
-.ctlrow.lens .chips button{font-size:12px;padding:6px 12px}
 /* The date picker used to sit in .tbctl and was styled by `.tbctl select`. Moving it
    into the list controls left the rule behind, so it fell back to a native control:`button,select,input{color:inherit}` gave it near-white text and nothing gave it a
    background, which on this page means light-on-light. */
@@ -1298,8 +1306,16 @@ function spkReadout(live){
                the sign is <b class="warn">not stable</b> across the definition.`)+where;
         })()}
           ${SCANOK&&(!SCANOK.ev||!SCANOK.fi)
-            ? ` <b class="warn">This scan does not reproduce the shipped files</b>
-                (${SCANOK.n} events against ${SCANOK.want}) — treat these numbers as broken, not as a result.`
+            ? (SCANOK.skew
+              ? ` <span class="mut">The shipped files and the data loaded here come from
+                  different builds${SCANOK.builtOver!==SCANOK.days
+                    ?` — built over ${SCANOK.builtOver} archive days against ${SCANOK.days} loaded`
+                    :` — the price pack reached ${SCANOK.pxWant} there and ${SCANOK.pxHave} here`},
+                  so they disagree. Different builds, not different answers; the scan is the
+                  current one.</span>`
+              : ` <b class="warn">This scan does not reproduce the shipped files</b>
+                (${SCANOK.n} events against ${SCANOK.want}) on the same ${SCANOK.days} days —
+                treat these numbers as broken, not as a result.`)
             : ` <span class="mut">Recomputed in your browser; at the default it reproduces
                 data/events.json and data/finding.json exactly.</span>`}</p>`
       : `<div class="spkOut mut">${spkCustom()
@@ -1766,7 +1782,28 @@ function selfCheck(){
   const f=scanFinding(mine,(FINDING0.horizons||[]).map(h=>h.sessions));
   const g=s=>((f.horizons.find(h=>h.sessions===s)||{}).gap_median);
   const fiOK=(FINDING0.horizons||[]).every(h=>g(h.sessions)===h.gap_median);
-  SCANOK={ev:evOK,fi:fiOK,n:mine.length,want:EVENTS0.length};
+  /* Two different failures wear the same shape, and only one is a bug.
+     
+     If the archive on screen has more days than the finding was computed over, the
+     files came from different builds — a visitor caught mid-deploy, or a browser
+     holding a cached events.json against fresh snapshots, which is exactly what
+     happened while testing. The scan is right and the shipped file is stale; nothing
+     is broken and it will resolve itself.
+     
+     A mismatch with the day counts *agreeing* is the real one: same inputs, different
+     answers. Only that earns "treat these numbers as broken". */
+  /* Both inputs, not just one. The day count catches a stale events/finding file against
+     fresh snapshots; it does not catch a stale price pack, which was the other half of
+     what testing produced — events reproduced exactly and the finding did not, because
+     the returns were computed over different closes. finding.json records the last
+     session its pack reached, so the comparison is available. */
+  const pxEnd=Object.values(PRICES).reduce((m,v)=>
+    v&&v.d&&v.d.length&&v.d[v.d.length-1]>m?v.d[v.d.length-1]:m,'');
+  const skew=(FINDING0.archive_days||0)!==DAYS.length
+          || (!!FINDING0.prices_through&&!!pxEnd&&FINDING0.prices_through!==pxEnd);
+  SCANOK={ev:evOK,fi:fiOK,n:mine.length,want:EVENTS0.length,skew,
+          days:DAYS.length,builtOver:FINDING0.archive_days||0,
+          pxHave:pxEnd,pxWant:FINDING0.prices_through||''};
   if(!evOK||!fiOK)console.warn('spike scan does not reproduce the shipped files',SCANOK);
 }
 
