@@ -31,7 +31,7 @@
      3.73:1 against the card, and the line is the one mark the whole page is about. Two
      tokens, because the two jobs have opposite requirements. */
   --accfill:#6d5bf4;
-  --bar:#3a3f4c; --r:10px;
+  --bar:#3a3f4c; --r:8px;
   --sans:ui-sans-serif,-apple-system,"SF Pro Text",Inter,Segoe UI,Roboto,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --top:54px; --rail:272px;
@@ -48,19 +48,19 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--ink);font:400 14px/1.5 var(--sans);
+body{background:var(--bg);color:var(--ink);font:400 14px/20px var(--sans);
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 button,select,input{font:inherit;color:inherit}
 button{cursor:pointer}
 .num{font-variant-numeric:tabular-nums}
+
 .up{color:var(--up)} .dn{color:var(--dn)} .mut{color:var(--ink3)}
 
-/* ---- shell: the whole point. Nothing outside .pane ever scrolls. ---- */
+/* ---- shell:the whole point. Nothing outside .pane ever scrolls. ---- */
 .app{height:100dvh;display:grid;
   /* minmax(0,·) not 1fr. A 1fr track's floor is the min-content of what sits in it, and
      the claim sentence is one nowrap line ~690px wide — so on a 375px phone the whole
-     app laid out at 735px and body{overflow-x:hidden} quietly cropped the right half:
-     the Market tab, and the track-record column of every row, were simply gone. */
+     app laid out at 735px and body{overflow-x:hidden} quietly cropped the right half:the Market tab, and the track-record column of every row, were simply gone. */
   grid-template-columns:minmax(0,1fr);
   grid-template-rows:var(--top) auto 1fr;grid-template-areas:"top" "claim" "pane"}
 
@@ -69,21 +69,21 @@ button{cursor:pointer}
    column below is the ticker list. */
 .claim{grid-area:claim;background:var(--sunk);border-bottom:1px solid var(--line);min-width:0}
 .claimBar{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;
-  padding:9px 16px;text-align:left;color:var(--ink2);font-size:12.5px}
+  padding:8px 16px;text-align:left;color:var(--ink2);font-size:12px}
 .claimBar:hover{background:var(--card)}
 .claimBar .cw{font:600 10px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
   color:var(--ink3);flex:none}
 .claimBar .cl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.claimBar .cl b{color:var(--ink);font-weight:650}
+.claimBar .cl b{color:var(--ink);font-weight:600}
 .claimBar .cl .dn{color:var(--dn)}
 .claimBar .cx{color:var(--ink3);transition:transform .15s;flex:none}
 .claimBar[aria-expanded=true] .cx{transform:rotate(180deg)}
-.claimBody{padding:0 16px 15px;max-width:940px}
-.claimBody .fLead{font-size:13.5px}
-.topbar{grid-area:top;display:flex;align-items:center;gap:14px;padding:0 16px;
+.claimBody{padding:0 16px 16px;max-width:940px}
+.claimBody .fLead{font-size:13px}
+.topbar{grid-area:top;display:flex;align-items:center;gap:16px;padding:0 16px;
   background:var(--sunk);border-bottom:1px solid var(--line);min-width:0}
 .rail{grid-area:rail;background:var(--sunk);border-right:1px solid var(--line);
-  overflow-y:auto;overscroll-behavior:contain;padding:14px}
+  overflow-y:auto;overscroll-behavior:contain;padding:16px}
 .pane{grid-area:pane;overflow:hidden;min-width:0;display:grid;
   grid-template-columns:minmax(300px,400px) 1fr;grid-template-areas:"list detail"}
 /* Controls-then-list in one column, so the controls sit against the thing they filter
@@ -91,29 +91,28 @@ button{cursor:pointer}
    across the screen and below a paragraph of prose. */
 .listcol{grid-area:list;display:grid;grid-template-rows:auto 1fr;min-height:0;min-width:0;
   border-right:1px solid var(--line)}
-.listctl{border-bottom:1px solid var(--line);background:var(--sunk);padding:9px 12px;
-  display:flex;flex-direction:column;gap:7px}
+.listctl{border-bottom:1px solid var(--line);background:var(--sunk);padding:8px 12px;
+  display:flex;flex-direction:column;gap:8px}
 /* flex-start, not center. Sort's chips fit one line and Show's wrap to three, so
    centring put the word SHOW beside the *second* line — leaving its first line of chips
    sitting under SORT with nothing claiming them, which is exactly how the two rows read
    as one. The label now sits against the first chip either way. */
-.ctlrow{display:flex;align-items:flex-start;gap:9px;min-width:0}
+.ctlrow{display:flex;align-items:flex-start;gap:8px;min-width:0}
 .ctlk{font:600 10px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
-  color:var(--ink3);width:52px;flex:none;padding-top:9px}
+  color:var(--ink3);width:52px;flex:none;padding-top:8px}
 /* Sort reorders what you are looking at; Show changes what it is. Different operations,
    and the counts hanging off Show's chips make it read as data next to Sort's pure
    presentation — so they get a line between them rather than 7px of gap. */
 .ctlrow.sep{border-top:1px solid var(--line);padding-top:8px;margin-top:1px}
-.ctlrow.active{border-top:1px solid var(--line);padding-top:7px}
+.ctlrow.active{border-top:1px solid var(--line);padding-top:8px}
 /* The lens decides what every control under it means, so it reads first and heavier. */
 .ctlrow.lens{padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:1px}
-.ctlrow.lens .chips button{font-size:12px;padding:6px 11px}
+.ctlrow.lens .chips button{font-size:12px;padding:6px 12px}
 /* The date picker used to sit in .tbctl and was styled by `.tbctl select`. Moving it
-   into the list controls left the rule behind, so it fell back to a native control:
-   `button,select,input{color:inherit}` gave it near-white text and nothing gave it a
+   into the list controls left the rule behind, so it fell back to a native control:`button,select,input{color:inherit}` gave it near-white text and nothing gave it a
    background, which on this page means light-on-light. */
-.dsel{background:var(--bg);border:1px solid var(--line);border-radius:7px;
-  color:var(--ink);font:500 12.5px/1 var(--sans);padding:7px 28px 7px 10px;
+.dsel{background:var(--bg);border:1px solid var(--line);border-radius:8px;
+  color:var(--ink);font:500 12px/1 var(--sans);padding:8px 24px 8px 8px;
   max-width:100%;cursor:pointer;
   /* The native arrow is drawn by the platform and does not follow --ink3, so it is
      replaced rather than left to clash. */
@@ -127,37 +126,37 @@ button{cursor:pointer}
 /* Firefox on Linux ignores color-scheme for the popup; harmless where it is honoured. */
 .dsel option{background:var(--sunk);color:var(--ink)}
 .dsel optgroup{background:var(--sunk);color:var(--ink3);font-style:normal}
-/* The definition control reads as machinery, not as another filter: it changes what
+/* The definition control reads as machinery, not as another filter:it changes what
    every number on the page means. */
-.ctlrow.spk{align-items:flex-start;border-top:1px solid var(--line);padding-top:9px;margin-top:2px}
+.ctlrow.spk{align-items:flex-start;border-top:1px solid var(--line);padding-top:8px;margin-top:2px}
 .ctlrow.spk.on .ctlk{color:var(--dn)}
 .spkBody{flex:1;min-width:0}
 .spkLine{font-size:12px;color:var(--ink2);line-height:2.1}
-.spkN{display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
+.spkN{display:inline-flex;align-items:center;gap:4px;vertical-align:middle}
 .spkN input{width:74px;accent-color:var(--acc)}
 .spkN b{font-variant-numeric:tabular-nums;color:var(--ink);min-width:26px}
-.spkOut{margin-top:7px;font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-.spkRst{background:none;border:1px solid var(--line);border-radius:5px;color:var(--ink3);
-  font:inherit;font-size:11px;padding:2px 7px;cursor:pointer}
+.spkOut{margin-top:8px;font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.spkRst{background:none;border:1px solid var(--line);border-radius:4px;color:var(--ink3);
+  font:inherit;font-size:11px;padding:2px 8px;cursor:pointer}
 .spkRst:hover{color:var(--ink);border-color:var(--ink3)}
-.spkCap{margin-top:9px;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3)}
-.spkGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;margin-top:8px}
-.spkCell{background:var(--card);border:1px solid var(--line);border-radius:5px;cursor:pointer;
+.spkCap{margin-top:8px;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3)}
+.spkGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin-top:8px}
+.spkCell{background:var(--card);border:1px solid var(--line);border-radius:4px;cursor:pointer;
   padding:4px 2px;display:grid;gap:1px;font:inherit;color:var(--ink2)}
 /* --ink3 at opacity .75 landed at 4.25:1 against the card, and this label is the only
    thing identifying which threshold pair the cell is. */
-.spkCell .k{font-size:9.5px}
-.spkCell .v{font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--dn)}
+.spkCell .k{font-size:10px}
+.spkCell .v{font-size:12px;font-variant-numeric:tabular-nums;color:var(--dn)}
 .spkCell.pos .v{color:var(--up)}
 .spkCell:hover{border-color:var(--ink3)}
 .spkCell.on{border-color:var(--acc);background:rgba(124,108,246,.14)}
 .spkGrid.stale{opacity:.4}
 .spkCell .thin{position:absolute;top:1px;right:3px;font-size:13px;line-height:1;color:var(--warn,#e0a33e);opacity:.9}
 .spkCell{position:relative}
-.spkNote{margin:8px 0 0;font-size:11px;line-height:1.55;color:var(--ink3)}
+.spkNote{margin:8px 0 0;font-size:11px;line-height:16px;color:var(--ink3)}
 
 .fchip{background:rgba(139,124,246,.14);border:1px solid rgba(139,124,246,.35);
-  color:var(--acc);border-radius:6px;padding:4px 8px;font-size:11px}
+  color:var(--acc);border-radius:4px;padding:4px 8px;font-size:11px}
 .fchip:hover{background:rgba(139,124,246,.24)}
 .fchip.clr{background:none;border-color:var(--line2);color:var(--ink3)}
 .fchip.clr:hover{color:var(--ink)}
@@ -168,161 +167,168 @@ button{cursor:pointer}
    list happened to be empty there. */
 .pane.single .listcol{display:none}
 .list{overflow-y:auto;overscroll-behavior:contain;min-width:0}
-.detail{grid-area:detail;overflow-y:auto;overscroll-behavior:contain;padding:18px 22px;min-width:0}
+.detail{grid-area:detail;overflow-y:auto;overscroll-behavior:contain;padding:16px 24px;min-width:0}
 
-.brand{font:650 16px/1 var(--sans);letter-spacing:-.02em;white-space:nowrap}
-.brand span{display:block;font:400 10.5px/1.3 var(--sans);color:var(--ink3);margin-top:3px}
+.brand{font:600 15px/1 var(--sans);letter-spacing:-.02em;white-space:nowrap}
+.brand span{display:block;font:400 11px/16px var(--sans);color:var(--ink3);margin-top:4px}
 .seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:2px}
-.seg button{border:0;background:none;color:var(--ink3);font:550 12.5px/1 var(--sans);
-  padding:7px 13px;border-radius:6px;white-space:nowrap}
+.seg button{border:0;background:none;color:var(--ink3);font:500 12px/1 var(--sans);
+  padding:8px 12px;border-radius:4px;white-space:nowrap}
 .seg button[aria-selected=true]{background:var(--accfill);color:#fff}
 .spacer{flex:1;min-width:0}
 .tbctl{display:flex;align-items:center;gap:8px;min-width:0}
-.tbctl select,.tbctl input{background:var(--bg);border:1px solid var(--line);border-radius:7px;
-  padding:6px 9px;font-size:12.5px;min-width:0}
+.tbctl select,.tbctl input{background:var(--bg);border:1px solid var(--line);border-radius:8px;
+  padding:6px 8px;font-size:12px;min-width:0}
 .tbctl input{width:118px;text-transform:uppercase;letter-spacing:.03em}
 .tbctl input::placeholder{text-transform:none;color:var(--ink3)}
 .stale{color:var(--warn)}
 
 /* ---- rail ---- */
-.rk{font:600 10.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
-  color:var(--ink3);margin:0 0 9px;display:flex;align-items:center;gap:7px}
+.rk{font:600 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink3);margin:0 0 8px;display:flex;align-items:center;gap:8px}
 .rkq{width:15px;height:15px;padding:0;border:1px solid var(--line2);border-radius:50%;
-  background:none;color:var(--ink3);font:600 9.5px/1 var(--sans)}
+  background:none;color:var(--ink3);font:600 10px/1 var(--sans)}
 .rkq:hover{color:var(--ink);border-color:var(--ink3)}
 tr.jump{cursor:pointer}
 tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .finding{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);
-  border-radius:var(--r);padding:13px 14px;margin:0 0 14px}
-.fLead{font-size:13px;line-height:1.55;color:var(--ink2);margin:0}
-.fLead b{color:var(--ink);font-weight:650}
+  border-radius:var(--r);padding:12px 16px;margin:0 0 16px}
+.fLead{font-size:13px;line-height:20px;color:var(--ink2);margin:0}
+.fLead b{color:var(--ink);font-weight:600}
 .fRow{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;
-  padding:7px 0;border:0;border-top:1px solid var(--line);background:none;font-size:12px;
+  padding:8px 0;border:0;border-top:1px solid var(--line);background:none;font-size:12px;
   margin-top:8px;text-align:left;border-radius:0}
 .fRow:hover{color:var(--ink)}
 .fRow:hover .mut{color:var(--ink2)}
-.fRow:first-of-type{margin-top:10px}
-.fCav{font-size:11.5px;line-height:1.55;color:var(--ink3);margin:11px 0 0;
-  padding-top:10px;border-top:1px solid var(--line)}
-.fld{margin:0 0 13px}
-.fld label{display:block;font-size:11.5px;color:var(--ink3);margin:0 0 5px}
+.fRow:first-of-type{margin-top:8px}
+.fCav{font-size:12px;line-height:16px;color:var(--ink3);margin:12px 0 0;
+  padding-top:8px;border-top:1px solid var(--line)}
+.fld{margin:0 0 12px}
+.fld label{display:block;font-size:12px;color:var(--ink3);margin:0 0 4px}
 .fld select,.fld input{width:100%;background:var(--card);border:1px solid var(--line);
-  border-radius:7px;padding:7px 9px;font-size:12.5px}
-.chips{display:flex;flex-wrap:wrap;gap:5px}
-.chips button{background:var(--card);border:1px solid var(--line);border-radius:6px;
-  padding:5px 9px;font-size:11.5px;color:var(--ink2)}
+  border-radius:8px;padding:8px 8px;font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chips button{background:var(--card);border:1px solid var(--line);border-radius:4px;
+  padding:4px 8px;font-size:12px;color:var(--ink2)}
 .chips button[aria-pressed=true]{background:var(--accfill);border-color:var(--accfill);color:#fff}
 .chips button[disabled]{opacity:.35;cursor:default}
-.chips .cnt{margin-left:6px;font-variant-numeric:tabular-nums;opacity:.65;font-size:10.5px}
+.chips .cnt{margin-left:6px;font-variant-numeric:tabular-nums;opacity:.65;font-size:11px}
 .chips button[aria-pressed=true] .cnt{opacity:.85}
-.railBtn{width:100%;background:var(--card);border:1px solid var(--line);border-radius:7px;
+.railBtn{width:100%;background:var(--card);border:1px solid var(--line);border-radius:8px;
   padding:8px;font-size:12px;color:var(--ink2)}
 
 /* ---- list ---- */
 .listHead{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);
-  padding:9px 14px;font-size:11.5px;color:var(--ink3);display:flex;gap:8px;align-items:center}
-.srcTag{margin-left:auto;padding:2px 7px;border-radius:4px;font-size:10.5px;
+  padding:8px 16px;font-size:12px;color:var(--ink3);display:flex;gap:8px;align-items:center}
+.srcTag{margin-left:auto;padding:2px 8px;border-radius:4px;font-size:11px;
   background:rgba(139,124,246,.16);color:var(--acc);white-space:nowrap}
 .srcTag.bad{background:rgba(237,161,0,.16);color:var(--warn)}
 .wbNote{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);
-  border-radius:var(--r);padding:11px 13px;margin:0 0 14px;font-size:12.5px;line-height:1.6;color:var(--ink3)}
+  border-radius:var(--r);padding:12px 12px;margin:0 0 16px;font-size:12px;line-height:16px;color:var(--ink3)}
 .wbNote.bad{border-left-color:var(--warn)}
 .wbNote b{color:var(--ink2)}
-.row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;
-  padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;border-left:2px solid transparent}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;
+  padding:8px 16px;border-bottom:1px solid var(--line);cursor:pointer;border-left:2px solid transparent}
 .row:hover{background:var(--sunk)}
 .row[aria-selected=true]{background:var(--sunk);border-left-color:var(--acc)}
 /* All three placed explicitly. `.out` carries a grid-row, and items with a definite
    row are placed before auto-placed ones — so it claimed column 1 and shoved the
    ticker into column 2, which is how the first render came out mirrored. */
-.row .r1{grid-column:1;grid-row:1;display:flex;align-items:baseline;gap:7px;min-width:0}
-.row .tk{font:650 13.5px/1 var(--sans);letter-spacing:-.01em}
+/* min-height, because otherwise the row's height depends on whether the ticker happens
+   to have a price chip: with one this line is 21px, without it collapses to the 13px of
+   bare text and the list scrolls at two rhythms. YOU was the row that showed it. */
+.row .r1{grid-column:1;grid-row:1;display:flex;align-items:baseline;gap:8px;min-width:0;
+  min-height:20px}
+.row .tk{font:600 13px/1 var(--sans);letter-spacing:-.01em}
 .row .dt{font-size:11px;color:var(--ink3)}
-.row .r2{grid-column:1;grid-row:2;font-size:11.5px;color:var(--ink3);white-space:nowrap;
+.row .r2{grid-column:1;grid-row:2;font-size:12px;color:var(--ink3);white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis}
-.row .out{grid-column:2;grid-row:1/3;font:650 14px/1 var(--sans);text-align:right;
-  align-self:center;white-space:nowrap}
-.row .recn{display:block;font:400 10.5px/1.3 var(--sans);color:var(--ink3);margin-top:3px}
+/* Fixed height too: the two lines came out 32px or 33px depending on the second one, and
+   a one-pixel jitter down a scrolling list is visible even when it is not identifiable. */
+.row .out{grid-column:2;grid-row:1/3;font:600 13px/16px var(--sans);text-align:right;
+  align-self:center;white-space:nowrap;height:32px;display:flex;flex-direction:column;
+  justify-content:center;align-items:flex-end}
+.row .recn{display:block;font:400 11px/16px var(--sans);color:var(--ink3);margin-top:4px}
 .row .r2 b{color:var(--ink2);font-weight:600}
-.row .px{font:500 10.5px/1 var(--mono);color:var(--ink3);border:1px solid var(--line);
-  border-radius:4px;padding:3px 5px}
+.row .px{font:500 11px/1 var(--mono);color:var(--ink3);border:1px solid var(--line);
+  border-radius:4px;padding:4px 4px}
 .grp{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;
-  padding:8px 14px;background:var(--bg);border-bottom:1px solid var(--line);
-  font:600 10.5px/1.3 var(--sans);letter-spacing:.04em;color:var(--ink3);text-transform:uppercase}
+  padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--line);
+  font:600 11px/16px var(--sans);letter-spacing:.04em;color:var(--ink3);text-transform:uppercase}
 .grp .gn{margin-left:auto;font-variant-numeric:tabular-nums;text-transform:none;opacity:.7}
 /* A sort that ranks by a column the reader cannot see is a list they cannot check. */
 .row .out.mut{font-weight:400}
-.badge{font:600 9.5px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;
-  padding:3px 5px;border-radius:4px;background:var(--line2);color:var(--ink2)}
+.badge{font:600 10px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;
+  padding:4px 4px;border-radius:4px;background:var(--line2);color:var(--ink2)}
 .badge.b{background:rgba(139,124,246,.18);color:var(--acc)}
 .more{display:block;width:100%;background:none;border:0;border-top:1px solid var(--line);
   padding:12px;color:var(--ink3);font-size:12px}
-.kbd{padding:11px 14px 16px;font-size:11px;color:var(--ink3);border-top:1px solid var(--line)}
+.kbd{padding:12px 16px 16px;font-size:11px;color:var(--ink3);border-top:1px solid var(--line)}
 .kbd kbd{font:500 10px/1 var(--mono);border:1px solid var(--line2);border-bottom-width:2px;
-  border-radius:4px;padding:3px 5px;margin-right:3px;color:var(--ink2)}
+  border-radius:4px;padding:4px 4px;margin-right:4px;color:var(--ink2)}
 
 /* ---- detail ---- */
 .dHead{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:0 0 4px}
-.dTk{font:650 25px/1.1 var(--sans);letter-spacing:-.022em}
-.dSub{font-size:12.5px;color:var(--ink3);margin:2px 0 0}
+.dTk{font:600 26px/32px var(--sans);letter-spacing:-.022em}
+.dSub{font-size:12px;color:var(--ink3);margin:2px 0 0}
 .dOut{margin-left:auto;text-align:right}
-.dOut .v{font:650 27px/1 var(--sans);letter-spacing:-.02em}
-.dOut .k{font-size:11px;color:var(--ink3);margin-top:3px}
+.dOut .v{font:600 26px/1 var(--sans);letter-spacing:-.02em}
+.dOut .k{font-size:11px;color:var(--ink3);margin-top:4px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:1px;
   background:var(--line);border:1px solid var(--line);border-radius:var(--r);
   overflow:hidden;margin:16px 0}
-.stat{background:var(--card);padding:10px 12px}
-.stat .k{font-size:10.5px;color:var(--ink3);letter-spacing:.02em}
-.stat .v{font:600 15px/1.2 var(--sans);margin-top:3px}
-.chartbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;
+.stat{background:var(--card);padding:8px 12px}
+.stat .k{font-size:11px;color:var(--ink3);letter-spacing:.02em}
+.stat .v{font:600 15px/20px var(--sans);margin-top:4px}
+.chartbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;
   position:relative}
 .chHit{cursor:crosshair}
 /* Visually separate from everything the research uses. Same panel, different border,
    its own clock — so nobody reads a mid-session quote as an archived close. */
-.live{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:14px 0 0;
-  padding:11px 13px;background:var(--sunk);border:1px solid var(--line);
+.live{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:16px 0 0;
+  padding:12px 12px;background:var(--sunk);border:1px solid var(--line);
   border-left:3px solid var(--up);border-radius:var(--r)}
 .live.dnb{border-left-color:var(--dn)}
-.live .lp{font:650 21px/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.live .lp{font:600 21px/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .live .lc{font:600 13px/1 var(--sans);font-variant-numeric:tabular-nums}
-.live .lk{font-size:11px;color:var(--ink3);margin-left:auto;text-align:right;line-height:1.5}
-.live .lx{font-size:11.5px;color:var(--ink3);flex-basis:100%}
+.live .lk{font-size:11px;color:var(--ink3);margin-left:auto;text-align:right;line-height:16px}
+.live .lx{font-size:12px;color:var(--ink3);flex-basis:100%}
 .live .lx b{color:var(--ink2);font-weight:600}
 /* Follows the pointer but never leaves the box, and never sits under the cursor —
    a readout you have to move away from to read is not a readout. */
 .chTip{position:absolute;pointer-events:none;z-index:3;opacity:0;transition:opacity .09s;
-  background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;
-  font:400 11.5px/1.5 var(--sans);color:var(--ink2);white-space:nowrap;
+  background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:8px 8px;
+  font:400 12px/16px var(--sans);color:var(--ink2);white-space:nowrap;
   box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .chTip.on{opacity:1}
 .chTip .d{color:var(--ink);font-weight:600;font-size:12px}
 .chTip .v{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
 .chTip .warn{color:var(--warn)}
 .chartbox svg{display:block;width:100%;height:auto}
-.cLegend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--ink3);margin:10px 0 0}
-.cLegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.cLegend{display:flex;flex-wrap:wrap;gap:16px;font-size:11px;color:var(--ink3);margin:8px 0 0}
+.cLegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 .hoverHint{margin-left:auto;color:var(--ink3);opacity:.75}
 /* The number, its sign and what the sign means, together. Reading GEX off an unlabelled
    line was the complaint. */
-.gauge{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:0 0 10px;
-  padding:12px 14px;background:var(--sunk);border:1px solid var(--line);
+.gauge{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin:0 0 8px;
+  padding:12px 16px;background:var(--sunk);border:1px solid var(--line);
   border-left:3px solid var(--line2);border-radius:var(--r)}
 .gauge.gpos{border-left-color:var(--up)}
 .gauge.gneg{border-left-color:var(--dn)}
-.gauge .gv{font:650 24px/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.gauge .gtxt{font-size:12.5px;color:var(--ink3);line-height:1.5;flex:1;min-width:220px}
+.gauge .gv{font:600 21px/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.gauge .gtxt{font-size:12px;color:var(--ink3);line-height:16px;flex:1;min-width:220px}
 .gauge .gtxt b{color:var(--ink2)}
 .winbar{display:flex;align-items:center;gap:8px;margin:12px 0 0;flex-wrap:wrap}
-.note{font-size:12px;line-height:1.6;color:var(--ink3);margin:11px 0 0}
-.empty{display:grid;place-items:center;height:100%;color:var(--ink3);font-size:13px;text-align:center;padding:30px}
+.note{font-size:12px;line-height:16px;color:var(--ink3);margin:12px 0 0}
+.empty{display:grid;place-items:center;height:100%;color:var(--ink3);font-size:13px;text-align:center;padding:32px}
 .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
-table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:420px}
-th,td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+table{border-collapse:collapse;width:100%;font-size:12px;min-width:420px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
 th{position:sticky;top:0;background:var(--sunk);font:600 11px/1 var(--sans);
   letter-spacing:.03em;text-transform:uppercase;color:var(--ink3);z-index:1}
 tr:last-child td{border-bottom:0}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
-h3{font:600 13px/1 var(--sans);letter-spacing:.01em;margin:22px 0 10px}
+h3{font:600 13px/1 var(--sans);letter-spacing:.01em;margin:24px 0 8px}
 h3:first-child{margin-top:0}
 
 .loading{position:fixed;inset:var(--top) 0 0 0;display:grid;place-items:center;
@@ -340,40 +346,62 @@ h3:first-child{margin-top:0}
     grid-template-areas:"top" "claim" "pane" "tabs"}
   .claimBar{padding:8px 12px}
   .claimBar .cw{display:none}
-  .claimBody{padding:0 12px 13px}
+  .claimBody{padding:0 12px 12px}
   /* The rail becomes a sheet rather than a column. It holds the finding and the
      filters, which on a phone are a thing you open, decide, and close. */
   .rail{position:fixed;inset:var(--top) 0 0 0;z-index:40;border-right:0;
     transform:translateY(100%);transition:transform .22s ease;padding-bottom:80px}
   .rail.open{transform:translateY(0)}
-  .railClose{display:block;width:100%;margin:6px 0 14px;background:var(--card);
-    border:1px solid var(--line);border-radius:7px;padding:9px;font-size:12.5px;color:var(--ink2)}
+  .railClose{display:block;width:100%;margin:6px 0 16px;background:var(--card);
+    border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12px;color:var(--ink2)}
   /* List and detail stop being side by side and become two states of one pane —
      the phone equivalent of the same master-detail idea. */
   .pane{grid-template-columns:1fr;grid-template-areas:"list"}
   .pane .detail{display:none}
   .pane.showDetail{grid-template-areas:"detail"}
   .pane.showDetail .listcol{display:none}
-  .pane.showDetail .detail{display:block;padding:15px}
+  .pane.showDetail .detail{display:block;padding:16px}
   .pane.single .listcol{display:none}
   .ctlk{width:auto}
-  .listctl{padding:8px 10px}
+  .listctl{padding:8px 8px}
   .pane.single{grid-template-areas:"detail"}
   .pane.single .detail{display:block}
   .mtabs{grid-area:tabs;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);
     min-width:0;background:var(--sunk);
     border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
-  .mtabs button{border:0;background:none;color:var(--ink3);font:550 11px/1 var(--sans);
-    padding:11px 4px 12px;display:grid;gap:5px;justify-items:center}
+  .mtabs button{border:0;background:none;color:var(--ink3);font:500 11px/1 var(--sans);
+    padding:12px 4px 12px;display:grid;gap:4px;justify-items:center}
   .mtabs button[aria-selected=true]{color:var(--acc)}
   .mtabs .g{font-size:15px;line-height:1}
   .topbar .seg{display:none}
   .brand span{display:none}
   .dTk{font-size:21px}
   .back{display:inline-flex;align-items:center;gap:6px;background:none;border:0;
-    color:var(--acc);font-size:12.5px;padding:0 0 10px}
+    color:var(--acc);font-size:12px;padding:0 0 8px}
 }
 @media (min-width:901px){.back{display:none}}
+
+/* Numbers that stack into a column are set in the mono face, and this is not a stylistic
+   preference — `font-variant-numeric:tabular-nums` is inert on this stack. Measured in
+   the browser: "111" is 21.30px and "999" is 23.36px under the sans stack, and they stay
+   21.30 and 23.36 with tabular-nums applied, and again with font-feature-settings:"tnum".
+   ui-sans-serif/SF Pro simply does not expose the feature here. Declaring it looked like
+   a fix and changed nothing, which is worse than leaving the misalignment visible.
+   --mono gives 25.29 for both.
+   
+   Only the genuinely columnar ones. A stat row reads side by side, and a headline price
+   is a single number — mono there would cost legibility for an alignment nobody can see.
+   
+   `.row .out`, not `.out`: the row rule is two classes and wins on specificity no matter
+   where this sits in the file. The first attempt lost to it and left the one column most
+   worth aligning proportional. */
+.row .out,.cnt,.spkCell .v,table td.n,table th.n,.spkN b{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+.cnt,.spkCell .v{font-size:10px}
+/* The browser's default <b> is 700, a weight the type scale does not otherwise contain
+   and which appears exactly once in the interface. */
+b,strong{font-weight:600}
 </style></head>
 <body>
 <div class="app">
