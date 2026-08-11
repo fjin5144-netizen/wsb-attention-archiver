@@ -32,6 +32,7 @@ text and score come to about a fourteenth of that.
     python3 scripts/fetch_reddit.py 2026-08-10                 # one day
     python3 scripts/fetch_reddit.py 2026-02-15 2026-04-30      # a range, resumable
     python3 scripts/fetch_reddit.py --status
+    python3 scripts/fetch_reddit.py --status 2026-02-15 2026-04-30   # progress + ETA
 """
 import gzip, json, os, subprocess, sys, time, datetime as dt
 
@@ -126,28 +127,64 @@ def days_between(a, b):
     return [(d0 + dt.timedelta(days=i)).isoformat() for i in range((d1 - d0).days + 1)]
 
 
-def status():
+def status(target=None):
+    """What is on disk, and — if a range is named — what is left and roughly how long.
+
+    A download that takes hours needs somewhere to look. The first version of this
+    printed a single span and a total, which said nothing about progress because the
+    calibration days and the gap sit at opposite ends of the same range: "3 days
+    2026-02-15..2026-08-11" is true and useless.
+    """
     if not os.path.isdir(OUT):
         print("data/reddit is empty")
         return
-    days, size = set(), 0
+    days, size, newest = {}, 0, []
     for dirpath, _, files in os.walk(OUT):
         for n in files:
-            if n.endswith(".jsonl.gz"):
-                days.add(n[:10])
-                size += os.path.getsize(os.path.join(dirpath, n))
-    if not days:
+            if not n.endswith(".jsonl.gz"):
+                continue
+            fp = os.path.join(dirpath, n)
+            size += os.path.getsize(fp)
+            days.setdefault(n[:10], []).append(os.path.getmtime(fp))
+    done = sorted(d for d in days if have(d, "comments") and have(d, "posts"))
+    if not done:
         print("data/reddit is empty")
         return
-    d = sorted(days)
-    both = sum(1 for x in d if have(x, "comments") and have(x, "posts"))
-    print(f"{len(d)} days {d[0]}..{d[-1]} · {both} complete · {size/1e6:.1f} MB")
+
+    # Contiguous runs read better than a min..max that spans a hole.
+    runs, run = [], [done[0]]
+    for a_, b_ in zip(done, done[1:]):
+        if (dt.date.fromisoformat(b_) - dt.date.fromisoformat(a_)).days == 1:
+            run.append(b_)
+        else:
+            runs.append(run); run = [b_]
+    runs.append(run)
+    for r in runs:
+        print(f"  {r[0]}..{r[-1]}  {len(r)} day{'s' if len(r) > 1 else ''}")
+    print(f"  {len(done)} days complete · {size/1e6:.1f} MB")
+
+    if not target:
+        return
+    want = days_between(*target)
+    left = [d for d in want if d not in set(done)]
+    if not left:
+        print(f"\n{target[0]}..{target[1]} is complete")
+        return
+    # Rate from the most recent finished days, which is what the next ones will cost.
+    stamps = sorted(max(v) for d, v in days.items() if d in want and d not in left)
+    per = None
+    if len(stamps) > 2:
+        per = (stamps[-1] - stamps[0]) / (len(stamps) - 1)
+    eta = f" · about {per*len(left)/60:.0f} min left" if per else ""
+    print(f"\n{target[0]}..{target[1]}: {len(want)-len(left)}/{len(want)} done, "
+          f"{len(left)} to go{eta}")
+    print(f"  next: {left[0]}")
 
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
     if "--status" in sys.argv:
-        status()
+        status(tuple(args[:2]) if len(args) > 1 else None)
         return
     if not args:
         sys.exit(__doc__.strip().splitlines()[-3].strip())
