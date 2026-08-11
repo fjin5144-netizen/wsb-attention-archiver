@@ -9,3 +9,15 @@ index.html.bak-*
 
 # Local scratch
 _*.html
+
+# Raw Reddit text pulled by scripts/fetch_reddit.py.
+#
+# The 75-day gap alone is ~45 MB gzipped and five years would be ~1.4 GB, which is not a
+# git repository. It is also the one thing here that *is* re-fetchable — Arctic Shift
+# holds it, the script is committed, and the day files are content-addressed by date — so
+# the durable artefact is the counts derived from it, not the text.
+#
+# The two calibration days are the exception and stay tracked, because the comparison in
+# scripts/compare_counts.py is only reproducible with them.
+data/reddit/*
+!data/reddit/2026-08/
