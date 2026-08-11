@@ -38,9 +38,19 @@ jobs:
         run: |
           if [ -z "${URL:-}" ]; then
             echo "configured=no" >> $GITHUB_OUTPUT
-            { echo "### No mirror configured";
-              echo "Set the \`MIRROR_URL\` and \`MIRROR_TOKEN\` repository secrets to enable it."; } >> $GITHUB_STEP_SUMMARY
-            echo "MIRROR_URL is not set — skipping. Not a failure."
+            # A green tick against a backup that does not exist is worse than no backup,
+            # because it reads as one. Exiting green is still right — nobody wants a red
+            # cross every twelve hours over something they have not set up — but it says
+            # so where it shows: ::warning:: puts an annotation on the run and in the
+            # checks list, so the row is a ⚠ and not a ✓.
+            echo "::warning title=No offsite copy exists::MIRROR_URL is not set, so this run copied nothing. main and backup are branches of one repository under one account; a suspension or a leaked token takes both."
+            { echo "### ⚠ No mirror configured — nothing was copied";
+              echo "";
+              echo "\`main\` and \`backup\` are two branches of **one repository under one account**.";
+              echo "That covers a bad push. It does not cover the account.";
+              echo "";
+              echo "Set the \`MIRROR_URL\` and \`MIRROR_TOKEN\` repository secrets to enable a real second copy."; } >> $GITHUB_STEP_SUMMARY
+            echo "MIRROR_URL is not set — skipping. Not a failure, but not a backup either."
           else
             echo "configured=yes" >> $GITHUB_OUTPUT
           fi
