@@ -70,6 +70,23 @@ button{cursor:pointer}
 .claim{grid-area:claim;background:var(--sunk);border-bottom:1px solid var(--line);min-width:0}
 /* The rumor page. Wide measure for prose, but capped — a claim read across 1200px of
    monitor is a claim nobody finishes. */
+/* "Learn more" reads as a link, not a third destination — it must not compete with the
+   two segmented buttons it stands beside. */
+.lmore{background:none;border:0;color:var(--ink3);font:500 12px/16px var(--sans);
+  padding:8px;border-radius:4px;text-decoration:underline;text-underline-offset:3px;
+  text-decoration-color:var(--line2)}
+.lmore:hover{color:var(--ink)}
+.lmore:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+
+.modal{border:1px solid var(--line);border-radius:8px;background:var(--card);
+  color:var(--ink);padding:0;max-width:720px;width:calc(100% - 32px);
+  max-height:calc(100dvh - 64px);overflow:auto;overscroll-behavior:contain;position:relative}
+.modal::backdrop{background:rgba(0,0,0,.62)}
+.modalBody{padding:0 24px}
+.modalX{position:sticky;top:0;float:right;margin:8px 8px 0 0;z-index:1;
+  background:var(--sunk);border:1px solid var(--line);border-radius:4px;
+  color:var(--ink3);font-size:12px;line-height:1;padding:6px 8px}
+.modalX:hover{color:var(--ink);border-color:var(--ink3)}
 .rumor{max-width:680px;padding:24px 4px 48px}
 .rTag{font:600 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
   color:var(--warn);margin:0 0 12px}
@@ -351,6 +368,8 @@ h3:first-child{margin-top:0}
     grid-template-areas:"top" "pane" "tabs"}
   .rumor{padding:16px 4px 32px}
   .rSay{font-size:21px;line-height:28px}
+  .modal{width:calc(100% - 16px);max-height:calc(100dvh - 32px)}
+  .modalBody{padding:0 16px}
   /* The rail becomes a sheet rather than a column. It holds the finding and the
      filters, which on a phone are a thing you open, decide, and close. */
   .rail{position:fixed;inset:var(--top) 0 0 0;z-index:40;border-right:0;
@@ -420,8 +439,11 @@ b,strong{font-weight:600}
            them) so the lens picks the unit and lives beside the groups it changes. -->
       <button role="tab" data-v="stocks" aria-selected="true" title="Attention and what followed it">Stocks</button>
       <button role="tab" data-v="market" aria-selected="false" title="Systemic gauges, unrelated to the archive">Market</button>
-      <button role="tab" data-v="rumor" aria-selected="false" title="What the archive claims, and what it rests on">Rumor</button>
     </div>
+    <!-- Not a third tab. Stocks and Market are places you work in; the claim is
+         something you read once and come back to — a destination for it would sit there
+         permanently selected-or-not beside two things it is not comparable with. -->
+    <button class="lmore" data-learn="1">Learn more</button>
     <div class="spacer"></div>
     <div class="tbctl">
       <input id="q" type="search" placeholder="ticker" aria-label="Filter by ticker" autocomplete="off">
@@ -430,6 +452,12 @@ b,strong{font-weight:600}
   <!-- The claim used to be a foldable strip across the top of every screen: a headline
        squeezed to one ellipsed line, and the reasoning folded away behind a chevron most
        people never opened. It is a destination now — see the Rumor tab. -->
+  <!-- <dialog>, not a div with a high z-index: Esc, the focus trap, the inert
+       background and the backdrop are all behaviour nobody should be reimplementing. -->
+  <dialog class="modal" id="learn" aria-label="What the archive claims">
+    <button class="modalX" data-close="1" aria-label="Close">✕</button>
+    <div class="modalBody" id="learnBody"></div>
+  </dialog>
   <main class="pane" id="pane">
     <div class="listcol" id="listcol">
       <div class="listctl" id="listctl"></div>
@@ -440,10 +468,7 @@ b,strong{font-weight:600}
   <nav class="mtabs" id="mtabs" role="tablist">
     <button role="tab" data-v="stocks" aria-selected="true"><span class="g">▦</span>Stocks</button>
     <button role="tab" data-v="market" aria-selected="false"><span class="g">◈</span>Market</button>
-    <button role="tab" data-v="rumor" aria-selected="false"><span class="g">◊</span>Rumor</button>
-    <!-- The fourth tab opened the rail. The rail is gone: filters sit above the list
-         and the claim is a foldable bar across the top, reachable in both layouts
-         without a tab of its own. -->
+    <!-- Two, matching the top bar. "Learn more" lives up there in both layouts. -->
   </nav>
 </div>
 <div class="loading" id="boot">Loading the archive<div class="bar"><i></i></div></div>
@@ -455,6 +480,7 @@ const HOT_FLOOR=30, HOT_X=3, CLOSE_UTC=21;
 const BASKET=new Set(["GME","AMC","MSTR","PLTR","RKLB","SOFI","TSLA","NVDA","AMD","INTC","HOOD","COIN","RDDT","SMCI","IONQ","RGTI","QUBT","BBAI","SOUN","AI","CRWV","NBIS","TEM","ACHR","JOBY","LUNR","ASTS","SPCE","OKLO","SMR","MARA","RIOT","CLSK","WULF","DJT","OPEN","CVNA","UPST","AFRM","HIMS","TLRY","RUM","QS","BB","NOK","NIO","RIVN","LCID","PLUG","W","NVAX"]);
 const WINS={'5d':5,'10d':10,'20d':20,'all':null};
 
+let LEARNONBOOT=false;
 let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},PXH=null,RISK=null,DIXROWS=null,MWIN='2Y',TWIN='3M',TWINSET=false,LASTLENS='today',SNAP={},DAY='',
     VIEW='today',SEL=null,Q='',WIN='10d',SORT='res',ONLY='',SHOWN=40;
 
@@ -592,6 +618,7 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
   await loadDays([DAY]);
   $('boot').remove();
   render();
+  if(LEARNONBOOT)openLearn();
   /* The rest streams in behind the shell: mention history needs every snapshot, but
      nothing on first paint does. */
   loadDays(DAYS).then(()=>{
@@ -659,7 +686,10 @@ window.addEventListener('popstate',async()=>{
 });
 function readURL(){
   const p=new URLSearchParams(location.search);
-  if(['today','aftermath','market','method','rumor'].includes(p.get('v')))VIEW=p.get('v');
+  if(['today','aftermath','market','method'].includes(p.get('v')))VIEW=p.get('v');
+  /* ?v=rumor shipped briefly as a destination. The links exist; they open the dialog
+     now rather than landing on a view that no longer resolves. */
+  if(p.get('v')==='rumor')LEARNONBOOT=true;
   SEL=p.get('sel')||null; Q=(p.get('q')||'').toUpperCase();
   /* hasOwnProperty, not `in`: `'constructor' in TWINS` is true through the prototype,
      so ?tw=constructor set TWIN to a function, backFrom threw RangeError, and the throw
@@ -1078,7 +1108,7 @@ function syncChrome(){
   /* The ticker filter belongs to the two lenses that list tickers, and to nothing else.
      Rumor is prose about the whole archive; a search box beside it promises a filter it
      does not have. */
-  $('q').style.display=(VIEW==='market'||VIEW==='method'||VIEW==='rumor')?'none':'';
+  $('q').style.display=(VIEW==='market'||VIEW==='method')?'none':'';
   $('q').value=Q;
   /* One destination covers two lenses, so Stocks stays lit under either. */
   const dest=(VIEW==='today'||VIEW==='aftermath')?'stocks':VIEW;
@@ -1089,9 +1119,8 @@ function syncChrome(){
 
 function render(push=true){
   syncChrome();
-  $('pane').classList.toggle('single',VIEW==='market'||VIEW==='method'||VIEW==='rumor');
+  $('pane').classList.toggle('single',VIEW==='market'||VIEW==='method');
   renderClaim();
-  if(VIEW==='rumor'){$('detail').innerHTML=rumorHTML();writeURL(push);return;}
   if(VIEW==='method'){$('detail').innerHTML=methodHTML();writeURL(push);return;}
   if(VIEW==='market'){
     $('detail').innerHTML=marketHTML();writeURL(push);
@@ -1224,6 +1253,26 @@ function spkReadout(live){
    could be. A rumor is something being said, on evidence, that has not been confirmed —
    which is exactly this. The page is laid out as: what is being said, what it rests on,
    how much it moves, and what would kill it. */
+function openLearn(){
+  const d=$('learn'); if(!d)return;
+  $('learnBody').innerHTML=rumorHTML();
+  d.showModal();
+}
+/* Clicking the backdrop closes it. A <dialog>'s backdrop is not a separate element —
+   the click lands on the dialog itself, outside its own box — so the test is whether the
+   pointer was inside the content rectangle, not what it hit. */
+document.addEventListener('click',e=>{
+  const d=$('learn'); if(!d||!d.open||e.target!==d)return;
+  const r=d.getBoundingClientRect();
+  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();
+});
+/* Anything inside that navigates has to put the dialog away first, or the page changes
+   underneath a modal that is still covering it. */
+document.addEventListener('click',e=>{
+  const d=$('learn');
+  if(d&&d.open&&e.target.closest('[data-hz],[data-v]'))d.close();
+},true);
+
 function rumorHTML(){
   const f=FINDING&&(FINDING.horizons||[]).find(h=>h.sessions===(FINDING.headline_sessions||20));
   if(!f)return '<div class="empty">No finding computed yet.</div>';
@@ -2080,6 +2129,8 @@ document.addEventListener('click',e=>{
     SPK.floor=f;SPK.mult=m;applySpike();SEL=null;SHOWN=40;render();return;}
   if(e.target.closest('[data-spkrst]')){
     SPK={...SPK0};applySpike();SEL=null;SHOWN=40;render();return;}
+  if(e.target.closest('[data-learn]')){openLearn();return;}
+  if(e.target.closest('[data-close]')){$('learn').close();return;}
   const lens=e.target.closest('[data-lens]');
   if(lens){
     if(lens.dataset.lens!==VIEW){VIEW=lens.dataset.lens;SEL=null;ONLY='';SHOWN=40;render();}
@@ -2218,7 +2269,7 @@ document.addEventListener('input',e=>{
   renderList();
   /* The rumor page reads FINDING too, and a drag changes it. Repainted only when it is
      the thing on screen. */
-  if(VIEW==='rumor')$('detail').innerHTML=rumorHTML();
+  if($('learn')?.open)$('learnBody').innerHTML=rumorHTML();
 });
 /* On release, not during: a full render refreshes the group counts the drag left stale
    and writes one history entry for the whole gesture. */
@@ -2240,6 +2291,18 @@ document.addEventListener('pointerleave',()=>hideTip(),true);
 document.addEventListener('pointerdown',chartHover);
 
 document.addEventListener('keydown',e=>{
+  /* Escape closes the dialog explicitly. showModal() is supposed to give this away free,
+     and measured here it does not: the keydown arrives, nothing calls preventDefault, no
+     `cancel` fires and the dialog stays open. Rather than depend on a behaviour that was
+     asserted and then observed missing, it is handled. */
+  const dlg=$('learn');
+  if(dlg&&dlg.open){
+    if(e.key==='Escape'){dlg.close();e.preventDefault();}
+    /* And nothing else reaches the page underneath. j/k moved the selection behind the
+       modal, and ArrowLeft ran history.back() under it — navigating a page the reader
+       cannot see. */
+    return;
+  }
   /* `e.target` is not always an element — a key pressed with nothing focused targets
      `document`, which has no .matches, and the throw took the whole handler with it. */
   if(e.target&&e.target.matches&&e.target.matches('input,select'))return;
