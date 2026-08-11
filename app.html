@@ -253,6 +253,20 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
   padding:4px 8px;font-size:12px;color:var(--ink2)}
 .chips button[aria-pressed=true]{background:var(--accfill);border-color:var(--accfill);color:#fff}
 .chips button[disabled]{opacity:.35;cursor:default}
+/* The glyph carries the meaning, so it gets the room to be read: 14px against 12px text,
+   and stroke rather than fill so it stays legible at that size. currentColor throughout —
+   one drawing serves the resting chip, the hover, the white-on-accent pressed state and
+   both themes. */
+.fbtn{display:inline-flex;align-items:center;gap:6px}
+.gly{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;
+  stroke-linecap:round;stroke-linejoin:round;opacity:.72;
+  transition:opacity .12s,transform .12s}
+.fbtn:hover .gly{opacity:1}
+.fbtn[aria-pressed=true] .gly{opacity:1}
+/* A pressed filter is the one thing on screen doing something, and its mark leans into
+   it a little. Held to 4% so the chip does not jump the row it sits in. */
+.fbtn[aria-pressed=true] .gly{transform:scale(1.04)}
+@media (prefers-reduced-motion:reduce){.gly{transition:none}}
 .chips .cnt{margin-left:6px;font-variant-numeric:tabular-nums;opacity:.65;font-size:11px}
 .chips button[aria-pressed=true] .cnt{opacity:.85}
 .railBtn{width:100%;background:var(--card);border:1px solid var(--line);border-radius:8px;
@@ -539,6 +553,13 @@ let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICE
 const $=id=>document.getElementById(id);
 const gj=async u=>{const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json();};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* ApeWisdom returns names already HTML-escaped — "SPDR S&amp;P 500 ETF Trust" is what
+   the API sends, and the archive keeps it because the archive records what the source
+   served. Escaping that again produced &amp;amp;, which renders as the literal "S&amp;P".
+   Decoded first, then escaped, so one pass in and one pass out. */
+const unesc=s=>String(s).replace(/&(amp|lt|gt|quot|#39|apos);/g,m=>
+  ({'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&#39;':"'",'&apos;':"'"}[m]));
+const escName=s=>esc(unesc(s));
 const pct=v=>(v>0?'+':'')+v.toFixed(1)+'%';
 const cls=v=>v==null?'mut':v<0?'dn':'up';
 const median=a=>{if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;
@@ -1415,6 +1436,41 @@ function rumorHTML(){
   </div>`;
 }
 
+/* ---- filter glyphs ----
+   Not icons of the concept — drawings of the shape being filtered for. "Fell ≥25%" is a
+   steep line down; "Flat ±5%" is a flat one; "Deep risers" is an arrow arriving from
+   below the frame. The mark is the definition, so the row teaches while it decorates,
+   and a reader who has never opened the method page can still tell the two "fell"
+   buckets apart at a glance.
+
+   16×16, stroke-only, currentColor — so they follow the chip through hover, the pressed
+   state's white-on-accent, and both themes without a second set. */
+const GLYPH={
+  /* the whole board: every row, none removed */
+  '':'<path d="M2 4h12M2 8h12M2 12h12"/>',
+  /* a quiet line and then a spike */
+  hot:'<path d="M1.5 12.5h3l1.5-1 1.5 1.5L9.5 3l1.5 9.5h3.5"/>',
+  /* crossing a threshold: the line is the point, the arrow just pokes through it */
+  t15:'<path d="M1.5 5.5h13" stroke-dasharray="2.5 2"/><path d="M8 13V3.5m0 0L5.5 6M8 3.5 10.5 6"/>',
+  /* a long jump rather than a second arrow — the first draft drew both of these as a
+     straight arrow up and they were indistinguishable at 14px, which is the size they
+     are actually read at */
+  deep:'<path d="M2 14C2 14 4 5 13 3" /><path d="M13 3 9 3.5M13 3l.6 4"/>',
+  /* a mark where there was nothing */
+  'new':'<path d="M8 3v10M3 8h10"/><path d="M8 8m-6 0a6 6 0 1 0 12 0a6 6 0 1 0-12 0" opacity=".35"/>',
+  /* a history of past outcomes */
+  track:'<path d="M2.5 13V9m3.5 4V6m3.5 7v-3m3.5 3V4"/>',
+  /* the research basket */
+  basket:'<path d="M2 6h12l-1.5 8h-9L2 6Z"/><path d="M5.5 6 8 2l2.5 4"/>',
+  /* the outcome buckets, drawn as the return they select */
+  crash:'<path d="M2 3l12 10m0 0h-4m4 0V9"/>',
+  fell:'<path d="M2 6l12 4m0 0h-3.5m3.5 0V6.5"/>',
+  flat:'<path d="M2 8h3l1.5-1.5L8 9.5l1.5-1.5H14"/>',
+  rose:'<path d="M2 13L14 3m0 0h-4m4 0v4"/>',
+  pending:'<path d="M8 8m-6 0a6 6 0 1 0 12 0a6 6 0 1 0-12 0" stroke-dasharray="2.2 2"/><path d="M8 4.5V8l2.5 1.5"/>',
+};
+const glyph=k=>GLYPH[k]?`<svg class="gly" viewBox="0 0 16 16" aria-hidden="true">${GLYPH[k]}</svg>`:'';
+
 function renderClaim(){
   const f=FINDING&&(FINDING.horizons||[]).find(h=>h.sessions===(FINDING.headline_sessions||20));
   /* Counts on the buttons. "12 fell more than 25%" is itself the finding; making
@@ -1455,7 +1511,7 @@ function renderClaim(){
     +(VIEW==='today'?`<div class="ctlrow"><span class="ctlk">Day</span>
         <select id="day2" class="dsel" aria-label="Archive date">${dayOptions()}</select></div>`:'')
     +`<div class="ctlrow sep"><span class="ctlk">Show</span><div class="chips">${onlys.map(([k,l,c])=>
-       `<button data-only="${k}" aria-pressed="${ONLY===k}"${c===0?' disabled':''}>${l}<span class="cnt">${c}</span></button>`).join('')}</div></div>`
+       `<button class="fbtn" data-only="${k}" aria-pressed="${ONLY===k}"${c===0?' disabled':''}>${glyph(k)}<span class="fl">${l}</span><span class="cnt">${c}</span></button>`).join('')}</div></div>`
     +(VIEW==='aftermath'?spikeCtl():'')
     +activeFiltersHTML()
     +(VIEW==='aftermath'?`<div class="ctlrow"><span class="ctlk"></span><button class="railBtn" id="csv">Export what is listed (CSV)</button></div>`:'');
@@ -2079,7 +2135,7 @@ function boardDetail(){
   return `<button class="back" data-back="1">‹ The board</button>${wbn}
   <div class="dHead"><div>
     <div class="dTk">${r.ticker}${BASKET.has(r.ticker)?' <span class="badge b">basket</span>':''}</div>
-    <p class="dSub">${esc(r.name||r.ticker)} · rank #${r.rank} on ${DAY}</p></div>
+    <p class="dSub">${escName(r.name||r.ticker)} · rank #${r.rank} on ${DAY}</p></div>
     <div class="dOut"><div class="v">${r.mentions}</div><div class="k">mentions</div></div></div>
   <div class="stats">
     ${r.ctx===false?st('source','archive.org'):st('prior 20-day median',r.med.toFixed(1))}
