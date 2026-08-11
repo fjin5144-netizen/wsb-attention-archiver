@@ -60,7 +60,34 @@ def fetch_apewisdom():
                     "mentions_24h_ago": int(d.get("mentions_24h_ago") or 0),
                 })
             time.sleep(0.5)
+        # Deduplicate across pages, keeping the best rank.
+        #
+        # The board's tail is a mass of ties — on 2026-08-10 everything from rank ~90
+        # down had 3 mentions — and the API's order within a tie is not stable between
+        # requests. So a ticker returned at rank 96 by the page-1 call comes back at 124
+        # from the page-2 call, and both land in `rows`. Five days of 103 carry it, in
+        # mirrored pairs around the boundary: 96/124, 97/123, 98/122, 99/121, 100/120.
+        #
+        # The duplicate is the visible half. The costly half is that every duplicated
+        # slot is a ticker that should have been on the board and was returned by neither
+        # call — 35 board positions lost across those five days. Deduping cannot recover
+        # them, so the count is recorded rather than quietly absorbed.
+        seen, uniq, dropped = {}, [], 0
+        for r in rows:
+            tk = r.get("ticker")
+            if tk in seen:
+                dropped += 1
+                if r["rank"] < seen[tk]["rank"]:
+                    seen[tk].update(r)
+                continue
+            seen[tk] = r
+            uniq.append(r)
+        rows = uniq
+        time.sleep(0)
         out[f] = rows
+        if dropped:
+            print(f"  apewisdom {f}: {dropped} duplicate rows across pages "
+                  f"(tie order shifted between requests; that many board slots are lost)")
         print(f"  apewisdom {f}: {len(rows)} rows")
     return out
 

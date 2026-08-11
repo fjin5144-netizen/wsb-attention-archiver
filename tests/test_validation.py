@@ -8,7 +8,7 @@ independent recomputation compared against what shipped.
 Every assertion here recomputes from data/apewisdom/ rather than trusting an
 artefact, because an artefact compared against itself always agrees.
 """
-import json, os, statistics, sys
+import json, os, re, statistics, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
@@ -434,3 +434,35 @@ def test_price_shards_align_with_the_research_pack():
                          if sh["c"][k] is not None), None)
             assert real == claimed, (
                 f"_ends says {tk} ends {claimed} but its shard ends {real}")
+
+
+def test_no_archived_board_lists_a_ticker_twice_going_forward():
+    """The board is assembled from five paginated API calls, and its tail is a mass of
+    ties whose order is not stable between requests: on 2026-08-10 everything from rank
+    ~90 down had 3 mentions, and five tickers came back from both the page-1 and page-2
+    calls at mirrored ranks — 96/124, 97/123, 98/122, 99/121, 100/120.
+
+    Five days of the archive carry it, 35 rows in all, and each duplicate is also a board
+    position that neither call returned. archive.py deduplicates now. The known-bad days
+    stay as captured — the archive records what the source served — so this asserts that
+    no *new* day joins them.
+    """
+    import collections
+    archive = os.path.join(ROOT, "data", "apewisdom")
+    known = {"2026-07-14", "2026-07-22", "2026-08-01", "2026-08-03", "2026-08-10"}
+    offenders = {}
+    for name in sorted(os.listdir(archive)):
+        if not re.fullmatch(r"\d{4}-\d\d-\d\d\.json", name):
+            continue
+        day = name[:-5]
+        if day in known:
+            continue
+        with open(os.path.join(archive, name)) as f:
+            rows = (json.load(f).get("filters") or {}).get("wallstreetbets") or []
+        c = collections.Counter(r.get("ticker") for r in rows)
+        dupes = {k: v for k, v in c.items() if v > 1}
+        if dupes:
+            offenders[day] = dupes
+    assert not offenders, (
+        f"paginated fetch returned a ticker twice on {len(offenders)} new day(s), which "
+        f"also means that many board positions are missing: {offenders}")

@@ -26,6 +26,19 @@ def validate_day(path, prev_path=None):
         print(f"FAIL: {path} implausible payload: row count {len(rows)} far from expected (250-600)")
         return False
 
+    # One row per ticker. The board is assembled from five paginated calls and its tail is
+    # a mass of ties, so a ticker can be returned by two of them at different ranks — five
+    # days of the archive carry it, and every duplicate is also a board slot that no call
+    # returned at all. The archiver dedupes now; this is what notices if that stops
+    # working, or if the next source has the same shape.
+    tickers = [r.get("ticker") for r in rows]
+    dupes = {t for t in tickers if tickers.count(t) > 1}
+    if dupes:
+        print(f"FAIL: {path} has {len(tickers) - len(set(tickers))} duplicate rows "
+              f"({sorted(dupes)[:6]}) — pagination returned a ticker twice, which also "
+              f"means that many board positions are missing")
+        return False
+
     has_rank_1 = False
     for i, r in enumerate(rows):
         for k in ("ticker", "mentions", "rank"):

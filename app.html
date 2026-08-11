@@ -515,7 +515,29 @@ const capAt=d=>{const t=(SNAP[d]||{}).fetched_at;if(!t)return null;
   const x=new Date(t);return isNaN(x)?null:x;};
 const settled=d=>{const x=capAt(d);return x?x.getUTCHours()>=CLOSE_UTC:true;};
 const capLabel=d=>{const x=capAt(d);return x?`${String(x.getUTCHours()).padStart(2,'0')}:${String(x.getUTCMinutes()).padStart(2,'0')} UTC`:'unknown';};
-const rowsOf=d=>((SNAP[d]||{}).filters||{}).wallstreetbets||[];
+/* Deduplicated on read. The board is assembled from five paginated calls and its tail is
+   a mass of ties whose order is not stable between requests, so a ticker can come back
+   from two of them at different ranks — 2026-08-10 returned FIG at 96 and again at 124,
+   with identical mentions both times. Five days of the archive carry it, 35 rows in all.
+   The archiver dedupes now, but these days are already written and the archive is a
+   record of what the source served, not something to rewrite after the fact.
+   
+   Best rank wins, which is the one the earlier page reported. Nothing downstream of
+   mentions changes — mapOf is keyed by ticker, so duplicates already collapsed there and
+   both copies carried the same count — this is the list showing a ticker twice and the
+   header counting it twice. */
+const ROWSC={};
+const rowsOf=d=>{
+  if(d in ROWSC)return ROWSC[d];
+  const raw=((SNAP[d]||{}).filters||{}).wallstreetbets||[];
+  if(!raw.length)return raw;            // not loaded yet — do not cache an empty answer
+  const seen=new Map();
+  for(const r of raw){
+    const p=seen.get(r.ticker);
+    if(!p||r.rank<p.rank)seen.set(r.ticker,r);
+  }
+  return ROWSC[d]=raw.length===seen.size?raw:[...seen.values()].sort((a,b)=>a.rank-b.rank);
+};
 const MAPS={};
 const mapOf=d=>{if(d in MAPS)return MAPS[d];
   const m={};for(const r of rowsOf(d))m[r.ticker]=r.mentions;return MAPS[d]=m;};
@@ -654,7 +676,7 @@ async function loadDays(list){
          sat in the repo. */
       const dir=DAYS.includes(d)?'apewisdom':'wayback';
       try{SNAP[d]=await gj(`${BASE}data/${dir}/${d}.json`);}catch(e){SNAP[d]=null;}
-      delete MAPS[d];
+      delete MAPS[d]; delete ROWSC[d];
     }));
   }
 }
@@ -1351,11 +1373,6 @@ function rumorHTML(){
 
 function renderClaim(){
   const f=FINDING&&(FINDING.horizons||[]).find(h=>h.sessions===(FINDING.headline_sessions||20));
-  /* Collapsed line first: the result in a sentence. The rest is the same block that
-     was in the rail, revealed only when asked for. */
-  const sorts=VIEW==='aftermath'
-    ? [['res','Newest resolved'],['new','Newest'],['old','Oldest'],['worst','Worst 10d'],['best','Best 10d'],['mentions','Most mentions']]
-    : [['res','Rank'],['mentions','Mentions'],['best','Multiple'],['worst','Worst record']];
   /* Counts on the buttons. "12 fell more than 25%" is itself the finding; making
      someone click each group to discover the shape wastes the one screen that could
      have shown it. */
@@ -1436,7 +1453,11 @@ function renderList(){
      that block feel flat. Here it also sits beside the count it orders. */
   const sorts=VIEW==='aftermath'
     ? [['res','Newest resolved'],['new','Newest'],['old','Oldest'],['worst','Worst 10d'],['best','Best 10d'],['mentions','Most mentions']]
-    : [['res','Rank'],['mentions','Mentions'],['best','Multiple'],['worst','Worst record']];
+    /* "Worst record" did not say record of what, and the question got asked. It orders
+       by the median 10-session return across a ticker's own past confirmed spikes — the
+       number already printed in each row's right-hand column — so the label names it. */
+    : [['res','Rank'],['mentions','Mentions'],['best','Multiple'],
+       ['worst','Worst after past spikes']];
   const head=`<div class="listHead"><b>${L.length}</b> ${VIEW==='aftermath'?'spikes':'tickers'}
     ${Q?`· filter ${esc(Q)}`:''}${ONLY?` · ${ONLY}`:''}${src}
     <label class="sortSel"><span>sorted by</span>
