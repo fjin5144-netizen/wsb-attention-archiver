@@ -107,14 +107,23 @@ button{cursor:pointer}
 .rail{grid-area:rail;background:var(--sunk);border-right:1px solid var(--line);
   overflow-y:auto;overscroll-behavior:contain;padding:16px}
 .pane{grid-area:pane;overflow:hidden;min-width:0;display:grid;
-  grid-template-columns:minmax(300px,400px) 1fr;grid-template-areas:"list detail"}
+  grid-template-columns:minmax(208px,248px) minmax(288px,380px) 1fr;
+  grid-template-areas:"filters list detail"}
+.filtercol{grid-area:filters;background:var(--sunk);border-right:1px solid var(--line);
+  overflow-y:auto;overscroll-behavior:contain;min-width:0;min-height:0}
 /* Controls-then-list in one column, so the controls sit against the thing they filter
    and only the rows scroll under them. They used to live in the rail, 200px away
    across the screen and below a paragraph of prose. */
-.listcol{grid-area:list;display:grid;grid-template-rows:auto 1fr;min-height:0;min-width:0;
+.listcol{grid-area:list;display:grid;grid-template-rows:1fr;min-height:0;min-width:0;
   border-right:1px solid var(--line)}
-.listctl{border-bottom:1px solid var(--line);background:var(--sunk);padding:8px 12px;
-  display:flex;flex-direction:column;gap:8px}
+.listctl{background:var(--sunk);padding:12px;display:flex;flex-direction:column;gap:12px}
+/* In a column of its own the label goes above the chips rather than beside them: a
+   52px gutter out of 208px was a quarter of the rail spent on four words. */
+@media (min-width:1200px){
+  .ctlrow{flex-direction:column;gap:6px}
+  .ctlk{width:auto;padding-top:0}
+  .ctlrow.lens .chips button{width:100%;justify-content:center}
+}
 /* flex-start, not center. Sort's chips fit one line and Show's wrap to three, so
    centring put the word SHOW beside the *second* line — leaving its first line of chips
    sitting under SORT with nothing claiming them, which is exactly how the two rows read
@@ -189,7 +198,7 @@ button{cursor:pointer}
    left over from the previous view then auto-places into an implicit track and shows
    up beside the detail. It read as correct while testing Market only because the
    list happened to be empty there. */
-.pane.single .listcol{display:none}
+.pane.single .listcol,.pane.single .filtercol{display:none}
 .list{overflow-y:auto;overscroll-behavior:contain;min-width:0}
 .detail{grid-area:detail;overflow-y:auto;overscroll-behavior:contain;padding:16px 24px;min-width:0}
 
@@ -378,6 +387,16 @@ h3:first-child{margin-top:0}
 
 .mtabs{display:none}
 .railClose{display:none}
+/* Between 901 and 1199 there is not room for three real columns — a 208px rail plus a
+   288px list leaves the detail pane, which holds a 760px chart, with less than half the
+   window. So the filters fold back above the list and share its column, which is exactly
+   the two-column layout this had before. Same markup, different template. */
+@media (min-width:901px) and (max-width:1199px){
+  .pane{grid-template-columns:minmax(300px,400px) 1fr;grid-template-rows:auto 1fr;
+    grid-template-areas:"filters detail" "list detail"}
+  .filtercol{overflow:visible;border-right:1px solid var(--line);
+    border-bottom:1px solid var(--line)}
+}
 @media (max-width:900px){
   :root{--top:50px}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:var(--top) auto 1fr auto;
@@ -395,15 +414,17 @@ h3:first-child{margin-top:0}
     border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12px;color:var(--ink2)}
   /* List and detail stop being side by side and become two states of one pane —
      the phone equivalent of the same master-detail idea. */
-  .pane{grid-template-columns:1fr;grid-template-areas:"list"}
+  .pane{grid-template-columns:1fr;grid-template-rows:auto 1fr;
+    grid-template-areas:"filters" "list"}
+  .filtercol{overflow:visible;border-right:0;border-bottom:1px solid var(--line)}
   .pane .detail{display:none}
-  .pane.showDetail{grid-template-areas:"detail"}
-  .pane.showDetail .listcol{display:none}
+  .pane.showDetail{grid-template-rows:1fr;grid-template-areas:"detail"}
+  .pane.showDetail .listcol,.pane.showDetail .filtercol{display:none}
   .pane.showDetail .detail{display:block;padding:16px}
-  .pane.single .listcol{display:none}
+  .pane.single .listcol,.pane.single .filtercol{display:none}
   .ctlk{width:auto}
   .listctl{padding:8px 8px}
-  .pane.single{grid-template-areas:"detail"}
+  .pane.single{grid-template-rows:1fr;grid-template-areas:"detail"}
   .pane.single .detail{display:block}
   .mtabs{grid-area:tabs;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);
     min-width:0;background:var(--sunk);
@@ -475,8 +496,15 @@ b,strong{font-weight:600}
     <div class="modalBody" id="learnBody"></div>
   </dialog>
   <main class="pane" id="pane">
-    <div class="listcol" id="listcol">
+    <!-- Three columns: what you are filtering by, what matched, and the one you picked.
+         Filters and list used to share a column stacked vertically, which meant the
+         filter block ate the top of the only place rows could appear — 255px of it at
+         one point, against a 692px list. Given its own column it can be as tall as it
+         needs to be without costing the list a single row. -->
+    <aside class="filtercol" id="filtercol">
       <div class="listctl" id="listctl"></div>
+    </aside>
+    <div class="listcol" id="listcol">
       <div class="list" id="list"></div>
     </div>
     <div class="detail" id="detail"></div>
