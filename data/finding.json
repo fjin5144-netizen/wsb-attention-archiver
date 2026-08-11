@@ -20,8 +20,8 @@
    "placebo": {
     "n": 246,
     "median": -0.29,
-    "trimmed_mean": -0.47,
-    "mean": 0.65,
+    "trimmed_mean": -0.49,
+    "mean": 0.64,
     "win_rate": 48
    },
    "gap_median": -1.28
@@ -37,12 +37,12 @@
    },
    "placebo": {
     "n": 228,
-    "median": -1.31,
-    "trimmed_mean": -1.25,
-    "mean": 0.63,
+    "median": -1.61,
+    "trimmed_mean": -1.37,
+    "mean": 0.53,
     "win_rate": 46
    },
-   "gap_median": -4.38
+   "gap_median": -4.08
   },
   {
    "sessions": 20,
@@ -56,8 +56,8 @@
    "placebo": {
     "n": 196,
     "median": -1.52,
-    "trimmed_mean": -2.89,
-    "mean": -1.74,
+    "trimmed_mean": -2.9,
+    "mean": -1.75,
     "win_rate": 45
    },
    "gap_median": -8.0
