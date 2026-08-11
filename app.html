@@ -35,6 +35,11 @@
   --sans:ui-sans-serif,-apple-system,"SF Pro Text",Inter,Segoe UI,Roboto,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --top:54px; --rail:272px;
+  /* One height for anything you click. Measured before setting it: the interface had
+     seven — 20, 28, 30, 32, 34, 45 and 74px — which is why nothing looked aligned with
+     anything else even where the boxes were individually centred. 32 is the smallest
+     that stays comfortable with a pointer; touch gets 40 below 901px. */
+  --ctl:32px;
   /* The one declaration CSS cannot substitute for. A <select>'s open list, the scrollbars,
      the search field's clear button and the range thumbs are native chrome — no rule
      reaches inside them, and without this they render light on a #0e0f12 page. */
@@ -73,7 +78,7 @@ button{cursor:pointer}
 /* "Learn more" reads as a link, not a third destination — it must not compete with the
    two segmented buttons it stands beside. */
 .lmore{background:none;border:0;color:var(--ink3);font:500 12px/16px var(--sans);
-  padding:8px;border-radius:4px;text-decoration:underline;text-underline-offset:3px;
+  min-height:var(--ctl);display:inline-flex;align-items:center;padding:0 8px;border-radius:4px;text-decoration:underline;text-underline-offset:3px;
   text-decoration-color:var(--line2)}
 .lmore:hover{color:var(--ink)}
 .lmore:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
@@ -84,8 +89,9 @@ button{cursor:pointer}
 .modal::backdrop{background:rgba(0,0,0,.62)}
 .modalBody{padding:0 24px}
 .modalX{position:sticky;top:0;float:right;margin:8px 8px 0 0;z-index:1;
+  width:var(--ctl);height:var(--ctl);display:flex;align-items:center;justify-content:center;
   background:var(--sunk);border:1px solid var(--line);border-radius:4px;
-  color:var(--ink3);font-size:12px;line-height:1;padding:6px 8px}
+  color:var(--ink3);font-size:12px;line-height:1;padding:0}
 .modalX:hover{color:var(--ink);border-color:var(--ink3)}
 .rumor{max-width:680px;padding:24px 4px 48px}
 .rTag{font:600 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
@@ -158,7 +164,7 @@ button{cursor:pointer}
    into the list controls left the rule behind, so it fell back to a native control:`button,select,input{color:inherit}` gave it near-white text and nothing gave it a
    background, which on this page means light-on-light. */
 .dsel{background:var(--bg);border:1px solid var(--line);border-radius:8px;
-  color:var(--ink);font:500 12px/1 var(--sans);padding:8px 24px 8px 8px;
+  color:var(--ink);font:500 12px/1 var(--sans);min-height:var(--ctl);padding:0 24px 0 8px;
   max-width:100%;cursor:pointer;
   /* The native arrow is drawn by the platform and does not follow --ink3, so it is
      replaced rather than left to clash. */
@@ -179,7 +185,10 @@ button{cursor:pointer}
 .spkBody{flex:1;min-width:0}
 .spkLine{font-size:12px;color:var(--ink2);line-height:2.1}
 .spkN{display:inline-flex;align-items:center;gap:4px;vertical-align:middle}
-.spkN input{width:74px;accent-color:var(--acc)}
+/* The track stays thin; the target does not. A range input renders at the height of its
+   track — 16px — and that is the whole hit area, which is half the smallest thing worth
+   pointing at. The extra height is transparent. */
+.spkN input{width:74px;height:var(--ctl);accent-color:var(--acc);background:none}
 .spkN b{font-variant-numeric:tabular-nums;color:var(--ink);min-width:26px}
 .spkOut{margin-top:8px;font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .spkRst{background:none;border:1px solid var(--line);border-radius:4px;color:var(--ink3);
@@ -188,7 +197,8 @@ button{cursor:pointer}
 .spkCap{margin-top:8px;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3)}
 .spkGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin-top:8px}
 .spkCell{background:var(--card);border:1px solid var(--line);border-radius:4px;cursor:pointer;
-  padding:4px 2px;display:grid;gap:1px;font:inherit;color:var(--ink2)}
+  padding:4px 2px;display:grid;gap:1px;align-content:center;justify-items:center;
+  height:calc(var(--ctl) * 1.5);font:inherit;color:var(--ink2)}
 /* --ink3 at opacity .75 landed at 4.25:1 against the card, and this label is the only
    thing identifying which threshold pair the cell is. */
 .spkCell .k{font-size:10px}
@@ -219,12 +229,16 @@ button{cursor:pointer}
 .brand span{display:block;font:400 11px/16px var(--sans);color:var(--ink3);margin-top:4px}
 .seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:2px}
 .seg button{border:0;background:none;color:var(--ink3);font:500 12px/1 var(--sans);
-  padding:8px 12px;border-radius:4px;white-space:nowrap}
+  min-height:var(--ctl);padding:0 12px;border-radius:4px;white-space:nowrap;
+  display:inline-flex;align-items:center;justify-content:center}
 .seg button[aria-selected=true]{background:var(--accfill);color:#fff}
 .spacer{flex:1;min-width:0}
 .tbctl{display:flex;align-items:center;gap:8px;min-width:0}
-.tbctl select,.tbctl input{background:var(--bg);border:1px solid var(--line);border-radius:8px;
-  padding:6px 8px;font-size:12px;min-width:0}
+/* padding on the sides only. 6px top and bottom plus a 16px line and two 1px borders
+   comes to 34, which quietly overrides the 32 above it — min-height cannot shrink a box
+   its own content has already made taller. */
+.tbctl select,.tbctl input{height:var(--ctl);background:var(--bg);border:1px solid var(--line);
+  border-radius:8px;padding:0 8px;font-size:12px;min-width:0}
 .tbctl input{width:118px;text-transform:uppercase;letter-spacing:.03em}
 .tbctl input::placeholder{text-transform:none;color:var(--ink3)}
 .stale{color:var(--warn)}
@@ -232,8 +246,14 @@ button{cursor:pointer}
 /* ---- rail ---- */
 .rk{font:600 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink3);margin:0 0 8px;display:flex;align-items:center;gap:8px}
-.rkq{width:15px;height:15px;padding:0;border:1px solid var(--line2);border-radius:50%;
-  background:none;color:var(--ink3);font:600 10px/1 var(--sans)}
+/* 15px was a target you aim at. The ring stays 16px; the button around it is 32. */
+.rkq{width:var(--ctl);height:var(--ctl);padding:0;border:0;background:none;
+  color:var(--ink3);font:600 10px/1 var(--sans);
+  display:inline-flex;align-items:center;justify-content:center;vertical-align:middle}
+.rkq::before{content:'?';width:16px;height:16px;border:1px solid var(--line2);
+  border-radius:50%;display:flex;align-items:center;justify-content:center}
+.rkq{font-size:0}
+.rkq::before{font-size:10px}
 .rkq:hover{color:var(--ink);border-color:var(--ink3)}
 tr.jump{cursor:pointer}
 tr.jump:hover td{background:var(--sunk);color:var(--ink)}
@@ -242,8 +262,8 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .fLead{font-size:13px;line-height:20px;color:var(--ink2);margin:0}
 .fLead b{color:var(--ink);font-weight:600}
 .fRow{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;
-  padding:8px 0;border:0;border-top:1px solid var(--line);background:none;font-size:12px;
-  margin-top:8px;text-align:left;border-radius:0}
+  min-height:calc(var(--ctl) * 1.5);padding:0;border:0;border-top:1px solid var(--line);
+  background:none;font-size:12px;margin-top:8px;text-align:left;border-radius:0}
 .fRow:hover{color:var(--ink)}
 .fRow:hover .mut{color:var(--ink2)}
 .fRow:first-of-type{margin-top:8px}
@@ -254,7 +274,12 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .fld select,.fld input{width:100%;background:var(--card);border:1px solid var(--line);
   border-radius:8px;padding:8px 8px;font-size:12px}
 .chips{display:flex;flex-wrap:wrap;gap:4px}
-.chips button{background:var(--card);border:1px solid var(--line);border-radius:4px;
+/* :not(.fbtn) — the tiles are a different component that happens to live in a .chips
+   container, and this rule reached them: min-height:32 beat their 76 on source order and
+   collapsed the grid to 42px. Third time an unscoped rule has done something like this
+   here, so it is scoped rather than out-ordered. */
+.chips button:not(.fbtn){min-height:var(--ctl);display:inline-flex;align-items:center;
+  justify-content:center;background:var(--card);border:1px solid var(--line);border-radius:4px;
   padding:4px 8px;font-size:12px;color:var(--ink2)}
 .chips button[aria-pressed=true]{background:var(--accfill);border-color:var(--accfill);color:#fff}
 .chips button[disabled]{opacity:.35;cursor:default}
@@ -275,10 +300,18 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
    ~102px the tracks actually come out at. */
 .ctlrow.sep .chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
   gap:4px;flex:1;min-width:0}
-.fbtn{display:grid;justify-items:center;align-content:start;gap:4px;
-  padding:10px 6px;text-align:center;line-height:16px;min-height:74px}
+/* align-content:center, not start. With start the three lines stack from the top and
+   every pixel of slack lands at the bottom — measured at 4.6px of it, which is exactly
+   the amount that reads as "not quite centred" without being locatable. */
+.fbtn{display:grid;justify-items:center;align-content:center;gap:4px;
+  background:var(--card);border:1px solid var(--line);border-radius:4px;color:var(--ink2);
+  padding:8px 6px;text-align:center;line-height:16px;min-height:76px}
+.fbtn:hover{border-color:var(--line2)}
+.fbtn[aria-pressed=true]{background:var(--accfill);border-color:var(--accfill);color:#fff}
+.fbtn[disabled]{opacity:.35;cursor:default}
 .fbtn .fl{font-size:11px}
-.fbtn .cnt{margin:0;font-size:12px;opacity:1}
+.fbtn .cnt{margin:0;font-size:12px;opacity:.7}
+.fbtn[aria-pressed=true] .cnt{opacity:.85}
 .gly{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;
   stroke-linecap:round;stroke-linejoin:round;opacity:.7;
   transition:opacity .12s,transform .12s}
@@ -287,10 +320,16 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
    it. Held small so the tile does not shift the grid around it. */
 .fbtn[aria-pressed=true] .gly{opacity:1;transform:scale(1.06)}
 @media (prefers-reduced-motion:reduce){.gly{transition:none}}
-.chips .cnt{margin-left:6px;font-variant-numeric:tabular-nums;opacity:.65;font-size:11px}
-.chips button[aria-pressed=true] .cnt{opacity:.85}
-.railBtn{width:100%;background:var(--card);border:1px solid var(--line);border-radius:8px;
-  padding:8px;font-size:12px;color:var(--ink2)}
+/* :not(.fbtn) again. This rule and `.fbtn .cnt` are both two classes, so the later one
+   won and every tile's count sat 6px right of centre — invisible on the wide labels and
+   plainly off on "All", whose label is 12px wide and lets the count set the edge. */
+.chips :not(.fbtn) > .cnt{margin-left:6px;font-variant-numeric:tabular-nums;opacity:.65;font-size:11px}
+.chips .cnt{font-variant-numeric:tabular-nums}
+.chips button[aria-pressed=true]:not(.fbtn) .cnt{opacity:.85}
+.railBtn{width:100%;min-height:calc(var(--ctl) * 1.25);display:flex;align-items:center;
+  justify-content:center;background:var(--card);border:1px solid var(--line);border-radius:8px;
+  padding:0 8px;font-size:12px;color:var(--ink2)}
+.railBtn:hover{border-color:var(--line2);color:var(--ink)}
 
 /* ---- list ---- */
 .listHead{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);
@@ -301,7 +340,7 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .sortSel{margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--ink3);
   font-size:11px;white-space:nowrap}
 .sortSel select{background:none;border:0;color:var(--ink2);font:500 11px/16px var(--sans);
-  padding:2px 16px 2px 4px;border-radius:4px;cursor:pointer;-webkit-appearance:none;appearance:none;
+  min-height:var(--ctl);padding:0 16px 0 4px;border-radius:4px;cursor:pointer;-webkit-appearance:none;appearance:none;
   background-image:linear-gradient(45deg,transparent 50%,var(--ink3) 50%),
                    linear-gradient(135deg,var(--ink3) 50%,transparent 50%);
   background-position:calc(100% - 8px) 55%,calc(100% - 4px) 55%;
@@ -350,8 +389,12 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .badge{font:600 10px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;
   padding:4px 4px;border-radius:4px;background:var(--line2);color:var(--ink2)}
 .badge.b{background:rgba(139,124,246,.18);color:var(--acc)}
-.more{display:block;width:100%;background:none;border:0;border-top:1px solid var(--line);
-  padding:12px;color:var(--ink3);font-size:12px}
+/* A full-width row rather than a control, so it gets a row's height — but a multiple of
+   the control unit rather than whatever 12px of padding happened to produce. */
+.more{display:flex;align-items:center;justify-content:center;width:100%;background:none;
+  border:0;border-top:1px solid var(--line);min-height:calc(var(--ctl) * 1.5);padding:0 12px;
+  color:var(--ink3);font-size:12px}
+.more:hover{color:var(--ink);background:var(--sunk)}
 .kbd{padding:12px 16px 16px;font-size:11px;color:var(--ink3);border-top:1px solid var(--line)}
 .kbd kbd{font:500 10px/1 var(--mono);border:1px solid var(--line2);border-bottom-width:2px;
   border-radius:4px;padding:4px 4px;margin-right:4px;color:var(--ink2)}
@@ -440,7 +483,8 @@ h3:first-child{margin-top:0}
     border-bottom:1px solid var(--line)}
 }
 @media (max-width:900px){
-  :root{--top:50px}
+  /* 40, not 32: a finger is not a cursor, and every one of these is a primary control. */
+  :root{--top:50px;--ctl:40px}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:var(--top) auto 1fr auto;
     grid-template-areas:"top" "pane" "tabs"}
   .rumor{padding:16px 4px 32px}
