@@ -1335,9 +1335,19 @@ function boardRows(){
   let L=withPrior(rowsOf(DAY),DAY).map(r=>{
     if(!ctx)return {...r,med:null,x:null,hot:false,ctx:false};
     const prior=DAYS.filter(d=>d<DAY).slice(-20);
-    const med=prior.length?median(prior.map(d=>mOf(d,r.ticker))):0;
-    return {...r,med,x:r.mentions/Math.max(med,1),ctx:true,
-      hot:r.mentions>=HOT_FLOOR&&r.mentions>=HOT_X*Math.max(med,1)};
+    /* The trailing days have to be *in cache*, not merely on the calendar. DAYS is the
+       full index and is complete from the first paint, so prior.length was 20 immediately
+       while only today and yesterday had been fetched — the other 18 answered 0 through
+       mOf, the median came out 0, Math.max(med,1) made the threshold 3, and every row
+       with 30 mentions wore a spike badge until the archive finished streaming in.
+       Caught on the live site: DTE showed SPIKE at 58 mentions against a real median of
+       55, a multiple of 1.1 rendered as one over 3.
+       isNewFace already guards this way. Spike is the site's central claim, so it does
+       the same and reports nothing rather than something wrong for a second. */
+    const ready=prior.length&&!prior.some(d=>!SNAP[d]);
+    const med=ready?median(prior.map(d=>mOf(d,r.ticker))):null;
+    return {...r,med,x:ready?r.mentions/Math.max(med,1):null,ctx:true,
+      hot:ready&&r.mentions>=HOT_FLOOR&&r.mentions>=HOT_X*Math.max(med,1)};
   });
   if(Q)L=L.filter(r=>r.ticker.includes(Q));
   /* Board groups by how attention moved, Aftermath by how the price answered. Both
@@ -2339,8 +2349,13 @@ function boardDetail(){
     <p class="dSub">${escName(r.name||r.ticker)} · rank #${r.rank} on ${DAY}</p></div>
     <div class="dOut"><div class="v">${r.mentions}</div><div class="k">mentions</div></div></div>
   <div class="stats">
-    ${r.ctx===false?st('source','archive.org'):st('prior 20-day median',r.med.toFixed(1))}
-    ${r.ctx===false?st('board depth','top '+rowsOf(DAY).length):st('multiple',' ×'+r.x.toFixed(1),r.hot?'dn':'')}
+    ${/* med and x are null until the trailing 20 days are in cache — see boardRows. A
+          dash for the second it takes, rather than a number computed from days that have
+          not arrived. */''}
+    ${r.ctx===false?st('source','archive.org')
+      :st('prior 20-day median',r.med==null?'—':r.med.toFixed(1))}
+    ${r.ctx===false?st('board depth','top '+rowsOf(DAY).length)
+      :st('multiple',r.x==null?'—':' ×'+r.x.toFixed(1),r.hot?'dn':'')}
     ${d24!=null?st('24h change',(d24>=0?'+':'')+d24,d24>0?'up':d24<0?'dn':''):st('read at',capLabel(DAY))}
     ${r.rank_24h_ago>0?st('rank 24h ago','#'+r.rank_24h_ago):st('rank','#'+r.rank)}
     ${st('upvotes',r.upvotes!=null?r.upvotes:'—')}
