@@ -466,3 +466,44 @@ def test_no_archived_board_lists_a_ticker_twice_going_forward():
     assert not offenders, (
         f"paginated fetch returned a ticker twice on {len(offenders)} new day(s), which "
         f"also means that many board positions are missing: {offenders}")
+
+
+def test_artifact_labels_still_describe_the_data():
+    """data/artifacts.json names board rows proven not to be about the company.
+
+    The proof is a count of the raw text in data/reddit/ — DTE's ApeWisdom figure of 70 on
+    2026-08-07 against 69 items containing `0DTE`/`45 DTE` and 3 containing a standalone
+    `DTE`; EU's 8 against zero `$EU` and sampled context that is entirely the European
+    Union. Those counts are not recomputable here, because the raw text is 31 MB and is
+    not committed.
+
+    What is checkable, and what actually rots, is the join: the file claims specific spike
+    dates, and the spike set is recomputed on every archive run. If a threshold moves or a
+    day is refetched, a labelled event can vanish and the label is then pointing at
+    nothing — a stale artefact claim reads as an audited one.
+    """
+    path = os.path.join(ROOT, "data", "artifacts.json")
+    with open(path) as f:
+        art = json.load(f)
+    events = {(tk, day) for day, tk in archive_events()}
+
+    missing = []
+    for tk, rec in art["confirmed"].items():
+        for day in rec.get("spike_dates", []):
+            if (tk, day) not in events:
+                missing.append(f"{tk} {day}")
+        n = rec.get("spike_events")
+        actual = sum(1 for t, _ in events if t == tk)
+        if n is not None and n != actual:
+            missing.append(f"{tk} claims {n} events, archive has {actual}")
+    assert not missing, (
+        "data/artifacts.json labels events the recomputed spike set no longer contains: "
+        + ", ".join(missing))
+
+    # NOW came off WORDLIKE on evidence; putting it back silently would restore a 15x
+    # undercount and with it the 0.92 rank correlation that started this.
+    import compare_counts
+    assert "NOW" not in compare_counts.WORDLIKE, (
+        "NOW is back in WORDLIKE — see data/artifacts.json 'cleared'. Its three spikes are "
+        "ServiceNow, and $-only counting misses them by 15x.")
+    assert "DTE" not in art["cleared"], "DTE is a confirmed artefact, not a cleared one"

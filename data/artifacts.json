@@ -1,0 +1,196 @@
+{
+  "_note": "Board rows that are demonstrably not about the company, established by counting the raw r/wallstreetbets text in data/reddit/ rather than by judgement. Written by hand from the checks recorded in `evidence`; scripts/verify_overlap.py is what produces the candidates. Nothing here is removed from the archive — the archive records what ApeWisdom said, and editing it would destroy the only record of what it said. These are labels, not deletions.",
+  "_status": "complete for the 2026 archive — all 27 spike events on word-shaped tickers checked against raw text, plus four more artefacts surfaced by scripts/divergence.py across all 103 overlapping days. A 2021-2025 pass is in progress.",
+  "confirmed": {
+    "DTE": {
+      "reads_as": "DTE Energy",
+      "actually": "0DTE / 45 DTE — days-to-expiration options slang",
+      "evidence": "2026-08-07, 32,378 items: 69 contain DTE with a digit prefix (0DTE, 45 DTE); ApeWisdom reported 70. Standalone DTE appears in 3 items, $DTE in zero.",
+      "board_presence": "top-50 on all 103 archived days, best rank #4",
+      "spike_events": 0,
+      "cause": "ApeWisdom's left word boundary does not exclude digits"
+    },
+    "EU": {
+      "reads_as": "enCore Energy",
+      "actually": "the European Union",
+      "evidence": "2026-07-08: 10 items contain bare uppercase EU, zero contain $EU; ApeWisdom reported 8. Sampled context is 'EU stocks', 'EU defense stocks', 'EU passport', 'EU releases the anti Coercion bazooka'.",
+      "spike_events": 4,
+      "spike_dates": [
+        "2026-06-11",
+        "2026-07-02",
+        "2026-07-10",
+        "2026-07-19"
+      ],
+      "cause": "two-letter ticker colliding with a geopolitical abbreviation"
+    },
+    "SELF": {
+      "reads_as": "Global Self Storage",
+      "actually": "a Reddit bot's output tag",
+      "evidence": "2026-07-22: 43 items contain bare uppercase SELF, zero contain $SELF. Every sampled instance is the string 'u/profanitycounter [SELF]'.",
+      "spike_events": 1,
+      "spike_dates": [
+        "2026-07-22"
+      ],
+      "cause": "bot output counted as user speech"
+    },
+    "TASK": {
+      "reads_as": "TaskUs",
+      "actually": "the phrase TASK FORCE",
+      "evidence": "2026-06-17: 88 of 95 items matching bare TASK contain 'TASK FORCE' (93%) — 'I AM SETTING UP A TASK FORCE TO REDEFINE INFLATION AND CUT RATES'. Of the 7 remaining, two are 'TASK FOURTH' and 'TASK FOR FOR'. Real TaskUs interest is 8 $TASK plus one 'calls on TASK'; ApeWisdom reported 39 against a median of 0.",
+      "spike_events": 1,
+      "spike_dates": [
+        "2026-06-17"
+      ],
+      "cause": "a news phrase containing the ticker as a whole word"
+    },
+    "BE": {
+      "reads_as": "Bloom Energy",
+      "actually": "the English word, shouted",
+      "evidence": "2026-06-30 and 2026-07-28: 64 and 95 items match bare uppercase BE, of which only 8 and 9 are the AutoModerator bot — the rest are caps-lock English ('IT IS GOING TO BE A BLOOD BATH', 'IT SHOULD BE ILLEGAL FOR IT TO GO UP PREMARKET'). Real Bloom Energy interest exists (4 and 7 $BE, 'How do we feel about BE for earnings?') but is under 10% of the matches, so the spike cannot be attributed to the company either way.",
+      "spike_events": 2,
+      "spike_dates": [
+        "2026-06-30",
+        "2026-07-28"
+      ],
+      "cause": "a two-letter ticker that is an English verb, on a board that writes in capitals",
+      "confidence": "unreliable rather than certainly false — genuine BE talk is present, just swamped"
+    },
+    "CC": {
+      "reads_as": "Chemours",
+      "actually": "covered call, credit card, conference call — anything but the company",
+      "evidence": "Twelve days of text: 40 items contain bare CC and exactly 1 contains $CC. 55% sit in options language ('sell an 08/14 $783 SPY CC', 'Almost closed my DRAM CC for like 60% profit'). The remaining 45% are not Chemours either — 'their 3% cashback card. I love that CC', 'CC security cameras', 'announce they cured cancer on the CC'.",
+      "spike_events": 0,
+      "board_presence": "top-50 on 15 of the scanned days",
+      "cause": "a two-letter ticker colliding with three separate common abbreviations"
+    },
+    "ON": {
+      "reads_as": "ON Semiconductor",
+      "actually": "the preposition",
+      "evidence": "2026-08-07: 47 items contain bare uppercase ON and zero contain $ON; ApeWisdom reported 8. Every sampled instance is English — 'CALLS ON META', 'HOT DOGS ARE BACK ON THE MENU', 'CALL ON OPEN 08/28 $4'. The options phrasing 'calls on X' puts the word in capitals constantly.",
+      "spike_events": 0,
+      "cause": "a two-letter ticker that is the preposition WSB uses to name every options trade",
+      "our_rule_also_wrong": "ON is in our WORDLIKE, so we count 0 — blind where they over-count. Neither series measures ON Semiconductor."
+    },
+    "JUST": {
+      "reads_as": "Just Energy",
+      "actually": "the adverb",
+      "evidence": "2026-08-07: 30 items contain bare uppercase JUST, zero contain $JUST; ApeWisdom reported 7. All English — 'WTF IS HTZ I JUST LANDED IN KL', 'HTZ JUST ANNOUNCED AI SPACE CARS', 'JUST IN: Saudi Arabia...'.",
+      "spike_events": 0,
+      "cause": "an all-caps board turns a common adverb into a ticker",
+      "our_rule_also_wrong": "JUST is NOT in our WORDLIKE, so we count 30 against their 7 — this time we are the worse of the two. Neither number is the company."
+    }
+  },
+  "cleared": {
+    "NOW": {
+      "verdict": "real — ServiceNow",
+      "evidence": "All three spike windows are ServiceNow. 2026-07-22 ('$NOW earnings', 'Is anyone playing NOW earnings') is its Q2 print, and ApeWisdom's 231 equals the bare-uppercase count of 231 exactly. 2026-05-29 has 30 $NOW; 2026-05-21 has 9 plus 'NOW 7/17 120 C play'.",
+      "our_bug": "NOW was in compare_counts.WORDLIKE, so our count saw only $NOW — 13 against ApeWisdom's 190 over five days. It is off the list now, which takes the count ratio from 0.07 to 1.46. That is a count fix, not a rank fix: the same change moves the median rank correlation 0.923 -> 0.902, because a ticker ranked far too low became one ranked somewhat too high. Bare uppercase NOW is still sometimes the English word ('NOW is the time'), so both series carry some of it and neither is correct.",
+      "spike_events": 3
+    },
+    "OPEN": {
+      "verdict": "real — Opendoor, though genuinely ambiguous",
+      "evidence": "2026-06-09: 18 items contain $OPEN alongside 43 bare. Bare usage is a real mix — 'I made 300% on OPEN after seeing it on reddit' next to 'OPEN THE KOREAN CASINO' and 'AT OPEN'.",
+      "spike_events": 3
+    },
+    "_earnings": {
+      "verdict": "real — checked against raw text, not inferred from the calendar",
+      "tickers": [
+        "BULL",
+        "DELL",
+        "SNOW",
+        "FIG",
+        "HIVE",
+        "LULU",
+        "KEEL",
+        "JACK",
+        "KO",
+        "SNAP",
+        "PATH"
+      ],
+      "evidence": "Each carries $-prefixed mentions and options language in its window: '$bull earnings' and 'BULL calls at eod'; '$SNOW omg' with 'SNOW and MDB earnings'; 49 $OPEN on 2026-06-01; '$KEEL and chill, deal incoming'; 14 $JACK with '40% short interest with a float of only 17mill'; '$fig earnings'; 18 $LULU; '$DELL P/E = 33.89'."
+    }
+  },
+  "calibration": {
+    "overlap_days": 103,
+    "of_possible_overlap_days": 103,
+    "count_ratio_median": 1.09,
+    "count_ratio_day_to_day_sd": 0.08,
+    "rank_correlation_median": 0.918,
+    "rank_correlation_median_excluding_artifacts": 0.986,
+    "loudest_ticker_agrees": "100 of 103 days (97%)",
+    "top5_overlap_mean": "4.8 of 5",
+    "top10_overlap_mean": "9.4 of 10, or 9.7 excluding the marked tickers",
+    "by_board_heat": {
+      "coldest_third": 0.867,
+      "middle_third": 0.939,
+      "hottest_third": 0.945
+    },
+    "note": "Every day of the 2026 archive now has the raw text behind it. Going from 21 to 43 to 103 days left the ratio at 1.09 throughout, which is what a stable instrument offset looks like. Disagreement concentrates on quiet days — the coldest third sits at 0.867 against 0.945 for the hottest — because a board of small counts is mostly ties and ties have no stable order. This is agreement between two independent counting rules, not accuracy: there is no ground truth here, and the only place either source can be called wrong is where the raw text settles it. Measured at top-20; at top-50 the median was 0.831."
+  },
+  "audit": {
+    "spike_events_total": 260,
+    "on_word_shaped_tickers": 27,
+    "checked_against_raw_text": 27,
+    "confirmed_artifacts": 9,
+    "unreliable": 2,
+    "real": 19,
+    "artifact_share_of_all_events": "6 of 260 = 2.3%, or 8 of 260 = 3.1% counting the two BE events",
+    "not_in_the_event_set": "DTE — top-50 on all 103 days, best rank #4, and zero spike events, because slang volume is high but flat",
+    "also_found_by_divergence_scan": "CC (0 spike events) and ALL (0 spike events, and our error too)",
+    "found_by_divergence_scan": "CC, ALL, ON, JUST — all four surfaced by scripts/divergence.py once the overlap reached 103 days, none of them producing a single spike event"
+  },
+  "our_own_errors": {
+    "_note": "A file that catalogues only the other source's mistakes is the bias it warns about. Same method, turned on scripts/compare_counts.py. Measured on the 2026-08-07 window, 32,898 items, using the real counter including its WORDLIKE exemptions.",
+    "YOU": {
+      "ours": 80,
+      "apewisdom": 15,
+      "dollar_form": 0,
+      "actually": "caps-lock English — 'tHeSE aRE NoT thE SHARes YOU are LoOKiNG For', 'I downvoted YOU'",
+      "cause": "YOU (Clear Secure) is not in WORDLIKE, so bare uppercase counts",
+      "severity": "5.3x high — worse on this day than ApeWisdom's DTE error is in relative terms"
+    },
+    "UP": {
+      "ours": 63,
+      "apewisdom": 17,
+      "dollar_form": 0,
+      "actually": "'HERTZ ONLY GOES UP', 'SHUT UP AND EAT YOUR LETTUCE'",
+      "cause": "same — UP (Wheels Up) is not in WORDLIKE",
+      "severity": "3.7x high"
+    },
+    "IT": {
+      "ours": 0,
+      "apewisdom": 13,
+      "dollar_form": 0,
+      "actually": "unknown — we cannot see it at all",
+      "cause": "IT is in WORDLIKE, so only $IT counts, and nobody writes $IT",
+      "severity": "blind, the opposite failure"
+    },
+    "conclusion": "Neither rule is the truth. Ours is wrong on YOU and UP in exactly the way theirs is wrong on DTE, and wrong on IT in the opposite direction. What the second source buys is not accuracy but auditability: every number here can be taken back to the sentence that produced it, which is the only reason the five confirmed artifacts were findable at all. The disagreements are not noise to be corrected away — they mark where 'what counts as a mention' actually bites.",
+    "open_question": "YOU and UP could join WORDLIKE for consistency, at the cost of going blind to them the way we are blind to IT. That is the same trade NOW lost. Not changed without a decision.",
+    "ALL": {
+      "ours": 0,
+      "apewisdom": 19,
+      "bare_uppercase": 55,
+      "dollar_form": 0,
+      "actually": "the English word — 'To ALL who bought HTZ', 'BAN ALL MENTION OF HTZ OR KOSPI'",
+      "cause": "ALL is in WORDLIKE so we see nothing; ApeWisdom counts 19 of the 55, so it is wrong too, in the other direction",
+      "severity": "blind, like IT — and their number is not right either, so neither series measures Allstate",
+      "spike_events": 0
+    }
+  },
+  "scan_blind_spot": {
+    "_note": "scripts/divergence.py ranks tickers by distance from the stable 1.13 offset. It finds errors the two rules make DIFFERENTLY. It is structurally blind to errors they make the SAME WAY, and that blindness is the more dangerous one, because agreement reads as confirmation.",
+    "proof": "EU is a confirmed artefact — the European Union, zero $EU, four false spike events — and its ratio is 1.20, sitting comfortably inside the normal band. Both rules count the bare uppercase word, so both are wrong in the same direction by the same amount, and the scan cannot see it. SELF and TASK are the same shape. Of the six confirmed artefacts the scan surfaces only DTE, BE and CC.",
+    "implication": "Two sources raise confidence only where their rules genuinely differ. Where they share an assumption — that a bare uppercase token is a ticker — a second source adds no protection at all, and combining or averaging them would hide that fact behind a number that looks corroborated. The three artefacts the scan misses were found by reading the text of flagged spike events, which is a different and non-automatable check."
+  },
+  "five_year_preliminary": {
+    "days_so_far": 31,
+    "span": "2021-05 .. 2026-07, from archive.org captures",
+    "usable": "28 of 31",
+    "count_ratio_median": 1.08,
+    "rank_correlation_median": 0.9,
+    "finding": "The offset is not a fact about 2026. Across five years the usable captures give 1.08 and 0.900, against 1.09 and 0.918 for the 103 collected days.",
+    "caveat": "The three days that looked like violent disagreement — ratios 13.80, 0.00 and 0.14 — are all thin captures, not disagreement. See data/wayback/quality.json `thin`.",
+    "status": "144 usable captures identified; raw text still downloading"
+  }
+}

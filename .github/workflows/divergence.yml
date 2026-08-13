@@ -1,0 +1,130 @@
+name: Cross-check the board against the raw posts
+
+# The archive records what ApeWisdom said. Nothing in it can say whether a board row is
+# about the company named on it — DTE spent 103 days in the top 50 while being options
+# slang, and no amount of ApeWisdom data would ever have revealed that. Only the raw
+# r/wallstreetbets text can, and this is that check, running where the rest of the
+# collection runs instead of on a laptop.
+#
+# The corpus is 285 MB and is deliberately NOT stored here. A day of posts costs eight
+# minutes to fetch and yields one number per ticker; the numbers are committed and the
+# text is discarded with the runner. data/divergence_daily.json accumulates the history,
+# so the five-year picture builds up without the five years of text ever existing in the
+# cloud. That file is the reason this can be a workflow at all.
+#
+# What this CANNOT do, and it matters: it finds tickers where the two counting rules
+# disagree. It is structurally blind to the ones where they agree and are both wrong —
+# EU is the European Union, it produced four false spikes, and its ratio is a perfectly
+# normal 1.20 because both rules count the bare uppercase word. Four of the nine
+# confirmed artefacts were found by a person reading the text, and no cron replaces that.
+
+on:
+  schedule:
+    # Well after archive.yml's last run, so the day being checked is settled. Arctic Shift
+    # also lags real time by an hour or two; asking at 04:20 UTC for a day that ended at
+    # 00:00 gives it room.
+    - cron: '20 4 * * *'
+  workflow_dispatch:
+    inputs:
+      day:
+        description: 'Day to check (YYYY-MM-DD). Defaults to the newest archived day.'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: divergence
+  cancel-in-progress: false
+
+jobs:
+  crosscheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick the day to check
+        id: pick
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, re, datetime as dt
+          want = os.environ.get("INPUT_DAY") or ""
+          days = sorted(n[:-5] for n in os.listdir("data/apewisdom")
+                        if re.fullmatch(r"\d{4}-\d\d-\d\d\.json", n))
+          cache = {}
+          if os.path.exists("data/divergence_daily.json"):
+              with open("data/divergence_daily.json") as f:
+                  cache = json.load(f).get("days", {})
+          # Newest archived day that has not been counted yet. Falling back to "newest"
+          # would recount the same day forever once it is cached.
+          todo = [d for d in days if d not in cache]
+          day = want or (todo[-1] if todo else "")
+          prev = (dt.date.fromisoformat(day) - dt.timedelta(days=1)).isoformat() if day else ""
+          print(f"day={day}")
+          print(f"prev={prev}")
+          PY
+        env:
+          INPUT_DAY: ${{ inputs.day }}
+
+      - name: Nothing to do
+        if: steps.pick.outputs.day == ''
+        run: echo "Every archived day is already counted." >> $GITHUB_STEP_SUMMARY
+
+      # The 24h window a board figure covers spans the read day and the one before it, so
+      # both are needed. ~8 minutes each; the repo is public, so Actions minutes are free.
+      - name: Fetch the two days of raw posts
+        if: steps.pick.outputs.day != ''
+        run: |
+          python3 scripts/fetch_reddit.py "${{ steps.pick.outputs.prev }}"
+          python3 scripts/fetch_reddit.py "${{ steps.pick.outputs.day }}"
+
+      - name: Count and compare
+        if: steps.pick.outputs.day != ''
+        run: python3 scripts/divergence.py --depth 50 --min-days 10 | tail -40
+
+      # Before the text is thrown away. Leaving it would put 20 MB a day into the history
+      # of a repository whose entire point is that it stays small enough to clone.
+      - name: Drop the raw text
+        if: always()
+        run: rm -rf data/reddit
+
+      - name: Commit the numbers
+        if: steps.pick.outputs.day != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/divergence_daily.json data/divergence.json
+          git diff --cached --quiet && { echo "no change"; exit 0; }
+          git commit -m "Cross-check ${{ steps.pick.outputs.day }} against the raw posts"
+          # archive.yml commits on its own schedule and the two collide often enough to
+          # matter; rebase rather than fail, since these files are append-only in practice.
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin HEAD:main && exit 0
+            sleep 10
+          done
+          exit 1
+
+      - name: Say what was found
+        if: steps.pick.outputs.day != ''
+        run: |
+          python3 - <<'PY' >> $GITHUB_STEP_SUMMARY
+          import json, os
+          d = json.load(open("data/divergence.json"))
+          art = json.load(open("data/artifacts.json")) if os.path.exists("data/artifacts.json") else {}
+          known = set(art.get("confirmed", {})) | {k for k in art.get("our_own_errors", {}) if k.isupper()} \
+                  | {k for k in art.get("cleared", {}) if k.isupper()}
+          c = d.get("common", 1)
+          new = {t: v["ratio"] for t, v in d["tickers"].items()
+                 if t not in known and abs(v["ratio"] - c) > 0.5}
+          print(f"### {d['days']} days counted, common ratio {c}\n")
+          if new:
+              print("**Tickers diverging with no entry in artifacts.json — read the text:**\n")
+              for t, r in sorted(new.items(), key=lambda x: -abs(x[1] - c)):
+                  print(f"- `{t}` ratio {r}")
+              print("\nDivergence is a question, not a verdict. It also cannot see the "
+                    "artefacts both rules share, such as EU.")
+          else:
+              print("No unexplained divergence. Note this cannot see errors both counting "
+                    "rules make the same way.")
+          PY

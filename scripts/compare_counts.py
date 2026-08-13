@@ -39,7 +39,20 @@ REDDIT = os.path.join(ROOT, "data", "reddit")
 # by prepositions. The list is deliberately short and visible rather than a cleverer rule:
 # a heuristic that silently decides what is a word is the kind of thing that should not be
 # invisible in a project about counting.
-WORDLIKE = {"OPEN", "ALL", "ON", "IT", "ARE", "SO", "BE", "GO", "NOW", "ANY", "CEO",
+#
+# NOW came off it, and the reason is worth keeping. Membership made this count 13 against
+# ApeWisdom's 190 over five days, which read as ApeWisdom over-counting an English word.
+# The text says otherwise: all three of NOW's spikes are ServiceNow ("$NOW earnings" on
+# 2026-07-22, its Q2 print), and on that day ApeWisdom's 231 equals the bare-uppercase
+# count exactly. Off the list this count runs ~1.5x high, against ~15x low on it.
+#
+# It is a count fix and not a rank fix, which is the part worth being straight about:
+# removing NOW moved the median rank correlation 0.923 -> 0.902 on the same 21 days,
+# because a ticker ranked far too low became one ranked somewhat too high. The whole of
+# the rank gap is DTE — excluding DTE alone gives 0.989, with or without this change.
+# Neither treatment of NOW is right, since bare NOW is still sometimes the word. One is
+# much less wrong about how many, and the defect was ours, not theirs.
+WORDLIKE = {"OPEN", "ALL", "ON", "IT", "ARE", "SO", "BE", "GO", "ANY", "CEO",
             "YOLO", "DD", "FOR", "AI", "EV", "PLAY", "LOVE", "TELL", "HAS", "NEW",
             "CAN", "ONE", "TWO", "SEE", "OUT", "WELL", "GOOD", "BIG", "RUN", "HOLD",
             "MOON", "CASH", "FREE", "REAL", "SAFE", "BEST", "TRUE", "WISH", "HOPE",

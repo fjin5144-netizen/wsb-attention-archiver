@@ -30,6 +30,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WB = os.path.join(ROOT, "data", "wayback")
 OUT = os.path.join(WB, "quality.json")
 SIMILAR = 60.0      # % of shared tickers with an identical count; the median is 3.6
+THIN_FLOOR = 1000   # top-100 board total below this is a counter caught mid-reset
+
 MIN_SHARED = 20     # below this a comparison is noise
 
 
@@ -85,6 +87,21 @@ def compute(days, snaps):
         if len(shared) >= MIN_SHARED:
             sims.append(sum(1 for t in shared if A[t] == B[t]) / len(shared) * 100)
 
+    # A second defect, and the larger one: the capture is a distinct page, not frozen, but
+    # ApeWisdom's rolling 24h counter had just reset when archive.org arrived, so the page
+    # carries minutes of data under a full date. 75 of 230 captures, and every test above
+    # misses them because each page is unique — just nearly empty. Many total exactly ~100,
+    # which is 100 rows carrying one mention each: a board rebuilt seconds earlier.
+    #
+    # Evidence for the threshold rather than a guess at it. 2026-07-18 is the only thin day
+    # we also collected ourselves: the capture totals 643 against our own 1,804, so it is
+    # missing two-thirds of the board. 2026-05-12, a healthy capture, matches our collection
+    # at 1.00. And the three wildest days in the five-year calibration — count ratios of
+    # 13.80, 0.00 and 0.14 against a norm of 1.09 — are all thin. A real day runs to
+    # thousands; the 25th percentile of all captures is 652 and the median is 2,445.
+    thin = {d: t for d, t in ((d, sum(counts[d].values())) for d in days)
+            if t < THIN_FLOOR and d not in suspect}
+
     return {
         "days": len(days),
         "span": [days[0], days[-1]] if days else [],
@@ -97,6 +114,9 @@ def compute(days, snaps):
         "median_adjacent_similarity_pct": round(st.median(sims), 1) if sims else None,
         "similarity_threshold_pct": SIMILAR,
         "suspect": dict(sorted(suspect.items())),
+        "thin": dict(sorted(thin.items())),
+        "thin_floor": THIN_FLOOR,
+        "usable_excluding_thin": len(days) - len(suspect) - len(thin),
     }
 
 
@@ -121,8 +141,9 @@ def main():
         json.dump(q, f, indent=1)
         f.write("\n")
     print(f"{q['days']} days {q['span'][0]} → {q['span'][1]}")
-    print(f"  usable            {q['usable']}")
-    print(f"  suspect           {len(q['suspect'])}")
+    print(f"  usable            {q['usable']}  ({q['usable_excluding_thin']} once thin ones go too)")
+    print(f"  suspect (frozen)  {len(q['suspect'])}")
+    print(f"  thin (mid-reset)  {len(q['thin'])}  board totals under {THIN_FLOOR}")
     print(f"  median adjacent similarity {q['median_adjacent_similarity_pct']}% "
           f"(flagging above {SIMILAR}%)")
     for d, why in q["suspect"].items():

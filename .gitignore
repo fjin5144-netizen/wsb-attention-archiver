@@ -20,4 +20,6 @@ _*.html
 # The two calibration days are the exception and stay tracked, because the comparison in
 # scripts/compare_counts.py is only reproducible with them.
 data/reddit/*
-!data/reddit/2026-08/
+
+# Local preview config for the Claude Code browser pane, not part of the project.
+.claude/

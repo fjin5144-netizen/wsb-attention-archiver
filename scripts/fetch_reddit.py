@@ -83,7 +83,7 @@ def fetch_day(day, kind):
     start = int(dt.datetime.strptime(day, "%Y-%m-%d")
                   .replace(tzinfo=dt.timezone.utc).timestamp())
     end = start + 86400
-    rows, cursor, seen = [], start, set()
+    rows, cursor, seen, pages = [], start, set(), 0
     while True:
         d = get(f"{API}/{kind}/search?subreddit={SUB}&after={cursor}&before={end}"
                 f"&limit={PAGE}&sort=asc")
@@ -93,6 +93,14 @@ def fetch_day(day, kind):
         for x in new:
             seen.add(x["id"])
             rows.append(trim(kind, x))
+        pages += 1
+        # Progress from inside the day, not only when it finishes. A day of comments is
+        # ~260 requests and seven minutes, and printing nothing until the file lands
+        # makes a working download indistinguishable from a hung one — which is exactly
+        # how it looked from outside.
+        if pages % 20 == 0:
+            at = dt.datetime.fromtimestamp(cursor, dt.timezone.utc).strftime("%H:%M")
+            print(f"    {day} {kind}: {len(rows):>6} so far, at {at} UTC", flush=True)
         if len(d) < PAGE:
             break
         nxt = max(x["created_utc"] for x in d)
@@ -199,6 +207,7 @@ def main():
                 skipped += 1
                 line.append(f"{kind} kept")
                 continue
+            print(f"  {day} {kind} …", flush=True)
             rows, err = fetch_day(day, kind)
             if err:
                 # Leave the day unwritten rather than half-written: `have()` is how a

@@ -97,11 +97,31 @@ def main():
     top = int(sys.argv[sys.argv.index("--top") + 1]) if "--top" in sys.argv else 20
     csv_path = sys.argv[sys.argv.index("--csv") + 1] if "--csv" in sys.argv else None
 
-    days = sorted(n[:-5] for n in os.listdir(ARCHIVE)
-                  if re.fullmatch(r"\d{4}-\d\d-\d\d\.json", n))
+    # --wayback runs the same comparison against the archive.org captures instead of the
+    # daily collection. Same file shape, so it is a directory swap rather than a second
+    # implementation — the point of the 2021-2025 fetch is to ask whether the 1.09 offset
+    # is a fact about this instrument or a fact about the last three months, and a
+    # separately-written checker could answer differently for reasons of its own.
+    #
+    # Two differences that matter and are handled here: captures are top 100 rather than
+    # top 500, which only bites above --top 100; and eleven capture dates are flagged
+    # frozen in quality.json, meaning ApeWisdom served archive.org one cached page under
+    # several dates. Those are dropped — comparing a day's text against another day's
+    # board would manufacture disagreement that says nothing about either source.
+    archive = ARCHIVE
+    skip = set()
+    if "--wayback" in sys.argv:
+        archive = os.path.join(ROOT, "data", "wayback")
+        qp = os.path.join(archive, "quality.json")
+        if os.path.exists(qp):
+            with open(qp) as f:
+                skip = set((json.load(f).get("suspect") or {}).keys())
+
+    days = sorted(n[:-5] for n in os.listdir(archive)
+                  if re.fullmatch(r"\d{4}-\d\d-\d\d\.json", n) and n[:-5] not in skip)
     pairs, per_day, rows = [], [], []
     for day in days:
-        with open(os.path.join(ARCHIVE, f"{day}.json")) as f:
+        with open(os.path.join(archive, f"{day}.json")) as f:
             snap = json.load(f)
         if not snap.get("fetched_at"):
             continue

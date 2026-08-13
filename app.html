@@ -389,6 +389,15 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .badge{font:600 10px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;
   padding:4px 4px;border-radius:4px;background:var(--line2);color:var(--ink2)}
 .badge.b{background:rgba(139,124,246,.18);color:var(--acc)}
+/* Three weights for three degrees of certainty, because flattening them would say the
+   scan's arithmetic and a read of the source text carry the same authority. Filled: the
+   text was read and it is not this company. Outlined: the miscount is ours. Dotted: the
+   two counting rules disagree and nobody has looked yet. */
+.badge.fl.x{background:rgba(242,104,92,.16);color:var(--dn)}
+.badge.fl.o{background:transparent;color:var(--ink2);box-shadow:inset 0 0 0 1px var(--line2)}
+.badge.fl.q{background:transparent;color:var(--ink2);
+  box-shadow:inset 0 0 0 1px var(--line2);opacity:.8;letter-spacing:0}
+.badge.fl{cursor:help;white-space:nowrap}
 /* A full-width row rather than a control, so it gets a row's height — but a multiple of
    the control unit rather than whatever 12px of padding happened to produce. */
 .more{display:flex;align-items:center;justify-content:center;width:100%;background:none;
@@ -687,6 +696,52 @@ const pxOf=(tk,day)=>{
   if(covers(b))return b;
   return a||b||null;
 };
+/* Rows the archive carries that are not about the company named on them.
+   ---------------------------------------------------------------------------
+   Two marks, from two sources, and merging them into one would defeat the point.
+
+   `checked` comes from data/artifacts.json: someone read the text behind the count and
+   the evidence is written down. DTE's 70 against 69 items containing `0DTE`.
+
+   `apart` comes from data/divergence.json: this project's own count of the raw posts
+   sits far from the stable ~1.13 offset between the two counting rules. It is arithmetic
+   over every board ticker, it runs daily, and it is a question rather than an answer.
+
+   The reason they cannot be one mark is EU. It is the European Union, it produced four
+   false spikes, and its divergence ratio is 1.20 — dead normal, because both rules count
+   the bare uppercase word and are wrong together. A page that showed only divergence
+   would render EU as clean, and agreement would be doing the laundering. SELF and TASK
+   are the same shape. Of seven confirmed artefacts the scan sees three. */
+let FLAG={};
+function buildFlags(art,dv){
+  FLAG={};
+  if(art){
+    for(const [tk,r] of Object.entries(art.confirmed||{}))
+      FLAG[tk]={kind:'checked',what:r.actually,ev:r.evidence,n:r.spike_events};
+    for(const [tk,r] of Object.entries(art.our_own_errors||{}))
+      if(/^[A-Z]{1,5}$/.test(tk))
+        FLAG[tk]={kind:'ours',what:r.actually,ev:r.cause,n:r.spike_events};
+  }
+  /* Tickers already read and found real get no mark at all. OPEN diverges hard (0.28 —
+     ApeWisdom counts four times what we do) and NOW diverges the other way, and both are
+     genuinely the company: 49 $OPEN in one window, '$NOW earnings' on ServiceNow's Q2 day.
+     The badge's job is to say "this row may not mean what it says", so putting one on a
+     row that does mean what it says is noise — and the divergence badge's own wording,
+     "nobody has read the text yet", would have been simply untrue on these two. */
+  const done=new Set(Object.keys((art&&art.cleared)||{}).filter(k=>/^[A-Z]{1,5}$/.test(k)));
+  if(dv&&dv.tickers){
+    const c=dv.common||1;
+    for(const [tk,r] of Object.entries(dv.tickers)){
+      if(FLAG[tk]||done.has(tk)||Math.abs(r.ratio-c)<=0.5)continue;
+      FLAG[tk]={kind:'apart',ratio:r.ratio,days:r.days,common:c};
+    }
+  }
+}
+const flagBadge=tk=>{
+  const f=FLAG[tk];if(!f)return'';
+  if(f.kind==='apart')return `<span class="badge fl q" title="Our own count of the raw posts runs ${f.ratio}x ApeWisdom's over ${f.days} days, against ${f.common}x for the board as a whole. Unexplained — nobody has read the text yet.">unchecked</span>`;
+  return `<span class="badge fl ${f.kind==='ours'?'o':'x'}" title="${esc(f.what||'')}${f.ev?' — '+esc(f.ev):''}">${f.kind==='ours'?'our error':'not a stock'}</span>`;
+};
 async function ensureDix(){
   try{
     const txt=await (await fetch(`${BASE}data/DIX.csv`)).text();
@@ -749,14 +804,17 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
     catch(_){DAYS=[];}
   }
   if(!DAYS.length){$('boot').textContent='No archive data yet.';return;}
-  const [ev,fi,px,rk,wq]=await Promise.all([
+  const [ev,fi,px,rk,wq,art,dv]=await Promise.all([
     gj(`${BASE}data/events.json`).catch(()=>[]),
     gj(`${BASE}data/finding.json`).catch(()=>null),
     gj(`${BASE}data/prices.json`).catch(()=>({})),
     gj(`${BASE}data/finding_rank.json`).catch(()=>null),
     gj(`${BASE}data/wayback/quality.json`).catch(()=>null),
+    gj(`${BASE}data/artifacts.json`).catch(()=>null),
+    gj(`${BASE}data/divergence.json`).catch(()=>null),
   ]);
   EVENTS=ev;FINDING=fi;PRICES=px;RANK=rk;
+  buildFlags(art,dv);
   /* Kept so a custom definition can be undone, and so the scan has something to be
      checked against. */
   EVENTS0=ev;FINDING0=fi;
@@ -1728,6 +1786,7 @@ function boardRow(r){
         :`<div class="out mut" style="font-size:12px">—<span class="recn">never spiked</span></div>`;
   return `<div class="row" role="button" tabindex="0" data-k="${r.ticker}">
     <div class="r1"><span class="tk">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge b">basket</span>':''}
+      ${flagBadge(r.ticker)}
       ${r.hot?'<span class="badge" style="background:rgba(242,104,92,.18);color:var(--dn)">spike</span>':''}
       ${(()=>{const p=lastClose(r.ticker);return p!=null?`<span class="px">$${p<10?p.toFixed(2):Math.round(p)}</span>`:'';})()}</div>
     ${/* from → to, not a bare current value with an arrow. Where it came from is the
@@ -2246,9 +2305,37 @@ function boardDetail(){
     spike detection does not run on it — coverage is too sparse for "the prior 20 archive
     days" to mean 20 days. Mentions and rank are real; a comparison with a 2026 board is not
     like-for-like.</div>`:'';
-  return `<button class="back" data-back="1">‹ The board</button>${wbn}
+  /* The badge in the list is not enough on its own. This pane opens on a company name, a
+     price chart and a mention history, and a reader who arrives here has already been told
+     three times that DTE is DTE Energy. Whatever the row said two clicks ago has to be
+     restated where the claim is actually being made. */
+  const fl=FLAG[r.ticker];
+  /* Evidence strings come from JSON and some end in a full stop and some do not; joining
+     them raw produced "so bare uppercase counts The figures on this page...". */
+  const stop=t=>!t?'':(/[.!?]$/.test(t.trim())?t.trim():t.trim()+'.');
+  /* Only the confirmed kind gets the alarm rule. On an `ours` row every number shown is
+     ApeWisdom's and is fine — the defect is in our comparison, not on this page. */
+  const flN=!fl?'':`<div class="wbNote${fl.kind==='checked'?' bad':''}">
+    ${fl.kind==='apart'
+      ? `<b>The two counts disagree about ${r.ticker}.</b> Counting the raw r/wallstreetbets
+         posts under this project's own rule gives ${fl.ratio}× ApeWisdom's figure, where the
+         board as a whole sits at ${fl.common}×, across ${fl.days} days. Nobody has read the
+         text behind it yet, so this is a question and not a verdict — the mentions below are
+         ApeWisdom's number either way.`
+      : fl.kind==='ours'
+      ? `<b>Our own count of ${r.ticker} is wrong</b>, not ApeWisdom's. ${esc(stop(fl.ev))}
+         The figures on this page are ApeWisdom's and are unaffected; this is recorded so the
+         comparison elsewhere on the site is not read as evidence against them.`
+      : `<b>These mentions are not about ${escName(r.name||r.ticker)}.</b>
+         ${r.ticker} on r/wallstreetbets is ${esc(fl.what||'')}. ${esc(stop(fl.ev))}
+         The counts and the chart below are exactly what the archive holds — nothing has been
+         removed, because the archive records what the source said. They are shown so the
+         record stays complete, not because they measure attention on this company.
+         ${fl.n?`${fl.n} confirmed spike${fl.n>1?'s':''} on this ticker ${fl.n>1?'are':'is'} affected.`:''}`}
+  </div>`;
+  return `<button class="back" data-back="1">‹ The board</button>${wbn}${flN}
   <div class="dHead"><div>
-    <div class="dTk">${r.ticker}${BASKET.has(r.ticker)?' <span class="badge b">basket</span>':''}</div>
+    <div class="dTk">${r.ticker}${BASKET.has(r.ticker)?' <span class="badge b">basket</span>':''}${flagBadge(r.ticker)}</div>
     <p class="dSub">${escName(r.name||r.ticker)} · rank #${r.rank} on ${DAY}</p></div>
     <div class="dOut"><div class="v">${r.mentions}</div><div class="k">mentions</div></div></div>
   <div class="stats">
