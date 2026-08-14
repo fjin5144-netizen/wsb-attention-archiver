@@ -115,7 +115,13 @@ def main():
         qp = os.path.join(archive, "quality.json")
         if os.path.exists(qp):
             with open(qp) as f:
-                skip = set((json.load(f).get("suspect") or {}).keys())
+                q = json.load(f)
+            # Both defects, not just the frozen one. Dropping `suspect` alone left the
+            # three days that produced ratios of 13.80, 0.00 and 0.14 in the sample, and
+            # they alone took the day-to-day spread from 0.07 to 1.17 — a five-year answer
+            # that read as violent instability when 155 of 161 days agree to within a few
+            # per cent. `thin` is a capture of ApeWisdom's counter seconds after it reset.
+            skip = set((q.get("suspect") or {})) | set((q.get("thin") or {}))
 
     days = sorted(n[:-5] for n in os.listdir(archive)
                   if re.fullmatch(r"\d{4}-\d\d-\d\d\.json", n) and n[:-5] not in skip)

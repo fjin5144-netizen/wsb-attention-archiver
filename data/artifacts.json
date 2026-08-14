@@ -1,6 +1,6 @@
 {
   "_note": "Board rows that are demonstrably not about the company, established by counting the raw r/wallstreetbets text in data/reddit/ rather than by judgement. Written by hand from the checks recorded in `evidence`; scripts/verify_overlap.py is what produces the candidates. Nothing here is removed from the archive — the archive records what ApeWisdom said, and editing it would destroy the only record of what it said. These are labels, not deletions.",
-  "_status": "complete for the 2026 archive — all 27 spike events on word-shaped tickers checked against raw text, plus four more artefacts surfaced by scripts/divergence.py across all 103 overlapping days. A 2021-2025 pass is in progress.",
+  "_status": "2026 archive complete; 2021-2025 pass done for calibration and surfaced two further artefacts (IS, WW). 401 days of raw text were fetched and the per-day results kept in data/divergence_daily.json so the corpus itself need not be.",
   "confirmed": {
     "DTE": {
       "reads_as": "DTE Energy",
@@ -78,6 +78,22 @@
       "spike_events": 0,
       "cause": "an all-caps board turns a common adverb into a ticker",
       "our_rule_also_wrong": "JUST is NOT in our WORDLIKE, so we count 30 against their 7 — this time we are the worse of the two. Neither number is the company."
+    },
+    "IS": {
+      "reads_as": "a ticker",
+      "actually": "the verb, in capitals",
+      "evidence": "2023-02-04: 90 items contain bare uppercase IS and zero contain $IS; ApeWisdom reported 33. Sampled: 'ONLY TESLA IS UP', 'GOOD FUCKING GOD IS THERE A FUCKING SCENARIO WHERE US BEARS WIN', 'A LAWSUIT IS AN EXCELLENT IDEA'. Case-insensitively the word appears 5,697 times that day.",
+      "spike_events": 0,
+      "cause": "an all-caps board turns the commonest verb in English into a ticker",
+      "our_rule_also_wrong": "IS is not in our WORDLIKE either, so we count 90 to their 33 — we are the worse of the two. Found in the 2021-2025 pass; it is not on the 2026 board."
+    },
+    "WW": {
+      "reads_as": "WW International (Weight Watchers)",
+      "actually": "unresolved, but not the company",
+      "evidence": "Ranked #2 on 2024-04-14 with 119 mentions on a day when standalone WW appears in the subreddit zero times. Same on 2025-06-24 (92 reported, 5 present) and 2024-04-15 (87 reported, 1 present). Our text for those days is sound — every other board row matches within the usual offset: SPY 234/207, TSM 72/70, RTX 68/64, NVDA 59/54, LMT 53/51.",
+      "spike_events": 0,
+      "mechanism": "Not established. 'ww' appears 386 times, essentially all inside www URLs, and the count of items containing www is the right order of magnitude but not the right number: 119/160, 92/137, 87/219 — ratios of 0.74, 0.67 and 0.40. DTE was provable because their 70 met our 69; this is not that, and saying 'they count URLs' would be a story fitted to three points.",
+      "cause": "unknown — the only certainty is that the row does not measure the company"
     }
   },
   "cleared": {
@@ -131,7 +147,7 @@
     "spike_events_total": 260,
     "on_word_shaped_tickers": 27,
     "checked_against_raw_text": 27,
-    "confirmed_artifacts": 9,
+    "confirmed_artifacts": 11,
     "unreliable": 2,
     "real": 19,
     "artifact_share_of_all_events": "6 of 260 = 2.3%, or 8 of 260 = 3.1% counting the two BE events",
@@ -192,5 +208,17 @@
     "finding": "The offset is not a fact about 2026. Across five years the usable captures give 1.08 and 0.900, against 1.09 and 0.918 for the 103 collected days.",
     "caveat": "The three days that looked like violent disagreement — ratios 13.80, 0.00 and 0.14 — are all thin captures, not disagreement. See data/wayback/quality.json `thin`.",
     "status": "144 usable captures identified; raw text still downloading"
+  },
+  "five_year_calibration": {
+    "overlap_days": 144,
+    "span": "2021-05-10 .. 2026-07-18",
+    "source": "archive.org captures",
+    "count_ratio_median": 1.07,
+    "count_ratio_spread": "0.96–1.31",
+    "count_ratio_day_to_day_sd": 0.042,
+    "rank_correlation_median": 0.941,
+    "rank_correlation_worst": 0.585,
+    "finding": "The offset is not a fact about 2026. Over five years it is 1.07 with a day-to-day sd of 0.042 — tighter than the 0.080 of the 103 densely-collected 2026 days, because these are spread across years rather than clustered in one quarter.",
+    "method_note": "Excludes both defects in the captures: 11 frozen pages and 75 caught mid-reset. Including the thin ones put the spread at 0.14-13.80 and the sd at 1.172 — a five-year answer that read as violent instability when 144 of 161 days agree to within a few per cent."
   }
 }
