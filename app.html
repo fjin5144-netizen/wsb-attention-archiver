@@ -398,6 +398,17 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .badge.fl.q{background:transparent;color:var(--ink2);
   box-shadow:inset 0 0 0 1px var(--line2);opacity:.8;letter-spacing:0}
 .badge.fl{cursor:help;white-space:nowrap}
+/* Provenance, not a verdict — so it sits below the problem badges in weight. Solid means
+   counted enough to trust the number, outline means counted but thinly, and the question
+   mark means nobody has looked. All three are the same size so a row's height never moves
+   with how well it happens to be known. */
+.badge.ck{cursor:help;white-space:nowrap;font-variant-numeric:tabular-nums;
+  letter-spacing:0;padding:4px 5px;min-width:26px;text-align:center}
+.badge.ck.ok{background:rgba(90,190,140,.16);color:#5abe8c}
+.badge.ck.part{background:transparent;color:var(--ink3);box-shadow:inset 0 0 0 1px var(--line2)}
+.badge.ck.thin{background:transparent;color:var(--ink3);box-shadow:inset 0 0 0 1px var(--line2);opacity:.75}
+.badge.ck.none{background:transparent;color:var(--ink3);
+  box-shadow:inset 0 0 0 1px var(--line2);border-radius:9px;opacity:.6}
 /* Quieter than wbNote: this is provenance, not a warning. */
 .ckNote{margin:0 0 14px;padding:9px 11px;border-radius:6px;background:var(--line2);
   font-size:12px;line-height:1.5;color:var(--ink2)}
@@ -741,6 +752,30 @@ function buildFlags(art,dv){
     }
   }
 }
+/* Three tiers of "has anyone checked this row", with the boundaries taken from the data
+   rather than chosen. Measured over 323 tickers that carry enough volume to be counted,
+   the deviation from the board's common ratio tightens as the number of counted days
+   grows: at 16+ days the 90th percentile is 0.075 — within 7% — while at 1-2 days it is
+   0.419, within 42%. Between them the samples are small and the spread is not monotonic,
+   so they are one band and not three.
+
+   The unchecked tier carries a prior rather than a measurement: of the rows with enough
+   volume to have been checked, 18 of 323 turned out not to be stocks. 1 in 18 is what an
+   unchecked row is worth, and it is worth saying so on the row rather than leaving the
+   absence of a badge to read as approval. */
+const ckTier=tk=>{
+  const v=CHECK&&CHECK.tickers?CHECK.tickers[tk]:null;
+  if(!v||!v.days)return {k:'none',t:`Never counted against the raw posts. Of rows that were, 18 of 323 turned out not to be the company — about 1 in 18.`};
+  const rd=v.rated_days||0;
+  if(!rd)return {k:'thin',d:v.days,t:`Seen on ${v.days} day${v.days>1?'s':''}, none of them carrying the 10 mentions a ratio needs. Counted, but never at a volume that could settle anything.`};
+  const off=CHECK.common?Math.abs(v.ratio-CHECK.common):0;
+  const good=rd>=16;
+  return {k:good?'ok':'part',d:rd,
+    t:`Counted on ${rd} day${rd>1?'s':''} at readable volume, ${v.days} on the board. Our own rule finds ${v.ratio}× ApeWisdom's against ${CHECK.common}× for the board — ${off<0.1?'inside':'outside'} the ±0.10 that half of all checked rows sit within. At this many days the 90th percentile of deviation is ${good?'0.075':'0.42'}.`};
+};
+const ckBadge=tk=>{const c=ckTier(tk);
+  return `<span class="badge ck ${c.k}" title="${esc(c.t)}">${
+    c.k==='none'?'?':c.k==='thin'?`${c.d}d?`:`${c.d}d`}</span>`;};
 const flagBadge=tk=>{
   const f=FLAG[tk];if(!f)return'';
   if(f.kind==='apart')return `<span class="badge fl q" title="Our own count of the raw posts runs ${f.ratio}x ApeWisdom's over ${f.days} days, against ${f.common}x for the board as a whole. Unexplained — nobody has read the text yet.">unchecked</span>`;
@@ -1823,7 +1858,7 @@ function boardRow(r){
         :`<div class="out mut" style="font-size:12px">—<span class="recn">never spiked</span></div>`;
   return `<div class="row" role="button" tabindex="0" data-k="${r.ticker}">
     <div class="r1"><span class="tk">${r.ticker}</span>${BASKET.has(r.ticker)?'<span class="badge b">basket</span>':''}
-      ${flagBadge(r.ticker)}
+      ${ckBadge(r.ticker)}${flagBadge(r.ticker)}
       ${r.hot?'<span class="badge" style="background:rgba(242,104,92,.18);color:var(--dn)">spike</span>':''}
       ${(()=>{const p=lastClose(r.ticker);return p!=null?`<span class="px">$${p<10?p.toFixed(2):Math.round(p)}</span>`:'';})()}</div>
     ${/* from → to, not a bare current value with an arrow. Where it came from is the
@@ -2386,7 +2421,7 @@ function boardDetail(){
   </div>`;
   return `<button class="back" data-back="1">‹ The board</button>${wbn}${flN}${ckN}
   <div class="dHead"><div>
-    <div class="dTk">${r.ticker}${BASKET.has(r.ticker)?' <span class="badge b">basket</span>':''}${flagBadge(r.ticker)}</div>
+    <div class="dTk">${r.ticker}${BASKET.has(r.ticker)?' <span class="badge b">basket</span>':''}${ckBadge(r.ticker)}${flagBadge(r.ticker)}</div>
     <p class="dSub">${escName(r.name||r.ticker)} · rank #${r.rank} on ${DAY}</p></div>
     <div class="dOut"><div class="v">${r.mentions}</div><div class="k">mentions</div></div></div>
   <div class="stats">

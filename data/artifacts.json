@@ -303,5 +303,28 @@
     "rank_correlation_worst": 0.585,
     "finding": "The offset is not a fact about 2026. Over five years it is 1.07 with a day-to-day sd of 0.042 — tighter than the 0.080 of the 103 densely-collected 2026 days, because these are spread across years rather than clustered in one quarter.",
     "method_note": "Excludes both defects in the captures: 11 frozen pages and 75 caught mid-reset. Including the thin ones put the spread at 0.14-13.80 and the sd at 1.172 — a five-year answer that read as violent instability when 144 of 161 days agree to within a few per cent."
+  },
+  "verification_coverage": {
+    "_note": "What the site puts on every row: whether anything ever counted it against the raw posts, and how much that is worth. The tier boundaries are measured, not chosen.",
+    "tickers_with_any_record": 1861,
+    "tickers_with_enough_volume_to_rate": 323,
+    "deviation_from_common_ratio_of_clean_rows": {
+      "median": "0.042 — within 4%",
+      "p75": "0.099 — within 9%",
+      "p90": "0.239 — within 21%",
+      "p95": "0.693 — within 62%"
+    },
+    "deviation_by_days_counted": {
+      "1-2 days": "median 0.075, p90 0.419",
+      "3-5 days": "median 0.034, p90 0.159",
+      "6-15 days": "median 0.042, p90 0.473",
+      "16+ days": "median 0.022, p90 0.075"
+    },
+    "artefact_rate": {
+      "among_rows_with_enough_volume": "18 of 323 = 5.6%, about 1 in 18",
+      "among_all_rows_with_any_record": "20 of 1861 = 1.1%",
+      "note": "5.6% is the figure an unchecked row should carry, not 1.1%. The larger denominator is mostly rows of one mention, which are neither checkable nor consequential; the rate that matters is among rows loud enough to be read."
+    },
+    "why_16_days": "At 16+ counted days the 90th percentile of deviation is 0.075 and at 1-2 days it is 0.419 — a row's ratio is worth roughly six times more when it has been seen that often. The middle bands are small samples and not monotonic (6-15 days has a wider p90 than 3-5), so they are one tier rather than three: the data supports two boundaries, not four."
   }
 }
