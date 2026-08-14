@@ -1,417 +1,667 @@
 {
  "_note": "Ratio of this project's count to ApeWisdom's, median across the days both exist. Near `common` means the two rules agree \u2014 which is NOT the same as either being right: EU sits at 1.20 and is the European Union. See artifacts.json for what agreement cannot catch.",
- "days": 104,
+ "days": 101,
  "depth": 50,
  "min_days": 10,
- "common": 1.142,
+ "common": 1.138,
  "tickers": {
   "YOU": {
-   "ratio": 3.702,
-   "days": 92
+   "ratio": 3.662,
+   "days": 90,
+   "dollar": 0,
+   "matches": 5645
   },
   "UP": {
    "ratio": 3.488,
-   "days": 28
+   "days": 28,
+   "dollar": 0,
+   "matches": 1334
   },
   "IT": {
    "ratio": 0.0,
-   "days": 96
+   "days": 93,
+   "dollar": 4,
+   "matches": 4
   },
   "ON": {
    "ratio": 0.0,
-   "days": 13
+   "days": 13,
+   "dollar": 10,
+   "matches": 10
   },
   "ALL": {
    "ratio": 0.0,
-   "days": 46
+   "days": 45,
+   "dollar": 1,
+   "matches": 1
   },
   "BE": {
    "ratio": 0.067,
-   "days": 40
+   "days": 40,
+   "dollar": 54,
+   "matches": 54
   },
   "DTE": {
-   "ratio": 0.108,
-   "days": 104
+   "ratio": 0.111,
+   "days": 101,
+   "dollar": 0,
+   "matches": 646
   },
   "JUST": {
    "ratio": 2.107,
-   "days": 14
+   "days": 14,
+   "dollar": 0,
+   "matches": 235
   },
   "OPEN": {
-   "ratio": 0.214,
-   "days": 41
+   "ratio": 0.212,
+   "days": 40,
+   "dollar": 283,
+   "matches": 283
   },
   "CC": {
-   "ratio": 0.613,
-   "days": 42
+   "ratio": 0.625,
+   "days": 41,
+   "dollar": 2,
+   "matches": 299
   },
   "NOW": {
-   "ratio": 1.629,
-   "days": 101
+   "ratio": 1.623,
+   "days": 98,
+   "dollar": 610,
+   "matches": 5801
   },
   "IBKR": {
    "ratio": 1.348,
-   "days": 10
+   "days": 10,
+   "dollar": 2,
+   "matches": 118
   },
   "JPM": {
    "ratio": 0.957,
-   "days": 23
+   "days": 23,
+   "dollar": 6,
+   "matches": 497
   },
   "LINK": {
    "ratio": 1.294,
-   "days": 25
+   "days": 25,
+   "dollar": 0,
+   "matches": 258
   },
   "IP": {
    "ratio": 1.0,
-   "days": 11
-  },
-  "API": {
-   "ratio": 1.0,
-   "days": 15
+   "days": 11,
+   "dollar": 0,
+   "matches": 118
   },
   "AMZN": {
-   "ratio": 1.259,
-   "days": 89
+   "ratio": 1.26,
+   "days": 86,
+   "dollar": 170,
+   "matches": 3122
   },
   "AAOI": {
    "ratio": 1.25,
-   "days": 18
+   "days": 18,
+   "dollar": 44,
+   "matches": 284
+  },
+  "DELL": {
+   "ratio": 1.25,
+   "days": 15,
+   "dollar": 57,
+   "matches": 1029
   },
   "AMC": {
    "ratio": 1.25,
-   "days": 23
+   "days": 23,
+   "dollar": 16,
+   "matches": 431
   },
   "HBM": {
    "ratio": 1.036,
-   "days": 30
-  },
-  "MU": {
-   "ratio": 1.052,
-   "days": 104
+   "days": 30,
+   "dollar": 0,
+   "matches": 378
   },
   "IWM": {
    "ratio": 1.23,
-   "days": 14
+   "days": 14,
+   "dollar": 2,
+   "matches": 321
   },
-  "SOFI": {
-   "ratio": 1.222,
-   "days": 17
+  "MU": {
+   "ratio": 1.052,
+   "days": 101,
+   "dollar": 1419,
+   "matches": 50113
   },
   "SMH": {
    "ratio": 1.222,
-   "days": 31
+   "days": 31,
+   "dollar": 58,
+   "matches": 433
   },
-  "DELL": {
-   "ratio": 1.22,
-   "days": 16
-  },
-  "SPY": {
-   "ratio": 1.073,
-   "days": 104
+  "API": {
+   "ratio": 1.062,
+   "days": 13,
+   "dollar": 0,
+   "matches": 190
   },
   "DOW": {
    "ratio": 1.207,
-   "days": 18
+   "days": 18,
+   "dollar": 1,
+   "matches": 248
   },
-  "MSFT": {
-   "ratio": 1.079,
-   "days": 104
+  "SPY": {
+   "ratio": 1.071,
+   "days": 101,
+   "dollar": 476,
+   "matches": 32213
   },
   "SOXX": {
    "ratio": 1.2,
-   "days": 20
+   "days": 20,
+   "dollar": 22,
+   "matches": 280
   },
-  "SNDK": {
-   "ratio": 1.084,
-   "days": 103
+  "SOFI": {
+   "ratio": 1.199,
+   "days": 16,
+   "dollar": 18,
+   "matches": 356
+  },
+  "MSFT": {
+   "ratio": 1.078,
+   "days": 101,
+   "dollar": 633,
+   "matches": 22713
+  },
+  "ES": {
+   "ratio": 1.083,
+   "days": 17,
+   "dollar": 1,
+   "matches": 217
   },
   "LULU": {
    "ratio": 1.084,
-   "days": 11
+   "days": 11,
+   "dollar": 30,
+   "matches": 432
   },
-  "USO": {
-   "ratio": 1.086,
-   "days": 74
-  },
-  "ES": {
-   "ratio": 1.087,
-   "days": 18
-  },
-  "FIG": {
-   "ratio": 1.088,
-   "days": 17
-  },
-  "NVDA": {
-   "ratio": 1.088,
-   "days": 104
-  },
-  "IREN": {
-   "ratio": 1.194,
-   "days": 25
+  "SNDK": {
+   "ratio": 1.085,
+   "days": 100,
+   "dollar": 358,
+   "matches": 14158
   },
   "ADBE": {
    "ratio": 1.191,
-   "days": 24
-  },
-  "TSLA": {
-   "ratio": 1.093,
-   "days": 104
+   "days": 24,
+   "dollar": 21,
+   "matches": 658
   },
   "TTWO": {
    "ratio": 1.19,
-   "days": 13
+   "days": 13,
+   "dollar": 23,
+   "matches": 355
   },
-  "QQQ": {
-   "ratio": 1.094,
-   "days": 104
+  "USO": {
+   "ratio": 1.086,
+   "days": 71,
+   "dollar": 46,
+   "matches": 1822
   },
-  "CRM": {
-   "ratio": 1.095,
-   "days": 13
+  "NVDA": {
+   "ratio": 1.089,
+   "days": 101,
+   "dollar": 532,
+   "matches": 18604
+  },
+  "IREN": {
+   "ratio": 1.185,
+   "days": 24,
+   "dollar": 57,
+   "matches": 828
+  },
+  "TSLA": {
+   "ratio": 1.092,
+   "days": 101,
+   "dollar": 204,
+   "matches": 6485
   },
   "ASML": {
    "ratio": 1.183,
-   "days": 20
+   "days": 20,
+   "dollar": 12,
+   "matches": 543
+  },
+  "FIG": {
+   "ratio": 1.093,
+   "days": 16,
+   "dollar": 68,
+   "matches": 532
+  },
+  "QQQ": {
+   "ratio": 1.093,
+   "days": 101,
+   "dollar": 201,
+   "matches": 10555
   },
   "RIVN": {
    "ratio": 1.182,
-   "days": 11
+   "days": 11,
+   "dollar": 39,
+   "matches": 210
   },
-  "AGI": {
-   "ratio": 1.182,
-   "days": 19
-  },
-  "SLS": {
-   "ratio": 1.182,
-   "days": 23
-  },
-  "ASTS": {
-   "ratio": 1.103,
-   "days": 102
+  "CRM": {
+   "ratio": 1.095,
+   "days": 13,
+   "dollar": 10,
+   "matches": 303
   },
   "TSM": {
    "ratio": 1.177,
-   "days": 22
+   "days": 22,
+   "dollar": 19,
+   "matches": 527
   },
   "TQQQ": {
    "ratio": 1.177,
-   "days": 19
-  },
-  "TLT": {
-   "ratio": 1.108,
-   "days": 12
-  },
-  "SPCX": {
-   "ratio": 1.108,
-   "days": 86
-  },
-  "GLD": {
-   "ratio": 1.174,
-   "days": 10
-  },
-  "SLV": {
-   "ratio": 1.172,
-   "days": 12
-  },
-  "CRWV": {
-   "ratio": 1.172,
-   "days": 40
+   "days": 19,
+   "dollar": 1,
+   "matches": 289
   },
   "WEN": {
-   "ratio": 1.171,
-   "days": 45
+   "ratio": 1.176,
+   "days": 44,
+   "dollar": 874,
+   "matches": 6884
   },
-  "AMD": {
-   "ratio": 1.114,
-   "days": 104
+  "SLS": {
+   "ratio": 1.173,
+   "days": 22,
+   "dollar": 36,
+   "matches": 658
   },
-  "META": {
-   "ratio": 1.114,
-   "days": 102
+  "ASTS": {
+   "ratio": 1.103,
+   "days": 100,
+   "dollar": 221,
+   "matches": 8310
   },
-  "CRSR": {
-   "ratio": 1.114,
-   "days": 10
+  "TLT": {
+   "ratio": 1.105,
+   "days": 11,
+   "dollar": 3,
+   "matches": 135
   },
   "RDW": {
    "ratio": 1.168,
-   "days": 14
+   "days": 14,
+   "dollar": 15,
+   "matches": 372
   },
   "UAE": {
    "ratio": 1.167,
-   "days": 19
+   "days": 19,
+   "dollar": 0,
+   "matches": 429
+  },
+  "AGI": {
+   "ratio": 1.167,
+   "days": 17,
+   "dollar": 0,
+   "matches": 234
+  },
+  "CRWV": {
+   "ratio": 1.167,
+   "days": 37,
+   "dollar": 48,
+   "matches": 759
   },
   "OKLO": {
    "ratio": 1.167,
-   "days": 25
+   "days": 25,
+   "dollar": 56,
+   "matches": 544
   },
   "BABA": {
    "ratio": 1.167,
-   "days": 12
+   "days": 12,
+   "dollar": 24,
+   "matches": 224
   },
   "ONDS": {
    "ratio": 1.167,
-   "days": 28
+   "days": 25,
+   "dollar": 39,
+   "matches": 671
   },
   "DJT": {
    "ratio": 1.167,
-   "days": 21
+   "days": 19,
+   "dollar": 13,
+   "matches": 193
   },
   "APLD": {
    "ratio": 1.167,
-   "days": 13
+   "days": 13,
+   "dollar": 17,
+   "matches": 363
   },
-  "MSTR": {
-   "ratio": 1.118,
-   "days": 63
+  "AMAT": {
+   "ratio": 1.165,
+   "days": 10,
+   "dollar": 20,
+   "matches": 294
   },
-  "GOOG": {
-   "ratio": 1.119,
-   "days": 93
+  "SPCX": {
+   "ratio": 1.112,
+   "days": 83,
+   "dollar": 678,
+   "matches": 17491
   },
-  "BB": {
-   "ratio": 1.119,
-   "days": 44
+  "AMD": {
+   "ratio": 1.113,
+   "days": 101,
+   "dollar": 183,
+   "matches": 9202
   },
-  "QCOM": {
-   "ratio": 1.12,
-   "days": 19
+  "CRSR": {
+   "ratio": 1.114,
+   "days": 10,
+   "dollar": 77,
+   "matches": 1536
   },
-  "LUNR": {
-   "ratio": 1.12,
-   "days": 40
-  },
-  "GOOGL": {
-   "ratio": 1.123,
-   "days": 82
+  "META": {
+   "ratio": 1.115,
+   "days": 99,
+   "dollar": 340,
+   "matches": 6812
   },
   "WTI": {
    "ratio": 1.16,
-   "days": 12
+   "days": 12,
+   "dollar": 0,
+   "matches": 155
   },
   "HPE": {
    "ratio": 1.16,
-   "days": 12
+   "days": 12,
+   "dollar": 43,
+   "matches": 1292
   },
-  "RDDT": {
-   "ratio": 1.125,
-   "days": 95
-  },
-  "SOUN": {
-   "ratio": 1.125,
-   "days": 17
-  },
-  "ORCL": {
-   "ratio": 1.125,
-   "days": 58
-  },
-  "UNH": {
-   "ratio": 1.125,
-   "days": 15
+  "MSTR": {
+   "ratio": 1.118,
+   "days": 62,
+   "dollar": 92,
+   "matches": 2463
   },
   "PLTR": {
    "ratio": 1.158,
-   "days": 79
+   "days": 76,
+   "dollar": 110,
+   "matches": 3179
   },
-  "HOOD": {
-   "ratio": 1.126,
-   "days": 86
-  },
-  "AAPL": {
-   "ratio": 1.126,
-   "days": 84
+  "BB": {
+   "ratio": 1.119,
+   "days": 44,
+   "dollar": 146,
+   "matches": 1834
   },
   "KORU": {
    "ratio": 1.156,
-   "days": 14
+   "days": 14,
+   "dollar": 19,
+   "matches": 237
   },
-  "RKLB": {
-   "ratio": 1.129,
-   "days": 100
+  "QCOM": {
+   "ratio": 1.12,
+   "days": 19,
+   "dollar": 22,
+   "matches": 493
   },
-  "EU": {
-   "ratio": 1.129,
-   "days": 38
+  "GOOG": {
+   "ratio": 1.121,
+   "days": 90,
+   "dollar": 178,
+   "matches": 4295
   },
-  "IQ": {
-   "ratio": 1.129,
-   "days": 28
+  "HOOD": {
+   "ratio": 1.121,
+   "days": 85,
+   "dollar": 324,
+   "matches": 2681
   },
   "NFLX": {
    "ratio": 1.154,
-   "days": 72
+   "days": 70,
+   "dollar": 67,
+   "matches": 2327
   },
   "VOO": {
    "ratio": 1.154,
-   "days": 77
+   "days": 75,
+   "dollar": 26,
+   "matches": 1472
   },
-  "AM": {
-   "ratio": 1.13,
-   "days": 94
-  },
-  "SOXL": {
-   "ratio": 1.131,
-   "days": 84
+  "INTC": {
+   "ratio": 1.152,
+   "days": 84,
+   "dollar": 199,
+   "matches": 4059
   },
   "SPCE": {
    "ratio": 1.151,
-   "days": 13
+   "days": 13,
+   "dollar": 396,
+   "matches": 8670
+  },
+  "SOUN": {
+   "ratio": 1.125,
+   "days": 17,
+   "dollar": 164,
+   "matches": 1218
+  },
+  "AAPL": {
+   "ratio": 1.125,
+   "days": 81,
+   "dollar": 113,
+   "matches": 3735
+  },
+  "GOOGL": {
+   "ratio": 1.125,
+   "days": 79,
+   "dollar": 160,
+   "matches": 3443
+  },
+  "ORCL": {
+   "ratio": 1.125,
+   "days": 57,
+   "dollar": 132,
+   "matches": 2111
+  },
+  "LUNR": {
+   "ratio": 1.125,
+   "days": 39,
+   "dollar": 37,
+   "matches": 1590
+  },
+  "UNH": {
+   "ratio": 1.125,
+   "days": 15,
+   "dollar": 16,
+   "matches": 435
   },
   "PL": {
    "ratio": 1.15,
-   "days": 11
+   "days": 11,
+   "dollar": 11,
+   "matches": 291
   },
   "WDC": {
    "ratio": 1.148,
-   "days": 38
+   "days": 38,
+   "dollar": 40,
+   "matches": 1254
   },
   "POET": {
    "ratio": 1.148,
-   "days": 28
+   "days": 28,
+   "dollar": 94,
+   "matches": 1435
   },
-  "AVGO": {
-   "ratio": 1.136,
-   "days": 53
+  "AM": {
+   "ratio": 1.128,
+   "days": 92,
+   "dollar": 0,
+   "matches": 2677
   },
-  "INTC": {
-   "ratio": 1.146,
-   "days": 86
+  "RDDT": {
+   "ratio": 1.129,
+   "days": 92,
+   "dollar": 250,
+   "matches": 4666
   },
-  "IONQ": {
-   "ratio": 1.138,
-   "days": 10
+  "EU": {
+   "ratio": 1.129,
+   "days": 38,
+   "dollar": 0,
+   "matches": 710
   },
-  "NOK": {
-   "ratio": 1.138,
-   "days": 42
+  "IQ": {
+   "ratio": 1.129,
+   "days": 28,
+   "dollar": 1,
+   "matches": 267
   },
-  "MRVL": {
-   "ratio": 1.139,
-   "days": 63
+  "RKLB": {
+   "ratio": 1.13,
+   "days": 97,
+   "dollar": 166,
+   "matches": 6267
   },
-  "NBIS": {
-   "ratio": 1.14,
-   "days": 96
+  "SLV": {
+   "ratio": 1.145,
+   "days": 10,
+   "dollar": 6,
+   "matches": 181
+  },
+  "SOXL": {
+   "ratio": 1.132,
+   "days": 82,
+   "dollar": 51,
+   "matches": 2706
   },
   "SMCI": {
    "ratio": 1.143,
-   "days": 49
+   "days": 46,
+   "dollar": 58,
+   "matches": 1757
   },
   "ARM": {
    "ratio": 1.143,
-   "days": 19
+   "days": 19,
+   "dollar": 40,
+   "matches": 766
   },
   "SOXS": {
    "ratio": 1.143,
-   "days": 57
-  },
-  "AMAT": {
-   "ratio": 1.143,
-   "days": 11
+   "days": 57,
+   "dollar": 43,
+   "matches": 1322
   },
   "IBM": {
    "ratio": 1.143,
-   "days": 45
+   "days": 45,
+   "dollar": 160,
+   "matches": 3124
+  },
+  "MRVL": {
+   "ratio": 1.133,
+   "days": 61,
+   "dollar": 88,
+   "matches": 4389
+  },
+  "AVGO": {
+   "ratio": 1.136,
+   "days": 53,
+   "dollar": 145,
+   "matches": 4302
+  },
+  "IONQ": {
+   "ratio": 1.138,
+   "days": 10,
+   "dollar": 11,
+   "matches": 203
+  },
+  "NOK": {
+   "ratio": 1.138,
+   "days": 42,
+   "dollar": 173,
+   "matches": 1368
+  },
+  "NBIS": {
+   "ratio": 1.138,
+   "days": 93,
+   "dollar": 314,
+   "matches": 5412
   }
- }
+ },
+ "never_dollar": [
+  "AGI",
+  "ALAB",
+  "AM",
+  "API",
+  "AR",
+  "AXTI",
+  "BJ",
+  "BYD",
+  "CAVA",
+  "CLS",
+  "COHR",
+  "DC",
+  "DTE",
+  "ESG",
+  "EU",
+  "EWY",
+  "FCF",
+  "HBM",
+  "HP",
+  "HR",
+  "IP",
+  "JD",
+  "JUST",
+  "LDOS",
+  "LINK",
+  "LPTH",
+  "MKL",
+  "NYT",
+  "OG",
+  "OS",
+  "PEG",
+  "PINS",
+  "PR",
+  "QBTS",
+  "RBRK",
+  "RC",
+  "SELF",
+  "SF",
+  "SGOV",
+  "TD",
+  "UAE",
+  "UBS",
+  "UI",
+  "UP",
+  "VC",
+  "VTI",
+  "VXUS",
+  "WTI",
+  "YOU"
+ ],
+ "never_dollar_min_matches": 20
 }
