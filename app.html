@@ -1258,7 +1258,17 @@ const CHEAP_MAX=100;
 function surgeTiers(rows){
   /* >0, not isFinite. 0 is the API's "no value" and Number.isFinite(0) is true, so the
      sentinel rows walked into every tier and produced a climb of (0 - rank). */
-  const cand=rows.filter(r=>r.rank_24h_ago>0);
+  /* A rank move is only a move if the row it lands on carries anything. Every tier here
+     was rank-only, and rank is a poor proxy for volume below the first page: measured
+     across the archive, ~21 rows a day reach 30 mentions, ~51 reach 10, and past about
+     #160 every row is a single mention. So "beyond #150 into the top 100" was mostly
+     1 mention becoming 4 — over 40 days its median arrival was 5 mentions and only 15%
+     of it cleared 10. Into-top-15 was already fine at a median of 74; this floor costs
+     it nothing and stops the deep tier from dressing noise as a surge.
+     10 rather than HOT_FLOOR's 30: arriving loud enough to read is a weaker claim than
+     spiking, and 30 would have left the tier with 2% of its rows. */
+  const RISE_FLOOR=10;
+  const cand=rows.filter(r=>r.rank_24h_ago>0&&r.mentions>=RISE_FLOOR);
   const seen=new Set();
   const take=(f,cap=8)=>{const out=cand.filter(r=>!seen.has(r.ticker)&&f(r))
       .sort((a,b)=>a.rank-b.rank).slice(0,cap);out.forEach(r=>seen.add(r.ticker));return out;};
@@ -1272,7 +1282,7 @@ function surgeTiers(rows){
   return [
     ['Into top 15 · climbed ≥10 spots',t15],
     ['Into top 50 · climbed ≥15 spots',t50],
-    ['Deep risers · beyond #150 → top 100',t100],
+    ['Deep risers · beyond #150 → top 100, 10+ mentions',t100],
     ['New faces · back after 10 days absent',nf],
     [`Cheap surges · under $${CHEAP_MAX}, climbed ≥15 into top 100`,cheap],
   ].filter(([,l])=>l.length);
