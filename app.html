@@ -621,7 +621,7 @@ const WINS={'5d':5,'10d':10,'20d':20,'all':null};
 
 let LEARNONBOOT=false;
 let DAYS=[],WBDAYS=[],WBSUSPECT=new Set(),EVENTS=[],FINDING=null,RANK=null,PRICES={},PXH=null,RISK=null,DIXROWS=null,MWIN='2Y',TWIN='3M',TWINSET=false,LASTLENS='today',SNAP={},DAY='',
-    VIEW='today',SEL=null,Q='',WIN='10d',SORT='res',ONLY='',SHOWN=40;
+    VIEW='today',SEL=null,Q='',WIN='10d',SORT='res',ONLY='',SHOWN=40,NOSTK=true,BOARDHID=0;
 
 const $=id=>document.getElementById(id);
 const gj=async u=>{const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json();};
@@ -1359,6 +1359,18 @@ function boardRows(){
     return {...r,med,x:ready?r.mentions/Math.max(med,1):null,ctx:true,
       hot:ready&&r.mentions>=HOT_FLOOR&&r.mentions>=HOT_X*Math.max(med,1)};
   });
+  /* Rows proven not to be about the company named on them are out of the ordering by
+     default, and renumbered around. Labelling them was enough while there were three;
+     at nineteen they are 4.6 of an average top 50 and up to 10, which pushes real names
+     down 2.4 places in the top 50 and 7.2 in the fifty below it. A rank that counts
+     0DTE and the European Union as competitors is a wrong number, not a caveated one.
+     Nothing is deleted — the archive keeps every row, `NOSTK=false` puts them back, and
+     the Hiding row says how many are out. `rn` carries the renumbering so a row can
+     show its position in the board it is actually being displayed in. */
+  const hidden=NOSTK?L.filter(r=>(FLAG[r.ticker]||{}).kind==='checked').length:0;
+  if(NOSTK)L=L.filter(r=>(FLAG[r.ticker]||{}).kind!=='checked');
+  L.sort((a,b)=>a.rank-b.rank).forEach((r,i)=>{r.rn=i+1;});
+  BOARDHID=hidden;
   if(Q)L=L.filter(r=>r.ticker.includes(Q));
   /* Board groups by how attention moved, Aftermath by how the price answered. Both
      were a flat list of tickers with a chart, which is why they read as the same screen
@@ -1718,6 +1730,7 @@ function activeFiltersHTML(){
      as "sorted · mentions ×" beside real filters, which is the same category error the
      chip row above used to make, and now the sort control sits in the list header where
      its effect is visible anyway. */
+  if(NOSTK&&BOARDHID)bits.push([`not stocks · ${BOARDHID}`,'nostk']);
   if(VIEW==='today'&&DAY!==DAYS[DAYS.length-1])bits.push([`day · ${DAY}`,'day']);
   if(!bits.length)return '';
   return `<div class="ctlrow active"><span class="ctlk">Hiding</span><div class="chips">`
@@ -1818,7 +1831,7 @@ function boardRow(r){
             r.mentions_24h_ago==null?'—':r.mentions_24h_ago} → ${r.mentions}`
         : r.mentions_24h_ago==null&&r.priorFrom
         ? `<b>new to the board</b> · ${r.mentions} mentions · was not in the top ${rowsOf(r.priorFrom).length||500} on ${r.priorFrom}`
-        : `rank #${r.rank} · ${r.mentions} mentions${r.x!=null?` · ×${r.x.toFixed(1)}`:''}`}</div>
+        : `rank #${r.rn||r.rank} · ${r.mentions} mentions${r.x!=null?` · ×${r.x.toFixed(1)}`:''}`}</div>
     ${rec}
   </div>`;
 }
@@ -2586,9 +2599,10 @@ document.addEventListener('click',e=>{
     const k=drop.dataset.drop;
     /* "Clear all" leaves the sort alone. It clears what is hiding rows; resetting the
        order as a side effect of unhiding them is a second, unasked-for change. */
-    if(k==='all'){Q='';ONLY='';if(DAYS.length)DAY=DAYS[DAYS.length-1];}
+    if(k==='all'){Q='';ONLY='';NOSTK=false;if(DAYS.length)DAY=DAYS[DAYS.length-1];}
     if(k==='q')Q='';
     if(k==='only')ONLY='';
+    if(k==='nostk')NOSTK=false;
     if(k==='day'&&DAYS.length)DAY=DAYS[DAYS.length-1];
     SHOWN=40;SEL=null;
     (async()=>{await loadDays([DAY]);render();})();
