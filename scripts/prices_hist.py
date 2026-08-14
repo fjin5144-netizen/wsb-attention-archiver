@@ -71,6 +71,23 @@ def main():
         with open(OUT) as f:
             old = json.load(f)
     want = universe()
+
+    # --only exists because of reverse splits. This file is written once and then only
+    # extended, so a ticker that re-bases keeps its pre-split closes forever while the
+    # daily shards under data/px/ move to the new basis. BYND did exactly that: 0.5275
+    # here against 12.21 in the shard, a factor of about thirty, and the golden test
+    # caught it as "a new ticker was re-based between the two price series".
+    #
+    # The alternative was to widen that test's allowlist, which documents the split
+    # instead of fixing it — and the two series are read by the same code path, picked
+    # by date, so a return spanning the boundary would be off by the split ratio.
+    # --refresh refetches all 1,800, which is an hour and pointless for one name.
+    only = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else []
+    for tk in only:
+        old.pop(tk, None)
+        if tk not in want:
+            want.append(tk)
+
     todo = [t for t in want if t not in old]
     print(f"universe {len(want)} tickers · have {len(old)} · fetching {len(todo)}")
 

@@ -144,9 +144,16 @@ jobs:
     permissions:
       issues: write
     steps:
+      # gh resolves the repository from the git remote, and this job never checked one
+      # out, so every alert since it was written died on "fatal: not a git repository"
+      # and no issue was ever filed or commented. The failure that surfaces a broken
+      # collection cannot itself be the thing that is broken, so: check out, and set
+      # GH_REPO as well, which makes gh independent of the working directory.
+      - uses: actions/checkout@v4
       - name: Alert
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           # 复用同一个 issue。每次失败开一张新的,一个坏掉的下午就堆出三条一模一样的
           # 告警(#1 #2 #3 就是这么来的),多出来的两条一点信息量都没有。
