@@ -1,5 +1,5 @@
 {
- "events": 278,
+ "events": 277,
  "archive_days": 106,
  "span": [
   "2026-05-01",
@@ -18,13 +18,13 @@
     "win_rate": 44
    },
    "placebo": {
-    "n": 254,
-    "median": -0.85,
-    "trimmed_mean": -0.91,
-    "mean": 0.01,
+    "n": 255,
+    "median": -0.88,
+    "trimmed_mean": -0.94,
+    "mean": -0.02,
     "win_rate": 44
    },
-   "gap_median": -0.71
+   "gap_median": -0.68
   },
   {
    "sessions": 10,
@@ -36,13 +36,13 @@
     "win_rate": 35
    },
    "placebo": {
-    "n": 243,
-    "median": -0.71,
-    "trimmed_mean": -0.85,
-    "mean": -0.22,
-    "win_rate": 46
+    "n": 242,
+    "median": -0.79,
+    "trimmed_mean": -1.08,
+    "mean": -0.4,
+    "win_rate": 45
    },
-   "gap_median": -4.3
+   "gap_median": -4.22
   },
   {
    "sessions": 20,
@@ -55,12 +55,12 @@
    },
    "placebo": {
     "n": 194,
-    "median": -0.27,
-    "trimmed_mean": -1.09,
-    "mean": 0.41,
-    "win_rate": 48
+    "median": -0.34,
+    "trimmed_mean": -1.26,
+    "mean": 0.27,
+    "win_rate": 47
    },
-   "gap_median": -7.16
+   "gap_median": -7.09
   }
  ]
 }
