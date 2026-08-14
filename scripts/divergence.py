@@ -33,7 +33,7 @@ one.
     python3 scripts/divergence.py --min-days 8 --depth 50
     python3 scripts/divergence.py --verify          # prove the tokeniser matches the regex
 """
-import datetime as dt, gzip, json, os, re, statistics as st, sys
+import collections, datetime as dt, gzip, json, os, re, statistics as st, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REDDIT = os.path.join(ROOT, "data", "reddit")
@@ -125,17 +125,46 @@ def main():
     # and throws the text away — 285 MB of raw posts never has to exist in the cloud, and
     # the history still accumulates. Locally it means a rerun re-counts nothing.
     cache_path = os.path.join(ROOT, "data", "divergence_daily.json")
-    cache = {}
+    cache, dcache = {}, {}
     if os.path.exists(cache_path):
         with open(cache_path) as f:
-            cache = json.load(f).get("days", {})
+            j = json.load(f)
+        cache = j.get("days", {})
+        # The dollar counts are cached separately and were added later, so a day can have a
+        # ratio and no dollar figure. Such a day is recounted while the corpus is still on
+        # disk — after it is deleted the number is unrecoverable, and a half-populated test
+        # would quietly under-report.
+        dcache = j.get("dollar_days", {})
+    cache = {d: v for d, v in cache.items() if d in dcache}
     fresh = 0
+
+    # A second test, and the one that covers the first one's blind spot.
+    #
+    # Divergence finds tickers the two rules count differently. It cannot see the ones they
+    # count the same way and are both wrong about: EU is the European Union, produced four
+    # false spike events, and its ratio is 1.20 — dead normal, because both rules count the
+    # bare uppercase word.
+    #
+    # This asks a different question, of the text alone rather than of the two counts: does
+    # anyone ever write $TICKER? Measured over 21 days and 27 unambiguous tickers, not one
+    # sits at zero — the lowest are ASTS at 1.3% and SPY at 1.5%. Meanwhile EU is 0 of 253,
+    # JUST 0 of 437, DTE 0 of 126, SELF 0 of 43, TASK 0 of 29. The dollar sign is the one
+    # thing a human writes to mean "the security", and a row nobody ever writes it for,
+    # across hundreds of items, is not being written about as a security.
+    #
+    # It convicts in one direction only. Some $ usage does NOT mean the row is sound: BE
+    # carries 24 $BE among 632 matches and is still nine-tenths caps-lock English. Between
+    # them the two tests caught every artefact in data/artifacts.json; neither did alone.
+    dollar = collections.defaultdict(lambda: [0, 0])
 
     ratios, seen_days = {}, 0
     for day in days:
         if day in cache:
             for tk, r in cache[day].items():
                 ratios.setdefault(tk, []).append(r)
+            for tk, (nd, nm) in dcache.get(day, {}).items():
+                dollar[tk][0] += nd
+                dollar[tk][1] += nm
             seen_days += 1
             continue
         with open(os.path.join(ARCHIVE, f"{day}.json")) as f:
@@ -154,14 +183,20 @@ def main():
                        key=lambda r: -r["mentions"])[:depth]
         seen_days += 1
         fresh += 1
-        today = {}
+        today, dtoday = {}, {}
         for r in board:
             if r["mentions"] <= 0:
                 continue
             n = sum(1 for _, b, d in items if hits(r["ticker"], b, d))
             today[r["ticker"]] = round(n / r["mentions"], 4)
             ratios.setdefault(r["ticker"], []).append(n / r["mentions"])
+            # Second, independent test — see the note above `dollar` below.
+            nd = sum(1 for _, _, d in items if r["ticker"] in d)
+            dollar[r["ticker"]][0] += nd
+            dollar[r["ticker"]][1] += max(n, nd)
+            dtoday[r["ticker"]] = [nd, max(n, nd)]
         cache[day] = today
+        dcache[day] = dtoday
         print(f"  {day} scanned", flush=True)
 
     if fresh:
@@ -169,7 +204,8 @@ def main():
             json.dump({"_note": ("Per-day, per-ticker ratio of this project's count to "
                                  "ApeWisdom's. Kept so the 285 MB of raw Reddit text does not "
                                  "have to be — see the comment in scripts/divergence.py."),
-                       "depth": depth, "days": dict(sorted(cache.items()))}, f, indent=0)
+                       "depth": depth, "days": dict(sorted(cache.items())),
+                       "dollar_days": dict(sorted(dcache.items()))}, f, indent=0)
         print(f"  {fresh} new day(s) counted -> data/divergence_daily.json", flush=True)
 
     if not ratios:
@@ -198,6 +234,16 @@ def main():
         if not note and abs(r - common) > 0.5:
             note = "<- unexplained, worth reading the text"
         print(f"{tk:<8}{r:>7.2f}{n:>6}   {note}")
+    NEVER_DOLLAR_MIN = 20      # below this the zero says nothing; ACHR clears it on 36
+    silent = sorted((tk, v[1]) for tk, v in dollar.items()
+                    if v[1] >= NEVER_DOLLAR_MIN and v[0] == 0)
+    if silent:
+        print(f"\nnever written with a dollar sign ({NEVER_DOLLAR_MIN}+ matches):")
+        for tk, n in sorted(silent, key=lambda x: -x[1]):
+            tag = {"confirmed": "artefact", "ours": "our error",
+                   "cleared": "checked, real"}.get(known.get(tk), "<- unexplained")
+            print(f"    {tk:<7}{n:>6} matches, 0 with $   {tag}")
+
     fresh = [tk for tk, r, n in rows if tk not in known and abs(r - common) > 0.5]
     print(f"\n{len(fresh)} ticker(s) diverge without an entry in artifacts.json"
           + (f": {', '.join(fresh)}" if fresh else ""))
@@ -213,7 +259,12 @@ def main():
                       "either being right: EU sits at 1.20 and is the European Union. See "
                       "artifacts.json for what agreement cannot catch."),
             "days": seen_days, "depth": depth, "min_days": min_days, "common": round(common, 3),
-            "tickers": {tk: {"ratio": round(r, 3), "days": n} for tk, r, n in rows},
+            "tickers": {tk: {"ratio": round(r, 3), "days": n,
+                             **({"dollar": dollar[tk][0], "matches": dollar[tk][1]}
+                                if dollar[tk][1] else {})}
+                        for tk, r, n in rows},
+            "never_dollar": [tk for tk, n in silent],
+            "never_dollar_min_matches": NEVER_DOLLAR_MIN,
         }, f, indent=1)
     print(f"{len(rows)} tickers -> data/divergence.json")
 

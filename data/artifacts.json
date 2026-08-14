@@ -94,6 +94,78 @@
       "spike_events": 0,
       "mechanism": "Not established. 'ww' appears 386 times, essentially all inside www URLs, and the count of items containing www is the right order of magnitude but not the right number: 119/160, 92/137, 87/219 — ratios of 0.74, 0.67 and 0.40. DTE was provable because their 70 met our 69; this is not that, and saying 'they count URLs' would be a story fitted to three points.",
       "cause": "unknown — the only certainty is that the row does not measure the company"
+    },
+    "AM": {
+      "reads_as": "Antero Midstream",
+      "actually": "the verb, and the time of day",
+      "evidence": "'I AM THE ONE WHO DUMPS'. 2,677 matches across 103 days and not one $AM. Antero Midstream is real and does get discussed ('AM squeezed 100%'), but it is a rounding error inside the English.",
+      "spike_events": 0,
+      "found_by": "the never-written-with-a-dollar-sign test in scripts/divergence.py",
+      "matches_with_dollar": "0 of 2677"
+    },
+    "HBM": {
+      "reads_as": "Hudbay Minerals",
+      "actually": "high-bandwidth memory",
+      "evidence": "'HBM supply to increase by 20% next year'. 378 matches, zero $HBM. The AI-chip component, in every DRAM thread on the board.",
+      "spike_events": 0,
+      "found_by": "the never-written-with-a-dollar-sign test in scripts/divergence.py",
+      "matches_with_dollar": "0 of 378"
+    },
+    "AGI": {
+      "reads_as": "Alamos Gold",
+      "actually": "artificial general intelligence",
+      "evidence": "'It is making inroads in ARC AGI 3', 'Good luck monetizing AGI'. 234 matches, zero $AGI.",
+      "spike_events": 1,
+      "found_by": "the never-written-with-a-dollar-sign test in scripts/divergence.py",
+      "matches_with_dollar": "0 of 234"
+    },
+    "WTI": {
+      "reads_as": "W&T Offshore",
+      "actually": "West Texas Intermediate",
+      "evidence": "'WTI CRUDE LONG - NO DEAL WEEKEND'. 155 matches, zero $WTI. The oil benchmark.",
+      "spike_events": 0,
+      "found_by": "the never-written-with-a-dollar-sign test in scripts/divergence.py",
+      "matches_with_dollar": "0 of 155"
+    },
+    "API": {
+      "reads_as": "Agora",
+      "actually": "an application programming interface, and the oil inventory report",
+      "evidence": "'more suited for trading centres already using API systems', 'Truth API: Buy Buy Buy'. 190 matches, zero $API.",
+      "spike_events": 1,
+      "found_by": "the never-written-with-a-dollar-sign test in scripts/divergence.py",
+      "matches_with_dollar": "0 of 190"
+    },
+    "UI": {
+      "reads_as": "a ticker",
+      "actually": "user interface",
+      "evidence": "'never did anything with it cause of the UI'. 123 matches, zero $UI.",
+      "spike_events": 1,
+      "found_by": "the never-written-with-a-dollar-sign test in scripts/divergence.py",
+      "matches_with_dollar": "0 of ?"
+    },
+    "UAE": {
+      "reads_as": "a ticker",
+      "actually": "the United Arab Emirates",
+      "evidence": "429 matches across 103 days, zero $UAE.",
+      "spike_events": 0,
+      "found_by": "the never-written-with-a-dollar-sign test in scripts/divergence.py",
+      "matches_with_dollar": "0 of 429"
+    },
+    "LINK": {
+      "reads_as": "Chainlink",
+      "actually": "a Reddit bot's message template",
+      "evidence": "Every sampled match is '[**CLICK THIS LINK**](https://www.reddit.com/message/compose/...)' — the same class as SELF. 258 matches, zero $LINK.",
+      "spike_events": 0,
+      "found_by": "the never-written-with-a-dollar-sign test in scripts/divergence.py",
+      "matches_with_dollar": "0 of 258"
+    },
+    "JD": {
+      "reads_as": "JD.com",
+      "actually": "a law degree, and a politician",
+      "evidence": "'Hence the JD and MBA', 'Who bottoms, thiel or JD?'. 196 matches, zero $JD.",
+      "spike_events": 1,
+      "found_by": "the never-written-with-a-dollar-sign test in scripts/divergence.py",
+      "matches_with_dollar": "0 of ?"
     }
   },
   "cleared": {
@@ -147,13 +219,14 @@
     "spike_events_total": 260,
     "on_word_shaped_tickers": 27,
     "checked_against_raw_text": 27,
-    "confirmed_artifacts": 11,
+    "confirmed_artifacts": 19,
     "unreliable": 2,
     "real": 19,
     "artifact_share_of_all_events": "6 of 260 = 2.3%, or 8 of 260 = 3.1% counting the two BE events",
     "not_in_the_event_set": "DTE — top-50 on all 103 days, best rank #4, and zero spike events, because slang volume is high but flat",
     "also_found_by_divergence_scan": "CC (0 spike events) and ALL (0 spike events, and our error too)",
-    "found_by_divergence_scan": "CC, ALL, ON, JUST — all four surfaced by scripts/divergence.py once the overlap reached 103 days, none of them producing a single spike event"
+    "found_by_divergence_scan": "CC, ALL, ON, JUST — all four surfaced by scripts/divergence.py once the overlap reached 103 days, none of them producing a single spike event",
+    "detectors": "Two automatic tests, and neither is sufficient alone. Divergence finds tickers the two counting rules treat differently (DTE, BE, CC, ON, JUST). The dollar-sign test asks the text alone whether anyone ever writes $TICKER, and catches the ones both rules get wrong together (EU, SELF, TASK) plus nine more. Of 27 unambiguous real tickers not one sits at zero — the floor is ASTS at 1.3%. It convicts in one direction only: some $ usage does not clear a row, since BE carries 24 $BE among 632 matches and is still caps-lock English."
   },
   "our_own_errors": {
     "_note": "A file that catalogues only the other source's mistakes is the bias it warns about. Same method, turned on scripts/compare_counts.py. Measured on the 2026-08-07 window, 32,898 items, using the real counter including its WORDLIKE exemptions.",
