@@ -166,6 +166,15 @@
       "spike_events": 1,
       "found_by": "the never-written-with-a-dollar-sign test in scripts/divergence.py",
       "matches_with_dollar": "0 of ?"
+    },
+    "FOR": {
+      "reads_as": "a ticker",
+      "actually": "the preposition",
+      "evidence": "2026-08-07: 50 items contain bare uppercase FOR and zero contain $FOR; ApeWisdom reported 4. 'IMMA RIDE FOR MY MOTHA FUCKIN HTZ', 'I DONT PAY ATTENTION TO THE REDDIT FOR ONE DAY AND NOW WE ARE PUMPING HERTZ', and the AutoModerator line 'PREPARE TO BE BOOKED FOR PROVIDING ILLEGAL FINANCIAL ADVICE'.",
+      "spike_events": 0,
+      "cause": "an all-caps board turns a preposition into a ticker",
+      "our_rule_also_wrong": "FOR is in our WORDLIKE, so we count 0 — blind where they over-count, as with ON, ALL and IT.",
+      "found_by": "the divergence scan once it was widened from the top 50 to the whole 500-row board"
     }
   },
   "cleared": {
@@ -219,14 +228,15 @@
     "spike_events_total": 260,
     "on_word_shaped_tickers": 27,
     "checked_against_raw_text": 27,
-    "confirmed_artifacts": 19,
+    "confirmed_artifacts": 20,
     "unreliable": 2,
     "real": 19,
     "artifact_share_of_all_events": "6 of 260 = 2.3%, or 8 of 260 = 3.1% counting the two BE events",
     "not_in_the_event_set": "DTE — top-50 on all 103 days, best rank #4, and zero spike events, because slang volume is high but flat",
     "also_found_by_divergence_scan": "CC (0 spike events) and ALL (0 spike events, and our error too)",
     "found_by_divergence_scan": "CC, ALL, ON, JUST — all four surfaced by scripts/divergence.py once the overlap reached 103 days, none of them producing a single spike event",
-    "detectors": "Two automatic tests, and neither is sufficient alone. Divergence finds tickers the two counting rules treat differently (DTE, BE, CC, ON, JUST). The dollar-sign test asks the text alone whether anyone ever writes $TICKER, and catches the ones both rules get wrong together (EU, SELF, TASK) plus nine more. Of 27 unambiguous real tickers not one sits at zero — the floor is ASTS at 1.3%. It convicts in one direction only: some $ usage does not clear a row, since BE carries 24 $BE among 632 matches and is still caps-lock English."
+    "detectors": "Two automatic tests, and neither is sufficient alone. Divergence finds tickers the two counting rules treat differently (DTE, BE, CC, ON, JUST). The dollar-sign test asks the text alone whether anyone ever writes $TICKER, and catches the ones both rules get wrong together (EU, SELF, TASK) plus nine more. Of 27 unambiguous real tickers not one sits at zero — the floor is ASTS at 1.3%. It convicts in one direction only: some $ usage does not clear a row, since BE carries 24 $BE among 632 matches and is still caps-lock English.",
+    "coverage": "Every board row now carries a record of whether it was ever counted against the raw posts: 1,861 tickers, 100% of the top 100 and 93% of the deep board, against 19% when the scan only went 50 deep. Depth 500 costs nothing — the intersection is over each item's own tokens, not over the candidate list — and 50 had made Deep risers, which are new to the board by definition, the least likely rows to have been checked."
   },
   "our_own_errors": {
     "_note": "A file that catalogues only the other source's mistakes is the bias it warns about. Same method, turned on scripts/compare_counts.py. Measured on the 2026-08-07 window, 32,898 items, using the real counter including its WORDLIKE exemptions.",

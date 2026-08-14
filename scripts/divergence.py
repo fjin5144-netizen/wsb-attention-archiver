@@ -113,8 +113,16 @@ def main():
     a = sys.argv
     if "--verify" in a:
         sys.exit(0 if verify() else 1)
-    depth = int(a[a.index("--depth") + 1]) if "--depth" in a else 50
+    depth = int(a[a.index("--depth") + 1]) if "--depth" in a else 500
     min_days = int(a[a.index("--min-days") + 1]) if "--min-days" in a else 6
+    # Coverage and statistics are different jobs, and widening depth to 500 made that
+    # obvious the hard way: every row is counted so it can say whether it was checked,
+    # but a row ApeWisdom reports as 1 mention yields a ratio of 0, 1 or 2 and means
+    # nothing. Including those dragged the common ratio from 1.13 to 1.00 and produced a
+    # 285-name worklist of V, PM, T, F, DAY, BABY, HE, OR -- the deep board's ties, not
+    # disagreements. So the ranking and the common offset take only days where the row
+    # carried enough to be a measurement; the cache still records all of them.
+    min_mentions = int(a[a.index("--min-mentions") + 1]) if "--min-mentions" in a else 10
 
     days = sorted(n[:-5] for n in os.listdir(ARCHIVE)
                   if re.fullmatch(r"\d{4}-\d\d-\d\d\.json", n))
@@ -130,6 +138,14 @@ def main():
         with open(cache_path) as f:
             j = json.load(f)
         cache = j.get("days", {})
+        # Depth is part of what a cached day means. A day counted at the old top-50 holds
+        # nothing for the 450 rows below it, and silently reusing it would leave the deep
+        # board looking unchecked forever. Counting 500 costs the same as counting 50 —
+        # the intersection is over each item's own tokens, not over the candidate list,
+        # so the work is the tokenising, which is shared — and 50 was a guess that made
+        # the newest arrivals, the ones a reader most wants checked, the least covered.
+        if j.get("depth") != depth:
+            cache = {}
         # The dollar counts are cached separately and were added later, so a day can have a
         # ratio and no dollar figure. Such a day is recounted while the corpus is still on
         # disk — after it is deleted the number is unrecoverable, and a half-populated test
@@ -157,11 +173,16 @@ def main():
     # them the two tests caught every artefact in data/artifacts.json; neither did alone.
     dollar = collections.defaultdict(lambda: [0, 0])
 
-    ratios, seen_days = {}, 0
+    ratios, seen_all, seen_days = {}, {}, 0
     for day in days:
         if day in cache:
+            with open(os.path.join(ARCHIVE, f"{day}.json")) as f:
+                ment = {r["ticker"]: r["mentions"]
+                        for r in ((json.load(f).get("filters") or {}).get("wallstreetbets") or [])}
             for tk, r in cache[day].items():
-                ratios.setdefault(tk, []).append(r)
+                seen_all[tk] = seen_all.get(tk, 0) + 1
+                if ment.get(tk, 0) >= min_mentions:
+                    ratios.setdefault(tk, []).append(r)
             for tk, (nd, nm) in dcache.get(day, {}).items():
                 dollar[tk][0] += nd
                 dollar[tk][1] += nm
@@ -189,7 +210,9 @@ def main():
                 continue
             n = sum(1 for _, b, d in items if hits(r["ticker"], b, d))
             today[r["ticker"]] = round(n / r["mentions"], 4)
-            ratios.setdefault(r["ticker"], []).append(n / r["mentions"])
+            seen_all[r["ticker"]] = seen_all.get(r["ticker"], 0) + 1
+            if r["mentions"] >= min_mentions:
+                ratios.setdefault(r["ticker"], []).append(n / r["mentions"])
             # Second, independent test — see the note above `dollar` below.
             nd = sum(1 for _, _, d in items if r["ticker"] in d)
             dollar[r["ticker"]][0] += nd
@@ -204,7 +227,7 @@ def main():
             json.dump({"_note": ("Per-day, per-ticker ratio of this project's count to "
                                  "ApeWisdom's. Kept so the 285 MB of raw Reddit text does not "
                                  "have to be — see the comment in scripts/divergence.py."),
-                       "depth": depth, "days": dict(sorted(cache.items())),
+                       "depth": depth, "min_mentions": min_mentions, "days": dict(sorted(cache.items())),
                        "dollar_days": dict(sorted(dcache.items()))}, f, indent=0)
         print(f"  {fresh} new day(s) counted -> data/divergence_daily.json", flush=True)
 
@@ -258,11 +281,21 @@ def main():
                       "exist. Near `common` means the two rules agree — which is NOT the same as "
                       "either being right: EU sits at 1.20 and is the European Union. See "
                       "artifacts.json for what agreement cannot catch."),
-            "days": seen_days, "depth": depth, "min_days": min_days, "common": round(common, 3),
-            "tickers": {tk: {"ratio": round(r, 3), "days": n,
+            "days": seen_days, "depth": depth, "min_days": min_days,
+            "min_mentions": min_mentions, "common": round(common, 3),
+            # Every ticker counted, not only those clearing min_days. min_days governs
+            # what the *ranking* trusts; a row seen twice still deserves to say so rather
+            # than read as unchecked, and "checked on 2 days" is a different statement
+            # from "never checked". A Deep riser is by definition new to the board, so
+            # the filter that protects the ranking was excluding exactly the rows whose
+            # provenance a reader is most likely to question.
+            "tickers": {tk: {"days": seen_all.get(tk, 0),
+                             **({"ratio": round(st.median(ratios[tk]), 3),
+                                 "rated_days": len(ratios[tk])} if ratios.get(tk) else {}),
                              **({"dollar": dollar[tk][0], "matches": dollar[tk][1]}
                                 if dollar[tk][1] else {})}
-                        for tk, r, n in rows},
+                        for tk in sorted(seen_all)},
+            "min_days_for_ranking": min_days,
             "never_dollar": [tk for tk, n in silent],
             "never_dollar_min_matches": NEVER_DOLLAR_MIN,
         }, f, indent=1)

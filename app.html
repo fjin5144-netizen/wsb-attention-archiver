@@ -398,6 +398,10 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .badge.fl.q{background:transparent;color:var(--ink2);
   box-shadow:inset 0 0 0 1px var(--line2);opacity:.8;letter-spacing:0}
 .badge.fl{cursor:help;white-space:nowrap}
+/* Quieter than wbNote: this is provenance, not a warning. */
+.ckNote{margin:0 0 14px;padding:9px 11px;border-radius:6px;background:var(--line2);
+  font-size:12px;line-height:1.5;color:var(--ink2)}
+.ckNote b{color:var(--ink)}
 /* A full-width row rather than a control, so it gets a row's height — but a multiple of
    the control unit rather than whatever 12px of padding happened to produce. */
 .more{display:flex;align-items:center;justify-content:center;width:100%;background:none;
@@ -712,9 +716,9 @@ const pxOf=(tk,day)=>{
    the bare uppercase word and are wrong together. A page that showed only divergence
    would render EU as clean, and agreement would be doing the laundering. SELF and TASK
    are the same shape. Of seven confirmed artefacts the scan sees three. */
-let FLAG={};
+let FLAG={},CHECK=null;
 function buildFlags(art,dv){
-  FLAG={};
+  FLAG={};CHECK=dv||null;
   if(art){
     for(const [tk,r] of Object.entries(art.confirmed||{}))
       FLAG[tk]={kind:'checked',what:r.actually,ev:r.evidence,n:r.spike_events};
@@ -2342,6 +2346,20 @@ function boardDetail(){
      price chart and a mention history, and a reader who arrives here has already been told
      three times that DTE is DTE Energy. Whatever the row said two clicks ago has to be
      restated where the claim is actually being made. */
+  /* Whether this particular row has ever been held against the raw posts, said plainly.
+     The badges only appear when something is wrong, so a row with no badge read as
+     "verified" when most of the board has simply never been looked at — 19% of it at the
+     time this was written, and 8% below rank 100. A Deep riser is new to the board by
+     definition, which made the rows a reader most wants checked the least likely to be. */
+  const ck=CHECK&&CHECK.tickers?CHECK.tickers[r.ticker]:null;
+  const ckN=!CHECK?'':`<div class="ckNote">${ck
+    ? `Counted independently from the raw r/wallstreetbets posts on <b>${ck.days} day${ck.days>1?'s':''}</b>.
+       This project's own rule finds <b>${ck.ratio}×</b> ApeWisdom's figure, against <b>${CHECK.common}×</b>
+       for the board as a whole${ck.matches?`, and ${ck.dollar} of ${ck.matches} matching items write $${r.ticker}`:''}.`
+    : `<b>Never counted against the raw posts.</b> The archive says what ApeWisdom said and nothing
+       here has checked it for ${r.ticker}. Coverage is best at the top of the board and thin below
+       it, so a row that has just arrived from the deep end is the least likely to have been looked at.`}
+  </div>`;
   const fl=FLAG[r.ticker];
   /* Evidence strings come from JSON and some end in a full stop and some do not; joining
      them raw produced "so bare uppercase counts The figures on this page...". */
@@ -2366,7 +2384,7 @@ function boardDetail(){
          record stays complete, not because they measure attention on this company.
          ${fl.n?`${fl.n} confirmed spike${fl.n>1?'s':''} on this ticker ${fl.n>1?'are':'is'} affected.`:''}`}
   </div>`;
-  return `<button class="back" data-back="1">‹ The board</button>${wbn}${flN}
+  return `<button class="back" data-back="1">‹ The board</button>${wbn}${flN}${ckN}
   <div class="dHead"><div>
     <div class="dTk">${r.ticker}${BASKET.has(r.ticker)?' <span class="badge b">basket</span>':''}${flagBadge(r.ticker)}</div>
     <p class="dSub">${escName(r.name||r.ticker)} · rank #${r.rank} on ${DAY}</p></div>
