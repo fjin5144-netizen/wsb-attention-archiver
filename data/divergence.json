@@ -1,9 +1,9 @@
 {
  "_note": "Ratio of this project's count to ApeWisdom's, median across the days both exist. Near `common` means the two rules agree \u2014 which is NOT the same as either being right: EU sits at 1.20 and is the European Union. See artifacts.json for what agreement cannot catch.",
- "days": 103,
+ "days": 104,
  "depth": 50,
  "min_days": 10,
- "common": 1.143,
+ "common": 1.142,
  "tickers": {
   "YOU": {
    "ratio": 3.702,
@@ -15,7 +15,7 @@
   },
   "IT": {
    "ratio": 0.0,
-   "days": 95
+   "days": 96
   },
   "ON": {
    "ratio": 0.0,
@@ -31,23 +31,23 @@
   },
   "DTE": {
    "ratio": 0.108,
-   "days": 103
+   "days": 104
   },
   "JUST": {
    "ratio": 2.107,
    "days": 14
   },
   "OPEN": {
-   "ratio": 0.212,
-   "days": 40
+   "ratio": 0.214,
+   "days": 41
   },
   "CC": {
    "ratio": 0.613,
    "days": 42
   },
   "NOW": {
-   "ratio": 1.627,
-   "days": 100
+   "ratio": 1.629,
+   "days": 101
   },
   "IBKR": {
    "ratio": 1.348,
@@ -70,112 +70,108 @@
    "days": 15
   },
   "AMZN": {
-   "ratio": 1.26,
-   "days": 88
-  },
-  "HBM": {
-   "ratio": 1.036,
-   "days": 30
+   "ratio": 1.259,
+   "days": 89
   },
   "AAOI": {
    "ratio": 1.25,
    "days": 18
   },
-  "DELL": {
-   "ratio": 1.25,
-   "days": 15
-  },
   "AMC": {
    "ratio": 1.25,
    "days": 23
   },
+  "HBM": {
+   "ratio": 1.036,
+   "days": 30
+  },
   "MU": {
-   "ratio": 1.051,
-   "days": 103
+   "ratio": 1.052,
+   "days": 104
   },
   "IWM": {
    "ratio": 1.23,
    "days": 14
   },
+  "SOFI": {
+   "ratio": 1.222,
+   "days": 17
+  },
   "SMH": {
    "ratio": 1.222,
    "days": 31
   },
-  "SPY": {
-   "ratio": 1.075,
-   "days": 103
+  "DELL": {
+   "ratio": 1.22,
+   "days": 16
   },
-  "MSFT": {
-   "ratio": 1.078,
-   "days": 103
+  "SPY": {
+   "ratio": 1.073,
+   "days": 104
   },
   "DOW": {
    "ratio": 1.207,
    "days": 18
   },
-  "SNDK": {
-   "ratio": 1.084,
-   "days": 102
-  },
-  "LULU": {
-   "ratio": 1.084,
-   "days": 11
+  "MSFT": {
+   "ratio": 1.079,
+   "days": 104
   },
   "SOXX": {
    "ratio": 1.2,
    "days": 20
   },
-  "SOFI": {
-   "ratio": 1.199,
-   "days": 16
+  "SNDK": {
+   "ratio": 1.084,
+   "days": 103
+  },
+  "LULU": {
+   "ratio": 1.084,
+   "days": 11
   },
   "USO": {
-   "ratio": 1.087,
-   "days": 73
+   "ratio": 1.086,
+   "days": 74
   },
   "ES": {
    "ratio": 1.087,
    "days": 18
   },
+  "FIG": {
+   "ratio": 1.088,
+   "days": 17
+  },
   "NVDA": {
    "ratio": 1.088,
-   "days": 103
+   "days": 104
   },
-  "FIG": {
-   "ratio": 1.093,
-   "days": 16
-  },
-  "TSLA": {
-   "ratio": 1.093,
-   "days": 103
-  },
-  "QQQ": {
-   "ratio": 1.094,
-   "days": 103
+  "IREN": {
+   "ratio": 1.194,
+   "days": 25
   },
   "ADBE": {
    "ratio": 1.191,
    "days": 24
   },
-  "CRM": {
-   "ratio": 1.095,
-   "days": 13
+  "TSLA": {
+   "ratio": 1.093,
+   "days": 104
   },
   "TTWO": {
    "ratio": 1.19,
    "days": 13
   },
-  "IREN": {
-   "ratio": 1.185,
-   "days": 24
+  "QQQ": {
+   "ratio": 1.094,
+   "days": 104
+  },
+  "CRM": {
+   "ratio": 1.095,
+   "days": 13
   },
   "ASML": {
    "ratio": 1.183,
    "days": 20
-  },
-  "ASTS": {
-   "ratio": 1.103,
-   "days": 102
   },
   "RIVN": {
    "ratio": 1.182,
@@ -189,9 +185,9 @@
    "ratio": 1.182,
    "days": 23
   },
-  "TLT": {
-   "ratio": 1.108,
-   "days": 12
+  "ASTS": {
+   "ratio": 1.103,
+   "days": 102
   },
   "TSM": {
    "ratio": 1.177,
@@ -201,17 +197,13 @@
    "ratio": 1.177,
    "days": 19
   },
-  "CRWV": {
-   "ratio": 1.177,
-   "days": 39
-  },
-  "WEN": {
-   "ratio": 1.176,
-   "days": 44
+  "TLT": {
+   "ratio": 1.108,
+   "days": 12
   },
   "SPCX": {
-   "ratio": 1.111,
-   "days": 85
+   "ratio": 1.108,
+   "days": 86
   },
   "GLD": {
    "ratio": 1.174,
@@ -221,29 +213,29 @@
    "ratio": 1.172,
    "days": 12
   },
+  "CRWV": {
+   "ratio": 1.172,
+   "days": 40
+  },
+  "WEN": {
+   "ratio": 1.171,
+   "days": 45
+  },
+  "AMD": {
+   "ratio": 1.114,
+   "days": 104
+  },
+  "META": {
+   "ratio": 1.114,
+   "days": 102
+  },
   "CRSR": {
    "ratio": 1.114,
    "days": 10
   },
-  "AMD": {
-   "ratio": 1.115,
-   "days": 103
-  },
-  "META": {
-   "ratio": 1.115,
-   "days": 101
-  },
-  "MSTR": {
-   "ratio": 1.118,
-   "days": 62
-  },
   "RDW": {
    "ratio": 1.168,
    "days": 14
-  },
-  "GOOG": {
-   "ratio": 1.118,
-   "days": 92
   },
   "UAE": {
    "ratio": 1.167,
@@ -259,7 +251,7 @@
   },
   "ONDS": {
    "ratio": 1.167,
-   "days": 27
+   "days": 28
   },
   "DJT": {
    "ratio": 1.167,
@@ -269,6 +261,14 @@
    "ratio": 1.167,
    "days": 13
   },
+  "MSTR": {
+   "ratio": 1.118,
+   "days": 63
+  },
+  "GOOG": {
+   "ratio": 1.119,
+   "days": 93
+  },
   "BB": {
    "ratio": 1.119,
    "days": 44
@@ -277,33 +277,13 @@
    "ratio": 1.12,
    "days": 19
   },
-  "AMAT": {
-   "ratio": 1.165,
-   "days": 10
-  },
-  "HOOD": {
-   "ratio": 1.121,
-   "days": 85
-  },
-  "SOUN": {
-   "ratio": 1.125,
-   "days": 17
+  "LUNR": {
+   "ratio": 1.12,
+   "days": 40
   },
   "GOOGL": {
-   "ratio": 1.125,
-   "days": 81
-  },
-  "ORCL": {
-   "ratio": 1.125,
-   "days": 58
-  },
-  "LUNR": {
-   "ratio": 1.125,
-   "days": 39
-  },
-  "UNH": {
-   "ratio": 1.125,
-   "days": 15
+   "ratio": 1.123,
+   "days": 82
   },
   "WTI": {
    "ratio": 1.16,
@@ -314,20 +294,40 @@
    "days": 12
   },
   "RDDT": {
-   "ratio": 1.126,
-   "days": 94
+   "ratio": 1.125,
+   "days": 95
   },
-  "AAPL": {
-   "ratio": 1.128,
-   "days": 83
+  "SOUN": {
+   "ratio": 1.125,
+   "days": 17
+  },
+  "ORCL": {
+   "ratio": 1.125,
+   "days": 58
+  },
+  "UNH": {
+   "ratio": 1.125,
+   "days": 15
   },
   "PLTR": {
    "ratio": 1.158,
-   "days": 78
+   "days": 79
+  },
+  "HOOD": {
+   "ratio": 1.126,
+   "days": 86
+  },
+  "AAPL": {
+   "ratio": 1.126,
+   "days": 84
+  },
+  "KORU": {
+   "ratio": 1.156,
+   "days": 14
   },
   "RKLB": {
-   "ratio": 1.128,
-   "days": 99
+   "ratio": 1.129,
+   "days": 100
   },
   "EU": {
    "ratio": 1.129,
@@ -337,25 +337,21 @@
    "ratio": 1.129,
    "days": 28
   },
-  "KORU": {
-   "ratio": 1.156,
-   "days": 14
+  "NFLX": {
+   "ratio": 1.154,
+   "days": 72
+  },
+  "VOO": {
+   "ratio": 1.154,
+   "days": 77
   },
   "AM": {
    "ratio": 1.13,
    "days": 94
   },
   "SOXL": {
-   "ratio": 1.132,
-   "days": 83
-  },
-  "NFLX": {
-   "ratio": 1.154,
-   "days": 71
-  },
-  "VOO": {
-   "ratio": 1.154,
-   "days": 76
+   "ratio": 1.131,
+   "days": 84
   },
   "SPCE": {
    "ratio": 1.151,
@@ -365,14 +361,6 @@
    "ratio": 1.15,
    "days": 11
   },
-  "MRVL": {
-   "ratio": 1.136,
-   "days": 62
-  },
-  "AVGO": {
-   "ratio": 1.136,
-   "days": 53
-  },
   "WDC": {
    "ratio": 1.148,
    "days": 38
@@ -380,6 +368,14 @@
   "POET": {
    "ratio": 1.148,
    "days": 28
+  },
+  "AVGO": {
+   "ratio": 1.136,
+   "days": 53
+  },
+  "INTC": {
+   "ratio": 1.146,
+   "days": 86
   },
   "IONQ": {
    "ratio": 1.138,
@@ -389,17 +385,17 @@
    "ratio": 1.138,
    "days": 42
   },
-  "INTC": {
-   "ratio": 1.146,
-   "days": 86
+  "MRVL": {
+   "ratio": 1.139,
+   "days": 63
   },
   "NBIS": {
-   "ratio": 1.143,
-   "days": 95
+   "ratio": 1.14,
+   "days": 96
   },
   "SMCI": {
    "ratio": 1.143,
-   "days": 48
+   "days": 49
   },
   "ARM": {
    "ratio": 1.143,
@@ -408,6 +404,10 @@
   "SOXS": {
    "ratio": 1.143,
    "days": 57
+  },
+  "AMAT": {
+   "ratio": 1.143,
+   "days": 11
   },
   "IBM": {
    "ratio": 1.143,
