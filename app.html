@@ -739,7 +739,41 @@ const pxOf=(tk,day)=>{
    the bare uppercase word and are wrong together. A page that showed only divergence
    would render EU as clean, and agreement would be doing the laundering. SELF and TASK
    are the same shape. Of seven confirmed artefacts the scan sees three. */
-let FLAG={},CHECK=null;
+let FLAG={},CHECK=null,DAILY=null,DAILYQ=null;
+/* How firm is the rank on the row? Not "was this checked" — that is a different question and
+   the one that got answered first by mistake. AVGO showed #7 on 2026-08-14 with 123 mentions
+   against NOK's 118, a five-mention gap, while the two counting rules differ by 12.5% on
+   average and wander day to day. So #7 is a coin-flip dressed as a fact.
+   Resampling settles it. Take a day out of the archive, apply that day's measured ratio for
+   every ticker to today's counts, re-rank, and repeat. Whole days rather than each ticker
+   drawing on its own: the tokenisers' disagreement is shared, so on a day ours runs high it
+   runs high for everyone. Drawing independently ignores that and inflates the spread — it put
+   AVGO's chance of being #7 at 30% with a 2nd-to-9th interval, against 42% and 2nd-to-8th
+   when the correlation is kept. The wrong assumption is the pessimistic one here, but it is
+   still wrong. */
+function rankOdds(tk,rows,draws=2000){
+  if(!DAILY||!rows||!rows.length)return null;
+  const days=Object.keys(DAILY);if(days.length<10)return null;
+  const top=rows.slice(0,40).filter(r=>r.mentions>0);
+  if(!top.some(r=>r.ticker===tk))return null;
+  const hit={},f=[];
+  for(let i=0;i<draws;i++){
+    const src=DAILY[days[(Math.random()*days.length)|0]];
+    const est=[];
+    for(const r of top){const v=src[r.ticker];if(v>0)est.push([r.ticker,r.mentions*v]);}
+    if(!est.length)continue;
+    est.sort((a,b)=>b[1]-a[1]);
+    const at=est.findIndex(e=>e[0]===tk);
+    if(at<0)continue;
+    hit[at+1]=(hit[at+1]||0)+1;f.push(at+1);
+  }
+  if(f.length<draws*0.5)return null;
+  const n=f.length,shown=top.findIndex(r=>r.ticker===tk)+1;
+  const pairs=Object.entries(hit).map(([k,v])=>[+k,v/n]).sort((a,b)=>b[1]-a[1]);
+  let acc=0,band=[];for(const[k,p]of pairs){band.push(k);acc+=p;if(acc>=0.75)break;}
+  band.sort((a,b)=>a-b);
+  return {shown,exact:hit[shown]?hit[shown]/n:0,band:[band[0],band[band.length-1]],bandP:acc};
+}
 function buildFlags(art,dv){
   FLAG={};CHECK=dv||null;
   if(art){
@@ -868,6 +902,10 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
   ]);
   EVENTS=ev;FINDING=fi;PRICES=px;RANK=rk;
   buildFlags(art,dv);
+  /* 213 KB gzipped, and nothing on the board needs it — only an opened ticker does. */
+  window.needDaily=()=>{if(DAILYQ)return DAILYQ;
+    DAILYQ=gj(`${BASE}data/divergence_daily.json`).then(j=>{DAILY=j&&j.days||null;
+      if(VIEW!=='market')render();}).catch(()=>{DAILY=null;});return DAILYQ;};
   /* Kept so a custom definition can be undone, and so the scan has something to be
      checked against. */
   EVENTS0=ev;FINDING0=fi;
@@ -2400,35 +2438,37 @@ function boardDetail(){
      "verified" when most of the board has simply never been looked at — 19% of it at the
      time this was written, and 8% below rank 100. A Deep riser is new to the board by
      definition, which made the rows a reader most wants checked the least likely to be. */
-  /* The same stat tiles the rest of the pane uses, not a paragraph. The prose version was
-     sixty words to carry three facts, and a reader scanning a stock page does not read sixty
-     words. Each number is given with the thing that makes it mean something — the board's own
-     gap, and the 0% that every proven artefact writes — because alone they mean nothing:
-     "1.138x" is unreadable, "the same as every other row" is not. The raw figures sit in the
-     title attribute for anyone who wants to check the tile rather than take it. */
+  /* Three tiles, and the first one is the question a reader actually has: is this rank real?
+     Not "has anyone checked this row", which is what these tiles said first and is a fact
+     about our process rather than about the stock. */
   const ck=CHECK&&CHECK.tickers?CHECK.tickers[r.ticker]:null;
   const ckN=(()=>{
     if(!CHECK)return '';
+    if(ctx&&!DAILY&&window.needDaily)window.needDaily();
     const tile=(k,v,sub,c='',ti='')=>`<div class="stat ckS"${ti?` title="${esc(ti)}"`:''}>
       <div class="k">${k}</div><div class="v ${c}">${v}</div>
       ${sub?`<div class="s">${sub}</div>`:''}</div>`;
-    if(!ck||!ck.days)return `<div class="stats ckStats">
-      ${tile('checked against the posts','never','',' mut')}
-      ${tile('rows like it that were','1 in 18 was not a stock','a preposition, slang, a bot','dn')}</div>`;
-    if(!ck.rated_days)return `<div class="stats ckStats">
-      ${tile('on the board',`${ck.days} days`,'')}
-      ${tile('loud enough to check','never','under 10 mentions every day',' mut')}</div>`;
-    const near=Math.abs(ck.ratio-CHECK.common)<0.10;
-    const solid=ck.rated_days>=16;
-    const dpct=ck.matches?Math.round(ck.dollar/ck.matches*100):null;
+    const od=ctx?rankOdds(r.ticker,boardRows()):null;
+    /* The neighbour is why the rank is soft, and it is more use than any percentage: five
+       mentions between #7 and #8 is a gap a reader can judge for themselves. */
+    let nb='';
+    if(ctx){const L=boardRows(),i=L.findIndex(x=>x.ticker===r.ticker);
+      const o=L[i+1]||L[i-1];
+      if(o)nb=`${Math.abs(r.mentions-o.mentions)} mentions from ${o.ticker}`;}
+    const dpct=ck&&ck.matches?Math.round(ck.dollar/ck.matches*100):null;
     return `<div class="stats ckStats">
-      ${tile('counted ourselves on',`${ck.rated_days} days`,solid?'enough to rely on':'too few to rely on',
-             solid?'':'mut',`${ck.rated_days} of ${ck.days} days on the board carried the 10+ mentions a comparison needs`)}
-      ${tile('vs ApeWisdom',near?'normal':'off',
-             near?`like every other row`:`${ck.ratio}× where the board is ${CHECK.common}×`,
-             near?'up':'dn',`Our count is ${ck.ratio}× theirs; the board as a whole is ${CHECK.common}×`)}
+      ${od?tile(`rank #${od.shown} is`,`${Math.round(od.exact*100)}% likely`,
+            `#${od.band[0]}–#${od.band[1]} covers ${Math.round(od.bandP*100)}%`,
+            od.exact>=0.5?'up':'',
+            `Resampled 2,000 times: each draw takes one archived day's measured gap between the two counts and re-ranks today's board with it.`)
+        :tile('rank confidence',DAILY===null&&ctx?'…':'—',ctx?'not enough history':'archive.org day',' mut')}
+      ${nb?tile('because it sits',nb,'a gap this small is inside the noise','',
+            'The two counting rules differ by about 12.5% on average and vary day to day, so neighbours closer than that can swap.'):''}
       ${dpct!=null?tile(`written as $${r.ticker}`,`${dpct}%`,'artefacts: 0%',dpct>0?'up':'dn',
-             `${ck.dollar} of ${ck.matches} posts. Every row proven not to be a stock sits at zero.`):''}
+            `${ck.dollar} of ${ck.matches} posts. Every row proven not to be a stock sits at zero.`)
+        :tile('checked against posts',ck&&ck.days?`${ck.days} days`:'never',
+              ck&&ck.days?'never at readable volume':'1 in 18 such rows was not a stock',
+              ck&&ck.days?' mut':'dn')}
     </div>`;})();
   const fl=FLAG[r.ticker];
   /* Evidence strings come from JSON and some end in a full stop and some do not; joining

@@ -81,7 +81,11 @@ jobs:
 
       - name: Count and compare
         if: steps.pick.outputs.day != ''
-        run: python3 scripts/divergence.py --depth 50 --min-days 10 | tail -40
+        # No --depth. It defaults to the whole 500-row board, and passing 50 here while the
+        # script defaulted to 500 was worse than a mismatch: the cache is invalidated when the
+        # depth changes, so the two runs took turns wiping each other, and this one can only
+        # rebuild the single day it fetched text for. 106 cached days became 1.
+        run: python3 scripts/divergence.py --min-days 10 | tail -40
 
       # Before the text is thrown away. Leaving it would put 20 MB a day into the history
       # of a repository whose entire point is that it stays small enough to clone.
