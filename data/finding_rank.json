@@ -76,7 +76,7 @@
     "2026-05-01",
     "2026-08-15"
    ],
-   "tickers_ever_top3": 32,
+   "tickers_ever_top3": 33,
    "horizons": [
     {
      "sessions": 5,
@@ -88,11 +88,11 @@
       "win_rate": 50
      },
      "rest_of_board": {
-      "n": 234,
+      "n": 232,
       "median": -0.46,
-      "trimmed_mean": 0.36,
-      "mean": 1.79,
-      "win_rate": 43
+      "trimmed_mean": 0.1,
+      "mean": 1.64,
+      "win_rate": 41
      },
      "gap_median": 0.46
     },
@@ -106,13 +106,13 @@
       "win_rate": 48
      },
      "rest_of_board": {
-      "n": 232,
-      "median": 1.21,
-      "trimmed_mean": 1.64,
-      "mean": 2.82,
-      "win_rate": 63
+      "n": 233,
+      "median": 1.38,
+      "trimmed_mean": 2.0,
+      "mean": 3.24,
+      "win_rate": 64
      },
-     "gap_median": -1.69
+     "gap_median": -1.86
     },
     {
      "sessions": 20,
@@ -124,11 +124,11 @@
       "win_rate": 45
      },
      "rest_of_board": {
-      "n": 199,
+      "n": 198,
       "median": -0.55,
-      "trimmed_mean": -0.17,
-      "mean": 3.64,
-      "win_rate": 45
+      "trimmed_mean": -0.53,
+      "mean": 3.3,
+      "win_rate": 44
      },
      "gap_median": 0.09
     }
