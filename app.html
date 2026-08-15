@@ -413,6 +413,9 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .ckNote{margin:0 0 14px;padding:9px 11px;border-radius:6px;background:var(--line2);
   font-size:12px;line-height:1.5;color:var(--ink2)}
 .ckNote b{color:var(--ink)}
+/* The figures the sentences are built from, for anyone who wants to check the sentence. */
+.ckNote .ckRaw{display:block;margin-top:7px;padding-top:7px;border-top:1px solid var(--line2);
+  font:400 10.5px/1.5 var(--mono,ui-monospace,Menlo,monospace);color:var(--ink3)}
 /* A full-width row rather than a control, so it gets a row's height — but a multiple of
    the control unit rather than whatever 12px of padding happened to produce. */
 .more{display:flex;align-items:center;justify-content:center;width:100%;background:none;
@@ -765,13 +768,15 @@ function buildFlags(art,dv){
    absence of a badge to read as approval. */
 const ckTier=tk=>{
   const v=CHECK&&CHECK.tickers?CHECK.tickers[tk]:null;
-  if(!v||!v.days)return {k:'none',t:`Never counted against the raw posts. Of rows that were, 18 of 323 turned out not to be the company — about 1 in 18.`};
+  if(!v||!v.days)return {k:'none',t:`Nothing has checked this row against the actual posts. Of the rows that were checked, about 1 in 18 turned out not to be the company at all.`};
   const rd=v.rated_days||0;
-  if(!rd)return {k:'thin',d:v.days,t:`Seen on ${v.days} day${v.days>1?'s':''}, none of them carrying the 10 mentions a ratio needs. Counted, but never at a volume that could settle anything.`};
+  if(!rd)return {k:'thin',d:v.days,t:`On the board ${v.days} day${v.days>1?'s':''}, never with enough mentions to check. Counting one or two posts settles nothing.`};
   const off=CHECK.common?Math.abs(v.ratio-CHECK.common):0;
   const good=rd>=16;
   return {k:good?'ok':'part',d:rd,
-    t:`Counted on ${rd} day${rd>1?'s':''} at readable volume, ${v.days} on the board. Our own rule finds ${v.ratio}× ApeWisdom's against ${CHECK.common}× for the board — ${off<0.1?'inside':'outside'} the ±0.10 that half of all checked rows sit within. At this many days the 90th percentile of deviation is ${good?'0.075':'0.42'}.`};
+    t:(off<0.1?`Checked on ${rd} day${rd>1?'s':''} and it holds up: counting the posts ourselves gives about the same gap to ApeWisdom that every other row has.`
+              :`Checked on ${rd} day${rd>1?'s':''} and it does not fit — our count sits ${v.ratio}× against the board's ${CHECK.common}×.`)
+       + (good?` Enough days that one odd one would not move it.`:` Too few days to be more than a direction.`)};
 };
 const ckBadge=tk=>{const c=ckTier(tk);
   return `<span class="badge ck ${c.k}" title="${esc(c.t)}">${
@@ -2386,15 +2391,42 @@ function boardDetail(){
      "verified" when most of the board has simply never been looked at — 19% of it at the
      time this was written, and 8% below rank 100. A Deep riser is new to the board by
      definition, which made the rows a reader most wants checked the least likely to be. */
+  /* Verdict first, in words. The first version of this printed "1.138x ApeWisdom's figure,
+     against 1.125x for the board as a whole, and 194 of 1617 matching items write $NOK" —
+     every number true and no reader able to say what to do with it. A ratio is only
+     meaningful against the ratio everything else has, and a dollar-sign count is only
+     meaningful against the zero that every proven artefact sits at. So say the comparison,
+     not the raw figure, and put the conclusion in the first four words. */
   const ck=CHECK&&CHECK.tickers?CHECK.tickers[r.ticker]:null;
-  const ckN=!CHECK?'':`<div class="ckNote">${ck
-    ? `Counted independently from the raw r/wallstreetbets posts on <b>${ck.days} day${ck.days>1?'s':''}</b>.
-       This project's own rule finds <b>${ck.ratio}×</b> ApeWisdom's figure, against <b>${CHECK.common}×</b>
-       for the board as a whole${ck.matches?`, and ${ck.dollar} of ${ck.matches} matching items write $${r.ticker}`:''}.`
-    : `<b>Never counted against the raw posts.</b> The archive says what ApeWisdom said and nothing
-       here has checked it for ${r.ticker}. Coverage is best at the top of the board and thin below
-       it, so a row that has just arrived from the deep end is the least likely to have been looked at.`}
-  </div>`;
+  const ckN=(()=>{
+    if(!CHECK)return '';
+    const nm=escName(r.name||r.ticker);
+    if(!ck||!ck.days)return `<div class="ckNote"><b>Nothing has checked this row.</b>
+      Its number is ApeWisdom's word, and no count of the actual posts has ever been held
+      against it. That matters because of what checking has found elsewhere: of the rows loud
+      enough to check, about <b>1 in 18</b> turned out not to be the company at all — a
+      preposition, options slang, a bot's template.</div>`;
+    if(!ck.rated_days)return `<div class="ckNote"><b>Seen, but never loud enough to check.</b>
+      ${r.ticker} has been on the board ${ck.days} day${ck.days>1?'s':''}, none of them carrying
+      the ten mentions a comparison needs. Counting one or two posts settles nothing either way.</div>`;
+    const off=Math.abs(ck.ratio-CHECK.common), near=off<0.10;
+    const solid=ck.rated_days>=16;
+    const dpct=ck.matches?Math.round(ck.dollar/ck.matches*100):null;
+    return `<div class="ckNote">
+      <b>${near?(solid?'Checked, and it holds up.':'Checked lightly, and it looks right.')
+              :'Checked, and it does not fit the pattern.'}</b>
+      Counting the posts ourselves finds ${near?'about the same gap to ApeWisdom as every other row has'
+        :`a gap to ApeWisdom of ${ck.ratio}×, where the board as a whole sits at ${CHECK.common}×`}.
+      ${dpct!=null?`And <b>${dpct}%</b> of the posts mentioning ${r.ticker} write it as
+        <b>$${r.ticker}</b> — the form nobody uses for an ordinary English word. Every row that
+        turned out not to be a stock sits at 0%.`:''}
+      ${solid?`Counted on ${ck.rated_days} separate days, which is enough that the figure would
+        have to be wrong on many of them to be wrong overall.`
+        :`Only ${ck.rated_days} day${ck.rated_days>1?'s':''} carried enough mentions to count, so
+        treat this as a direction rather than a measurement — rows checked this lightly land within
+        ±42% of the board's gap, against ±7% for well-covered ones.`}
+      <span class="ckRaw">${ck.ratio}× vs ${CHECK.common}× · ${ck.dollar||0} of ${ck.matches||0} posts
+        write $${r.ticker} · ${ck.rated_days} of ${ck.days} board days counted</span></div>`;})();
   const fl=FLAG[r.ticker];
   /* Evidence strings come from JSON and some end in a full stop and some do not; joining
      them raw produced "so bare uppercase counts The figures on this page...". */
