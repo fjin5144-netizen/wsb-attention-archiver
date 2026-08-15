@@ -1338,6 +1338,14 @@ function groupBase(view){
   finally{ ONLY=keep; }
 }
 
+/* The whole board, with the search and the group filter off. A rank is a position among all
+   the rows, so computing one against the filtered list was computing it against nothing:
+   searching AVGO left boardRows() with a single row and the odds came out of a board of one. */
+function fullBoard(){
+  const q=Q,o=ONLY; Q=''; ONLY='';
+  try{ return boardRows(); } finally{ Q=q; ONLY=o; }
+}
+
 /* The old site's four surge tiers, verbatim. Filter chips labelled "Deep risers" were
    not the same thing at all — what was lost is the grouped display with the movement
    written out, `rank 22 → 9 · mentions 12 → 21`. That "from → to" is the trajectory;
@@ -2444,15 +2452,16 @@ function boardDetail(){
   const ck=CHECK&&CHECK.tickers?CHECK.tickers[r.ticker]:null;
   const ckN=(()=>{
     if(!CHECK)return '';
-    if(ctx&&!DAILY&&window.needDaily)window.needDaily();
+    const live=r.ctx!==false;
+    if(live&&!DAILY&&window.needDaily)window.needDaily();
     const tile=(k,v,sub,c='',ti='')=>`<div class="stat ckS"${ti?` title="${esc(ti)}"`:''}>
       <div class="k">${k}</div><div class="v ${c}">${v}</div>
       ${sub?`<div class="s">${sub}</div>`:''}</div>`;
-    const od=ctx?rankOdds(r.ticker,boardRows()):null;
+    const od=live?rankOdds(r.ticker,fullBoard()):null;
     /* The neighbour is why the rank is soft, and it is more use than any percentage: five
        mentions between #7 and #8 is a gap a reader can judge for themselves. */
     let nb='';
-    if(ctx){const L=boardRows(),i=L.findIndex(x=>x.ticker===r.ticker);
+    if(live){const L=fullBoard(),i=L.findIndex(x=>x.ticker===r.ticker);
       const o=L[i+1]||L[i-1];
       if(o)nb=`${Math.abs(r.mentions-o.mentions)} mentions from ${o.ticker}`;}
     const dpct=ck&&ck.matches?Math.round(ck.dollar/ck.matches*100):null;
@@ -2461,7 +2470,7 @@ function boardDetail(){
             `#${od.band[0]}–#${od.band[1]} covers ${Math.round(od.bandP*100)}%`,
             od.exact>=0.5?'up':'',
             `Resampled 2,000 times: each draw takes one archived day's measured gap between the two counts and re-ranks today's board with it.`)
-        :tile('rank confidence',DAILY===null&&ctx?'…':'—',ctx?'not enough history':'archive.org day',' mut')}
+        :tile('rank confidence',live&&!DAILY?'…':'—',live?'not enough history':'archive.org day',' mut')}
       ${nb?tile('because it sits',nb,'a gap this small is inside the noise','',
             'The two counting rules differ by about 12.5% on average and vary day to day, so neighbours closer than that can swap.'):''}
       ${dpct!=null?tile(`written as $${r.ticker}`,`${dpct}%`,'artefacts: 0%',dpct>0?'up':'dn',
