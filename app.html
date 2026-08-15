@@ -413,6 +413,15 @@ tr.jump:hover td{background:var(--sunk);color:var(--ink)}
 .ckNote{margin:0 0 14px;padding:9px 11px;border-radius:6px;background:var(--line2);
   font-size:12px;line-height:1.5;color:var(--ink2)}
 .ckNote b{color:var(--ink)}
+/* Provenance tiles: same grid as the stats above them, one step quieter, and each carries a
+   second line naming what its number should be compared with. */
+.ckStats{margin:0 0 16px}
+.ckStats .stat{padding:7px 12px 8px}
+.ckStats .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+.ckStats .v{font-size:14px;line-height:18px;margin-top:3px}
+.ckStats .v.mut{color:var(--ink3);font-weight:400}
+.ckStats .s{font-size:10.5px;color:var(--ink3);margin-top:2px;line-height:1.35}
+.ckS{cursor:help}
 /* The figures the sentences are built from, for anyone who wants to check the sentence. */
 .ckNote .ckRaw{display:block;margin-top:7px;padding-top:7px;border-top:1px solid var(--line2);
   font:400 10.5px/1.5 var(--mono,ui-monospace,Menlo,monospace);color:var(--ink3)}
@@ -2391,42 +2400,36 @@ function boardDetail(){
      "verified" when most of the board has simply never been looked at — 19% of it at the
      time this was written, and 8% below rank 100. A Deep riser is new to the board by
      definition, which made the rows a reader most wants checked the least likely to be. */
-  /* Verdict first, in words. The first version of this printed "1.138x ApeWisdom's figure,
-     against 1.125x for the board as a whole, and 194 of 1617 matching items write $NOK" —
-     every number true and no reader able to say what to do with it. A ratio is only
-     meaningful against the ratio everything else has, and a dollar-sign count is only
-     meaningful against the zero that every proven artefact sits at. So say the comparison,
-     not the raw figure, and put the conclusion in the first four words. */
+  /* The same stat tiles the rest of the pane uses, not a paragraph. The prose version was
+     sixty words to carry three facts, and a reader scanning a stock page does not read sixty
+     words. Each number is given with the thing that makes it mean something — the board's own
+     gap, and the 0% that every proven artefact writes — because alone they mean nothing:
+     "1.138x" is unreadable, "the same as every other row" is not. The raw figures sit in the
+     title attribute for anyone who wants to check the tile rather than take it. */
   const ck=CHECK&&CHECK.tickers?CHECK.tickers[r.ticker]:null;
   const ckN=(()=>{
     if(!CHECK)return '';
-    const nm=escName(r.name||r.ticker);
-    if(!ck||!ck.days)return `<div class="ckNote"><b>Nothing has checked this row.</b>
-      Its number is ApeWisdom's word, and no count of the actual posts has ever been held
-      against it. That matters because of what checking has found elsewhere: of the rows loud
-      enough to check, about <b>1 in 18</b> turned out not to be the company at all — a
-      preposition, options slang, a bot's template.</div>`;
-    if(!ck.rated_days)return `<div class="ckNote"><b>Seen, but never loud enough to check.</b>
-      ${r.ticker} has been on the board ${ck.days} day${ck.days>1?'s':''}, none of them carrying
-      the ten mentions a comparison needs. Counting one or two posts settles nothing either way.</div>`;
-    const off=Math.abs(ck.ratio-CHECK.common), near=off<0.10;
+    const tile=(k,v,sub,c='',ti='')=>`<div class="stat ckS"${ti?` title="${esc(ti)}"`:''}>
+      <div class="k">${k}</div><div class="v ${c}">${v}</div>
+      ${sub?`<div class="s">${sub}</div>`:''}</div>`;
+    if(!ck||!ck.days)return `<div class="stats ckStats">
+      ${tile('checked against the posts','never','',' mut')}
+      ${tile('rows like it that were','1 in 18 was not a stock','a preposition, slang, a bot','dn')}</div>`;
+    if(!ck.rated_days)return `<div class="stats ckStats">
+      ${tile('on the board',`${ck.days} days`,'')}
+      ${tile('loud enough to check','never','under 10 mentions every day',' mut')}</div>`;
+    const near=Math.abs(ck.ratio-CHECK.common)<0.10;
     const solid=ck.rated_days>=16;
     const dpct=ck.matches?Math.round(ck.dollar/ck.matches*100):null;
-    return `<div class="ckNote">
-      <b>${near?(solid?'Checked, and it holds up.':'Checked lightly, and it looks right.')
-              :'Checked, and it does not fit the pattern.'}</b>
-      Counting the posts ourselves finds ${near?'about the same gap to ApeWisdom as every other row has'
-        :`a gap to ApeWisdom of ${ck.ratio}×, where the board as a whole sits at ${CHECK.common}×`}.
-      ${dpct!=null?`And <b>${dpct}%</b> of the posts mentioning ${r.ticker} write it as
-        <b>$${r.ticker}</b> — the form nobody uses for an ordinary English word. Every row that
-        turned out not to be a stock sits at 0%.`:''}
-      ${solid?`Counted on ${ck.rated_days} separate days, which is enough that the figure would
-        have to be wrong on many of them to be wrong overall.`
-        :`Only ${ck.rated_days} day${ck.rated_days>1?'s':''} carried enough mentions to count, so
-        treat this as a direction rather than a measurement — rows checked this lightly land within
-        ±42% of the board's gap, against ±7% for well-covered ones.`}
-      <span class="ckRaw">${ck.ratio}× vs ${CHECK.common}× · ${ck.dollar||0} of ${ck.matches||0} posts
-        write $${r.ticker} · ${ck.rated_days} of ${ck.days} board days counted</span></div>`;})();
+    return `<div class="stats ckStats">
+      ${tile('counted ourselves on',`${ck.rated_days} days`,solid?'enough to rely on':'too few to rely on',
+             solid?'':'mut',`${ck.rated_days} of ${ck.days} days on the board carried the 10+ mentions a comparison needs`)}
+      ${tile('vs ApeWisdom',near?'normal':'off',
+             near?`like every other row`:`${ck.ratio}× where the board is ${CHECK.common}×`,
+             near?'up':'dn',`Our count is ${ck.ratio}× theirs; the board as a whole is ${CHECK.common}×`)}
+      ${dpct!=null?tile(`written as $${r.ticker}`,`${dpct}%`,'artefacts: 0%',dpct>0?'up':'dn',
+             `${ck.dollar} of ${ck.matches} posts. Every row proven not to be a stock sits at zero.`):''}
+    </div>`;})();
   const fl=FLAG[r.ticker];
   /* Evidence strings come from JSON and some end in a full stop and some do not; joining
      them raw produced "so bare uppercase counts The figures on this page...". */
