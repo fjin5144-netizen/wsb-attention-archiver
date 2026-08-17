@@ -5,62 +5,62 @@
   "2026-05-01",
   "2026-08-17"
  ],
- "prices_through": "2026-08-14",
+ "prices_through": "2026-08-17",
  "headline_sessions": 20,
  "horizons": [
   {
    "sessions": 5,
    "spike": {
-    "n": 254,
-    "median": -1.54,
-    "trimmed_mean": -1.63,
+    "n": 259,
+    "median": -1.53,
+    "trimmed_mean": -1.6,
     "mean": -0.49,
-    "win_rate": 44
+    "win_rate": 45
    },
    "placebo": {
-    "n": 255,
-    "median": -0.48,
-    "trimmed_mean": -0.3,
+    "n": 261,
+    "median": -0.36,
+    "trimmed_mean": -0.26,
     "mean": 1.72,
-    "win_rate": 49
+    "win_rate": 48
    },
-   "gap_median": -1.06
+   "gap_median": -1.17
   },
   {
    "sessions": 10,
    "spike": {
-    "n": 237,
-    "median": -5.0,
-    "trimmed_mean": -4.93,
-    "mean": -4.09,
+    "n": 238,
+    "median": -4.93,
+    "trimmed_mean": -4.82,
+    "mean": -3.92,
     "win_rate": 35
    },
    "placebo": {
-    "n": 232,
-    "median": -0.5,
-    "trimmed_mean": -1.03,
-    "mean": 0.23,
-    "win_rate": 48
+    "n": 239,
+    "median": -0.4,
+    "trimmed_mean": -0.86,
+    "mean": 0.38,
+    "win_rate": 49
    },
-   "gap_median": -4.5
+   "gap_median": -4.53
   },
   {
    "sessions": 20,
    "spike": {
-    "n": 203,
-    "median": -6.7,
-    "trimmed_mean": -9.5,
-    "mean": -9.33,
+    "n": 206,
+    "median": -6.6,
+    "trimmed_mean": -9.24,
+    "mean": -9.12,
     "win_rate": 32
    },
    "placebo": {
-    "n": 206,
-    "median": -1.96,
-    "trimmed_mean": -2.43,
-    "mean": 0.5,
-    "win_rate": 43
+    "n": 212,
+    "median": -1.57,
+    "trimmed_mean": -1.89,
+    "mean": 0.98,
+    "win_rate": 45
    },
-   "gap_median": -4.74
+   "gap_median": -5.03
   }
  ]
 }
