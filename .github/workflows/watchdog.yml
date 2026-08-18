@@ -26,7 +26,7 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check collection health
         id: check
         # No continue-on-error: exit 1 means "checked, found something" and must not
@@ -56,10 +56,26 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Every gh call goes through this. On 2026-08-17 the first one took an HTTP 503
+          # from GitHub's own GraphQL endpoint and the run went red — which contradicts the
+          # rule the step above is built on, that red means the watchdog is broken. An
+          # upstream outage is not a collection problem and must not look like one.
+          # Three tries, then say so as a warning and stop: an alarm that cries wolf when
+          # GitHub sneezes is an alarm that gets ignored on the day it is right.
+          gh_try() {
+            for i in 1 2 3; do
+              out=$(gh "$@" 2>&1) && { printf '%s' "$out"; return 0; }
+              echo "gh $1 failed (attempt $i): $out" >&2
+              sleep $((i * 5))
+            done
+            echo "::warning title=Alert not delivered::gh failed three times — likely a GitHub outage, not a collection problem. The report is in this run's summary."
+            return 1
+          }
+
           # One issue, reused. Three checks a day each opening their own would bury the
           # one that matters — which is how #1 #2 #3 happened.
-          N=$(gh issue list --state open --limit 50 --json number,title \
-                -q "[.[] | select(.title | contains(\"Collection problem\"))][0].number // empty")
+          N=$(gh_try issue list --state open --limit 50 --json number,title \
+                -q "[.[] | select(.title | contains(\"Collection problem\"))][0].number // empty") || exit 0
           BODY="$(cat report.md)"
           LINK="[watchdog run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
 
@@ -69,15 +85,15 @@ jobs:
               # report three times a day is noise. Comment only when what is wrong has
               # changed — the fingerprint covers the problems, not the timestamp.
               FP=$(grep -o 'wd-fingerprint:[a-f0-9]*' report.md | head -1)
-              SEEN=$(gh issue view "$N" --json body,comments \
+              SEEN=$(gh_try issue view "$N" --json body,comments \
                        -q '.body + " " + ([.comments[].body] | join(" "))')
               if [ -n "$FP" ] && printf '%s' "$SEEN" | grep -q "$FP"; then
                 echo "unchanged ($FP) — not commenting again"
               else
-                gh issue comment "$N" --body "$BODY"$'\n\n'"$LINK"
+                gh_try issue comment "$N" --body "$BODY"$'\n\n'"$LINK"
               fi
             else
-              gh issue create --title "🚨 Collection problem" --body "$BODY"$'\n\n'"$LINK"
+              gh_try issue create --title "🚨 Collection problem" --body "$BODY"$'\n\n'"$LINK"
             fi
             # Deliberately not `exit 1`. The finding is reported in the issue; making
             # the run red as well would mean 2026-08-06 — a day that can never be
@@ -88,7 +104,7 @@ jobs:
           # Recovered. An alarm that never clears is an alarm nobody reads, so close it
           # rather than leaving a stale red flag beside a healthy archive.
           if [ -n "$N" ]; then
-            gh issue comment "$N" --body "Recovered."$'\n\n'"$BODY"$'\n\n'"$LINK"
-            gh issue close "$N"
+            gh_try issue comment "$N" --body "Recovered."$'\n\n'"$BODY"$'\n\n'"$LINK"
+            gh_try issue close "$N"
           fi
           echo "healthy"

@@ -37,7 +37,7 @@ jobs:
       contents: write
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Fetch snapshots
         run: python3 scripts/archive.py
       # 顺序有讲究:先验数据本身,再从它派生,最后在提交前把派生结果对着归档重算一遍。
@@ -149,7 +149,7 @@ jobs:
       # and no issue was ever filed or commented. The failure that surfaces a broken
       # collection cannot itself be the thing that is broken, so: check out, and set
       # GH_REPO as well, which makes gh independent of the working directory.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Alert
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -163,10 +163,21 @@ jobs:
             extra=$'\n\n作业被取消 —— 通常是没有分配到 runner(等满 15 分钟)。本次采集完全没有执行。'
           fi
           body="归档作业在 \`$(date -u +%Y-%m-%dT%H:%MZ)\` 结束于 \`$r\`。见 [workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)。$extra"
-          n=$(gh issue list --state open --limit 50 --json number,title \
-                -q '[.[] | select(.title | contains("Archive Cron Failed"))][0].number // empty')
+          # 同 watchdog:GitHub 自己的 API 会 503(2026-08-17 就吃了一次)。这一步是
+          # 采集坏掉时唯一的出口,它自己被一次瞬时故障吞掉,等于那次故障没人知道。
+          gh_try() {
+            for i in 1 2 3; do
+              out=$(gh "$@" 2>&1) && { printf '%s' "$out"; return 0; }
+              echo "gh $1 失败(第 $i 次): $out" >&2
+              sleep $((i * 5))
+            done
+            echo "::warning title=告警未送达::gh 连续三次失败,多半是 GitHub 侧故障。归档作业的结果见本次 run。"
+            return 1
+          }
+          n=$(gh_try issue list --state open --limit 50 --json number,title \
+                -q '[.[] | select(.title | contains("Archive Cron Failed"))][0].number // empty') || exit 0
           if [ -n "$n" ]; then
-            gh issue comment "$n" --body "$body"
+            gh_try issue comment "$n" --body "$body"
           else
-            gh issue create --title "🚨 Archive Cron Failed" --body "$body"
+            gh_try issue create --title "🚨 Archive Cron Failed" --body "$body"
           fi
