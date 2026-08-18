@@ -1,6 +1,6 @@
 {
  "_note": "Ratio of this project's count to ApeWisdom's, median across the days both exist. Near `common` means the two rules agree \u2014 which is NOT the same as either being right: EU sits at 1.20 and is the European Union. See artifacts.json for what agreement cannot catch.",
- "days": 103,
+ "days": 104,
  "depth": 500,
  "min_days": 10,
  "min_mentions": 10,
@@ -12,9 +12,9 @@
    "matches": 1309
   },
   "AA": {
-   "days": 27,
-   "dollar": 1,
-   "matches": 50
+   "days": 28,
+   "dollar": 2,
+   "matches": 53
   },
   "AAA": {
    "days": 18,
@@ -29,21 +29,21 @@
    "matches": 28
   },
   "AAL": {
-   "days": 73,
+   "days": 74,
    "dollar": 8,
-   "matches": 79
+   "matches": 80
   },
   "AAOI": {
-   "days": 68,
+   "days": 69,
    "ratio": 1.2,
    "rated_days": 17,
-   "dollar": 90,
-   "matches": 658
+   "dollar": 91,
+   "matches": 666
   },
   "AAON": {
-   "days": 3,
+   "days": 4,
    "dollar": 1,
-   "matches": 10
+   "matches": 12
   },
   "AAP": {
    "days": 21,
@@ -51,11 +51,11 @@
    "matches": 5
   },
   "AAPL": {
-   "days": 102,
+   "days": 103,
    "ratio": 1.111,
-   "rated_days": 70,
-   "dollar": 124,
-   "matches": 3895
+   "rated_days": 71,
+   "dollar": 125,
+   "matches": 3916
   },
   "AB": {
    "days": 17,
@@ -101,7 +101,7 @@
    "matches": 7
   },
   "ABT": {
-   "days": 48,
+   "days": 49,
    "dollar": 4,
    "matches": 29
   },
@@ -122,11 +122,11 @@
    "days": 3
   },
   "ACHR": {
-   "days": 20,
+   "days": 21,
    "ratio": 1.1,
    "rated_days": 1,
    "dollar": 6,
-   "matches": 136
+   "matches": 137
   },
   "ACI": {
    "days": 3,
@@ -162,11 +162,11 @@
    "days": 1
   },
   "ADBE": {
-   "days": 101,
+   "days": 102,
    "ratio": 1.154,
    "rated_days": 24,
    "dollar": 54,
-   "matches": 1002
+   "matches": 1004
   },
   "ADEA": {
    "days": 1,
@@ -174,9 +174,9 @@
    "matches": 8
   },
   "ADI": {
-   "days": 36,
+   "days": 37,
    "dollar": 1,
-   "matches": 29
+   "matches": 30
   },
   "ADM": {
    "days": 22,
@@ -203,6 +203,11 @@
    "dollar": 0,
    "matches": 4
   },
+  "ADV": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 1
+  },
   "AEHR": {
    "days": 8,
    "ratio": 1.294,
@@ -216,17 +221,17 @@
    "matches": 3
   },
   "AEM": {
-   "days": 13,
+   "days": 14,
    "dollar": 0,
    "matches": 10
   },
   "AEO": {
-   "days": 4,
+   "days": 5,
    "dollar": 0,
    "matches": 2
   },
   "AEP": {
-   "days": 16,
+   "days": 17,
    "dollar": 1,
    "matches": 6
   },
@@ -251,9 +256,9 @@
    "matches": 11
   },
   "AG": {
-   "days": 24,
+   "days": 25,
    "dollar": 6,
-   "matches": 29
+   "matches": 32
   },
   "AGCO": {
    "days": 1,
@@ -266,11 +271,11 @@
    "matches": 2
   },
   "AGI": {
-   "days": 80,
+   "days": 81,
    "ratio": 1.095,
    "rated_days": 12,
    "dollar": 0,
-   "matches": 615
+   "matches": 618
   },
   "AGM": {
    "days": 2,
@@ -308,7 +313,7 @@
    "matches": 21
   },
   "AIA": {
-   "days": 5,
+   "days": 6,
    "dollar": 0,
    "matches": 1
   },
@@ -356,9 +361,9 @@
    "matches": 15
   },
   "AL": {
-   "days": 16,
+   "days": 17,
    "dollar": 0,
-   "matches": 11
+   "matches": 13
   },
   "ALAB": {
    "days": 36,
@@ -381,7 +386,7 @@
    "matches": 8
   },
   "ALL": {
-   "days": 101,
+   "days": 102,
    "ratio": 0.0,
    "rated_days": 41,
    "dollar": 1,
@@ -408,23 +413,23 @@
    "matches": 2
   },
   "ALT": {
-   "days": 5,
+   "days": 6,
    "dollar": 0,
    "matches": 6
   },
   "AM": {
-   "days": 102,
-   "ratio": 1.119,
-   "rated_days": 76,
+   "days": 103,
+   "ratio": 1.121,
+   "rated_days": 77,
    "dollar": 0,
-   "matches": 2760
+   "matches": 2780
   },
   "AMAT": {
-   "days": 93,
+   "days": 94,
    "ratio": 1.143,
    "rated_days": 8,
    "dollar": 36,
-   "matches": 513
+   "matches": 519
   },
   "AMBA": {
    "days": 7,
@@ -432,11 +437,11 @@
    "matches": 1
   },
   "AMC": {
-   "days": 79,
+   "days": 80,
    "ratio": 1.167,
    "rated_days": 23,
    "dollar": 31,
-   "matches": 833
+   "matches": 835
   },
   "AMCR": {
    "days": 6,
@@ -444,11 +449,11 @@
    "matches": 2
   },
   "AMD": {
-   "days": 103,
+   "days": 104,
    "ratio": 1.111,
-   "rated_days": 98,
+   "rated_days": 99,
    "dollar": 185,
-   "matches": 9247
+   "matches": 9275
   },
   "AME": {
    "days": 7,
@@ -464,9 +469,9 @@
    "days": 2
   },
   "AMKR": {
-   "days": 29,
+   "days": 30,
    "dollar": 4,
-   "matches": 43
+   "matches": 45
   },
   "AMP": {
    "days": 9,
@@ -499,29 +504,29 @@
    "matches": 1
   },
   "AMZN": {
-   "days": 102,
-   "ratio": 1.243,
-   "rated_days": 70,
-   "dollar": 185,
-   "matches": 3280
+   "days": 103,
+   "ratio": 1.235,
+   "rated_days": 71,
+   "dollar": 189,
+   "matches": 3328
   },
   "AN": {
-   "days": 27,
+   "days": 28,
    "dollar": 0,
-   "matches": 141
+   "matches": 147
   },
   "ANAB": {
    "days": 1
   },
   "ANET": {
-   "days": 90,
+   "days": 91,
    "ratio": 1.103,
    "rated_days": 4,
    "dollar": 18,
-   "matches": 236
+   "matches": 240
   },
   "ANY": {
-   "days": 37,
+   "days": 38,
    "dollar": 13,
    "matches": 13
   },
@@ -561,18 +566,18 @@
    "matches": 30
   },
   "API": {
-   "days": 53,
+   "days": 54,
    "ratio": 1.062,
    "rated_days": 9,
    "dollar": 0,
-   "matches": 409
+   "matches": 415
   },
   "APLD": {
-   "days": 72,
+   "days": 73,
    "ratio": 1.217,
    "rated_days": 15,
    "dollar": 41,
-   "matches": 782
+   "matches": 787
   },
   "APM": {
    "days": 1
@@ -583,11 +588,11 @@
    "matches": 3
   },
   "APP": {
-   "days": 23,
+   "days": 24,
    "ratio": 1.165,
    "rated_days": 4,
-   "dollar": 24,
-   "matches": 370
+   "dollar": 26,
+   "matches": 379
   },
   "APPS": {
    "days": 12,
@@ -605,7 +610,7 @@
    "matches": 1
   },
   "AR": {
-   "days": 26,
+   "days": 27,
    "ratio": 1.172,
    "rated_days": 2,
    "dollar": 0,
@@ -655,7 +660,7 @@
    "matches": 57
   },
   "ARRY": {
-   "days": 1,
+   "days": 2,
    "dollar": 1,
    "matches": 2
   },
@@ -670,7 +675,7 @@
    "matches": 129
   },
   "ASAN": {
-   "days": 3,
+   "days": 4,
    "dollar": 5,
    "matches": 15
   },
@@ -690,11 +695,11 @@
    "matches": 3
   },
   "ASML": {
-   "days": 95,
+   "days": 96,
    "ratio": 1.13,
    "rated_days": 15,
    "dollar": 30,
-   "matches": 905
+   "matches": 913
   },
   "ASPI": {
    "days": 4,
@@ -713,16 +718,16 @@
    "days": 1
   },
   "ASTS": {
-   "days": 102,
+   "days": 103,
    "ratio": 1.103,
-   "rated_days": 98,
+   "rated_days": 99,
    "dollar": 223,
-   "matches": 8330
+   "matches": 8359
   },
   "ASX": {
-   "days": 14,
+   "days": 15,
    "dollar": 0,
-   "matches": 11
+   "matches": 12
   },
   "ATAI": {
    "days": 5,
@@ -745,9 +750,9 @@
    "matches": 8
   },
   "ATR": {
-   "days": 25,
+   "days": 26,
    "dollar": 0,
-   "matches": 17
+   "matches": 18
   },
   "ATYR": {
    "days": 1,
@@ -773,14 +778,16 @@
    "days": 1
   },
   "AVAV": {
-   "days": 72,
+   "days": 73,
    "ratio": 1.24,
    "rated_days": 4,
    "dollar": 18,
-   "matches": 320
+   "matches": 321
   },
   "AVB": {
-   "days": 1
+   "days": 2,
+   "dollar": 1,
+   "matches": 1
   },
   "AVDV": {
    "days": 5,
@@ -793,11 +800,11 @@
    "matches": 38
   },
   "AVGO": {
-   "days": 101,
+   "days": 102,
    "ratio": 1.136,
-   "rated_days": 46,
+   "rated_days": 47,
    "dollar": 162,
-   "matches": 4603
+   "matches": 4622
   },
   "AVO": {
    "days": 1,
@@ -810,7 +817,7 @@
    "matches": 1
   },
   "AVUS": {
-   "days": 1,
+   "days": 2,
    "dollar": 0,
    "matches": 1
   },
@@ -852,11 +859,11 @@
    "matches": 1
   },
   "AXTI": {
-   "days": 41,
+   "days": 42,
    "ratio": 1.142,
    "rated_days": 2,
-   "dollar": 8,
-   "matches": 234
+   "dollar": 9,
+   "matches": 243
   },
   "AZ": {
    "days": 3,
@@ -864,9 +871,9 @@
    "matches": 3
   },
   "AZN": {
-   "days": 8,
+   "days": 9,
    "dollar": 1,
-   "matches": 9
+   "matches": 10
   },
   "AZO": {
    "days": 15,
@@ -884,18 +891,23 @@
    "matches": 10
   },
   "BA": {
-   "days": 97,
+   "days": 98,
    "ratio": 1.062,
    "rated_days": 3,
    "dollar": 14,
    "matches": 256
   },
+  "BAB": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 1
+  },
   "BABA": {
-   "days": 95,
+   "days": 96,
    "ratio": 1.133,
    "rated_days": 12,
-   "dollar": 48,
-   "matches": 519
+   "dollar": 50,
+   "matches": 526
   },
   "BABY": {
    "days": 22,
@@ -903,7 +915,7 @@
    "matches": 191
   },
   "BAC": {
-   "days": 79,
+   "days": 80,
    "dollar": 14,
    "matches": 80
   },
@@ -936,11 +948,11 @@
    "matches": 2
   },
   "BB": {
-   "days": 94,
+   "days": 95,
    "ratio": 1.115,
    "rated_days": 41,
    "dollar": 158,
-   "matches": 2095
+   "matches": 2101
   },
   "BBAI": {
    "days": 12,
@@ -948,14 +960,14 @@
    "matches": 63
   },
   "BBBY": {
-   "days": 42,
+   "days": 43,
    "dollar": 2,
-   "matches": 49
+   "matches": 51
   },
   "BBC": {
-   "days": 50,
-   "dollar": 1,
-   "matches": 202
+   "days": 51,
+   "dollar": 3,
+   "matches": 206
   },
   "BBD": {
    "days": 3,
@@ -978,9 +990,9 @@
    "matches": 15
   },
   "BC": {
-   "days": 62,
+   "days": 63,
    "dollar": 0,
-   "matches": 79
+   "matches": 80
   },
   "BCE": {
    "days": 2,
@@ -993,16 +1005,16 @@
    "matches": 2
   },
   "BDC": {
-   "days": 11,
+   "days": 12,
    "dollar": 0,
    "matches": 2
   },
   "BE": {
-   "days": 94,
+   "days": 95,
    "ratio": 0.071,
    "rated_days": 35,
-   "dollar": 69,
-   "matches": 69
+   "dollar": 70,
+   "matches": 70
   },
   "BEAM": {
    "days": 5,
@@ -1033,9 +1045,9 @@
    "matches": 2
   },
   "BFLY": {
-   "days": 2,
+   "days": 3,
    "dollar": 3,
-   "matches": 11
+   "matches": 12
   },
   "BG": {
    "days": 4
@@ -1057,14 +1069,14 @@
    "days": 2
   },
   "BHP": {
-   "days": 8,
-   "dollar": 0,
-   "matches": 4
+   "days": 9,
+   "dollar": 1,
+   "matches": 6
   },
   "BIDU": {
-   "days": 8,
+   "days": 9,
    "dollar": 0,
-   "matches": 4
+   "matches": 6
   },
   "BIIB": {
    "days": 3,
@@ -1077,9 +1089,9 @@
    "matches": 6
   },
   "BILL": {
-   "days": 14,
+   "days": 15,
    "dollar": 2,
-   "matches": 26
+   "matches": 29
   },
   "BIO": {
    "days": 1,
@@ -1100,11 +1112,11 @@
    "days": 1
   },
   "BJ": {
-   "days": 48,
+   "days": 49,
    "ratio": 0.796,
    "rated_days": 2,
    "dollar": 2,
-   "matches": 123
+   "matches": 125
   },
   "BJRI": {
    "days": 2,
@@ -1127,9 +1139,9 @@
    "matches": 6
   },
   "BKR": {
-   "days": 19,
+   "days": 20,
    "dollar": 0,
-   "matches": 11
+   "matches": 12
   },
   "BKSY": {
    "days": 5,
@@ -1137,7 +1149,9 @@
    "matches": 19
   },
   "BL": {
-   "days": 8
+   "days": 9,
+   "dollar": 0,
+   "matches": 2
   },
   "BLDP": {
    "days": 1,
@@ -1165,14 +1179,14 @@
    "matches": 10
   },
   "BLZE": {
-   "days": 3,
+   "days": 4,
    "dollar": 6,
-   "matches": 14
+   "matches": 15
   },
   "BMI": {
-   "days": 32,
+   "days": 33,
    "dollar": 0,
-   "matches": 15
+   "matches": 17
   },
   "BMNR": {
    "days": 25,
@@ -1185,9 +1199,9 @@
    "matches": 12
   },
   "BMY": {
-   "days": 18,
-   "dollar": 1,
-   "matches": 12
+   "days": 19,
+   "dollar": 2,
+   "matches": 13
   },
   "BN": {
    "days": 1,
@@ -1203,9 +1217,9 @@
    "days": 2
   },
   "BNO": {
-   "days": 23,
+   "days": 24,
    "dollar": 2,
-   "matches": 47
+   "matches": 48
   },
   "BNS": {
    "days": 2,
@@ -1232,6 +1246,11 @@
    "dollar": 0,
    "matches": 82
   },
+  "BORR": {
+   "days": 1,
+   "dollar": 1,
+   "matches": 2
+  },
   "BOSS": {
    "days": 6,
    "dollar": 0,
@@ -1243,9 +1262,9 @@
    "matches": 5
   },
   "BP": {
-   "days": 90,
+   "days": 91,
    "dollar": 5,
-   "matches": 76
+   "matches": 77
   },
   "BR": {
    "days": 32,
@@ -1265,21 +1284,21 @@
    "matches": 1
   },
   "BRO": {
-   "days": 62,
+   "days": 63,
    "dollar": 0,
-   "matches": 211
+   "matches": 215
   },
   "BROS": {
-   "days": 9,
+   "days": 10,
    "ratio": 1.067,
    "rated_days": 1,
    "dollar": 9,
-   "matches": 63
+   "matches": 66
   },
   "BSX": {
-   "days": 59,
+   "days": 60,
    "dollar": 2,
-   "matches": 45
+   "matches": 46
   },
   "BTAL": {
    "days": 2
@@ -1332,17 +1351,19 @@
    "matches": 7
   },
   "BULL": {
-   "days": 56,
+   "days": 57,
    "ratio": 1.091,
    "rated_days": 10,
-   "dollar": 108,
-   "matches": 526
+   "dollar": 111,
+   "matches": 534
   },
   "BULZ": {
    "days": 1
   },
   "BW": {
-   "days": 1
+   "days": 2,
+   "dollar": 0,
+   "matches": 1
   },
   "BWXT": {
    "days": 31,
@@ -1355,19 +1376,19 @@
    "matches": 2
   },
   "BY": {
-   "days": 15,
+   "days": 16,
    "dollar": 0,
-   "matches": 135
+   "matches": 141
   },
   "BYD": {
-   "days": 44,
+   "days": 45,
    "ratio": 1.544,
    "rated_days": 2,
    "dollar": 2,
-   "matches": 196
+   "matches": 198
   },
   "BYND": {
-   "days": 20,
+   "days": 21,
    "dollar": 6,
    "matches": 33
   },
@@ -1382,9 +1403,9 @@
    "matches": 5
   },
   "C": {
-   "days": 27,
-   "dollar": 14,
-   "matches": 423
+   "days": 28,
+   "dollar": 15,
+   "matches": 437
   },
   "CAC": {
    "days": 3,
@@ -1426,15 +1447,15 @@
    "days": 3
   },
   "CAN": {
-   "days": 49
+   "days": 50
   },
   "CAPR": {
-   "days": 13,
+   "days": 14,
    "dollar": 4,
-   "matches": 16
+   "matches": 18
   },
   "CAR": {
-   "days": 48,
+   "days": 49,
    "ratio": 0.13,
    "rated_days": 9,
    "dollar": 33,
@@ -1461,11 +1482,11 @@
    "matches": 10
   },
   "CAT": {
-   "days": 101,
+   "days": 102,
    "ratio": 1.136,
    "rated_days": 4,
    "dollar": 25,
-   "matches": 365
+   "matches": 371
   },
   "CAVA": {
    "days": 8,
@@ -1475,7 +1496,7 @@
    "matches": 55
   },
   "CB": {
-   "days": 61,
+   "days": 62,
    "dollar": 1,
    "matches": 37
   },
@@ -1490,7 +1511,7 @@
    "matches": 4
   },
   "CBOE": {
-   "days": 86,
+   "days": 87,
    "dollar": 5,
    "matches": 81
   },
@@ -1505,11 +1526,11 @@
    "matches": 8
   },
   "CBRS": {
-   "days": 23,
+   "days": 24,
    "ratio": 1.125,
-   "rated_days": 1,
-   "dollar": 20,
-   "matches": 181
+   "rated_days": 2,
+   "dollar": 21,
+   "matches": 199
   },
   "CBT": {
    "days": 16,
@@ -1517,11 +1538,11 @@
    "matches": 11
   },
   "CC": {
-   "days": 103,
+   "days": 104,
    "ratio": 0.667,
-   "rated_days": 34,
+   "rated_days": 35,
    "dollar": 3,
-   "matches": 579
+   "matches": 586
   },
   "CCC": {
    "days": 2,
@@ -1534,9 +1555,9 @@
    "matches": 11
   },
   "CCJ": {
-   "days": 13,
+   "days": 14,
    "dollar": 2,
-   "matches": 24
+   "matches": 26
   },
   "CCL": {
    "days": 29,
@@ -1554,9 +1575,9 @@
    "matches": 2
   },
   "CD": {
-   "days": 17,
+   "days": 18,
    "dollar": 0,
-   "matches": 16
+   "matches": 17
   },
   "CDE": {
    "days": 1,
@@ -1587,7 +1608,7 @@
    "matches": 3
   },
   "CE": {
-   "days": 50,
+   "days": 51,
    "ratio": 0.211,
    "rated_days": 4,
    "dollar": 0,
@@ -1604,11 +1625,11 @@
    "days": 2
   },
   "CELH": {
-   "days": 72,
+   "days": 73,
    "ratio": 1.167,
    "rated_days": 5,
-   "dollar": 37,
-   "matches": 288
+   "dollar": 38,
+   "matches": 293
   },
   "CENT": {
    "days": 6,
@@ -1660,7 +1681,7 @@
    "days": 2
   },
   "CHIM": {
-   "days": 2
+   "days": 3
   },
   "CHKP": {
    "days": 5,
@@ -1673,7 +1694,7 @@
    "matches": 41
   },
   "CHWY": {
-   "days": 28,
+   "days": 29,
    "dollar": 2,
    "matches": 18
   },
@@ -1683,9 +1704,9 @@
    "matches": 10
   },
   "CIA": {
-   "days": 37,
+   "days": 38,
    "dollar": 0,
-   "matches": 125
+   "matches": 128
   },
   "CIBR": {
    "days": 5,
@@ -1700,9 +1721,9 @@
    "matches": 36
   },
   "CIFR": {
-   "days": 19,
-   "dollar": 6,
-   "matches": 81
+   "days": 20,
+   "dollar": 8,
+   "matches": 88
   },
   "CIM": {
    "days": 5,
@@ -1715,7 +1736,7 @@
    "matches": 1
   },
   "CL": {
-   "days": 96,
+   "days": 97,
    "dollar": 1,
    "matches": 83
   },
@@ -1740,7 +1761,7 @@
    "matches": 59
   },
   "CLS": {
-   "days": 18,
+   "days": 19,
    "ratio": 0.986,
    "rated_days": 2,
    "dollar": 1,
@@ -1772,11 +1793,11 @@
    "matches": 24
   },
   "CME": {
-   "days": 98,
+   "days": 99,
    "ratio": 1.154,
    "rated_days": 1,
    "dollar": 1,
-   "matches": 147
+   "matches": 151
   },
   "CMG": {
    "days": 88,
@@ -1794,17 +1815,17 @@
    "matches": 17
   },
   "CMS": {
-   "days": 18,
+   "days": 19,
    "dollar": 1,
    "matches": 13
   },
   "CN": {
-   "days": 8,
+   "days": 9,
    "dollar": 0,
-   "matches": 4
+   "matches": 5
   },
   "CNC": {
-   "days": 53,
+   "days": 54,
    "dollar": 1,
    "matches": 31
   },
@@ -1850,21 +1871,21 @@
    "matches": 12
   },
   "COHR": {
-   "days": 61,
+   "days": 62,
    "ratio": 1.368,
    "rated_days": 1,
    "dollar": 10,
-   "matches": 140
+   "matches": 142
   },
   "COIN": {
-   "days": 5,
+   "days": 6,
    "dollar": 16,
-   "matches": 75
+   "matches": 78
   },
   "COKE": {
-   "days": 17,
+   "days": 18,
    "dollar": 2,
-   "matches": 21
+   "matches": 22
   },
   "COLD": {
    "days": 1,
@@ -1877,14 +1898,14 @@
    "matches": 3
   },
   "COO": {
-   "days": 45,
+   "days": 46,
    "dollar": 1,
    "matches": 41
   },
   "COP": {
-   "days": 38,
+   "days": 39,
    "dollar": 2,
-   "matches": 20
+   "matches": 21
   },
   "COR": {
    "days": 6,
@@ -1905,16 +1926,16 @@
    "matches": 13
   },
   "COST": {
-   "days": 94,
+   "days": 95,
    "ratio": 1.1,
    "rated_days": 3,
    "dollar": 29,
-   "matches": 252
+   "matches": 253
   },
   "COTY": {
-   "days": 1,
+   "days": 2,
    "dollar": 1,
-   "matches": 1
+   "matches": 2
   },
   "CP": {
    "days": 14,
@@ -1922,9 +1943,9 @@
    "matches": 10
   },
   "CPA": {
-   "days": 26,
+   "days": 27,
    "dollar": 0,
-   "matches": 36
+   "matches": 37
   },
   "CPB": {
    "days": 39,
@@ -1940,9 +1961,9 @@
    "matches": 2
   },
   "CPRT": {
-   "days": 7,
+   "days": 8,
    "dollar": 1,
-   "matches": 4
+   "matches": 5
   },
   "CPS": {
    "days": 1
@@ -1958,9 +1979,9 @@
    "matches": 2
   },
   "CRAK": {
-   "days": 6,
+   "days": 7,
    "dollar": 1,
-   "matches": 9
+   "matches": 13
   },
   "CRCL": {
    "days": 26,
@@ -1970,11 +1991,16 @@
    "matches": 129
   },
   "CRDO": {
-   "days": 31,
+   "days": 32,
    "ratio": 1.284,
    "rated_days": 4,
-   "dollar": 9,
-   "matches": 266
+   "dollar": 10,
+   "matches": 268
+  },
+  "CRGO": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 3
   },
   "CRH": {
    "days": 4,
@@ -1987,11 +2013,11 @@
    "matches": 8
   },
   "CRM": {
-   "days": 102,
+   "days": 103,
    "ratio": 1.163,
    "rated_days": 14,
-   "dollar": 29,
-   "matches": 769
+   "dollar": 30,
+   "matches": 773
   },
   "CROX": {
    "days": 2,
@@ -2006,11 +2032,11 @@
    "matches": 23
   },
   "CRSR": {
-   "days": 29,
+   "days": 30,
    "ratio": 1.109,
    "rated_days": 10,
    "dollar": 87,
-   "matches": 1623
+   "matches": 1624
   },
   "CRVO": {
    "days": 1,
@@ -2018,25 +2044,25 @@
    "matches": 7
   },
   "CRWD": {
-   "days": 67,
+   "days": 68,
    "ratio": 1.085,
    "rated_days": 6,
-   "dollar": 9,
-   "matches": 360
+   "dollar": 10,
+   "matches": 361
   },
   "CRWV": {
-   "days": 86,
-   "ratio": 1.179,
-   "rated_days": 40,
-   "dollar": 95,
-   "matches": 1212
+   "days": 87,
+   "ratio": 1.182,
+   "rated_days": 41,
+   "dollar": 96,
+   "matches": 1228
   },
   "CSCO": {
-   "days": 74,
-   "ratio": 1.128,
-   "rated_days": 3,
+   "days": 75,
+   "ratio": 1.147,
+   "rated_days": 4,
    "dollar": 25,
-   "matches": 370
+   "matches": 391
   },
   "CSGP": {
    "days": 5,
@@ -2112,9 +2138,9 @@
    "matches": 2
   },
   "CVNA": {
-   "days": 43,
+   "days": 44,
    "dollar": 5,
-   "matches": 131
+   "matches": 132
   },
   "CVS": {
    "days": 70,
@@ -2122,9 +2148,9 @@
    "matches": 56
   },
   "CVX": {
-   "days": 91,
+   "days": 92,
    "dollar": 10,
-   "matches": 184
+   "matches": 185
   },
   "CW": {
    "days": 4
@@ -2181,9 +2207,9 @@
    "matches": 3
   },
   "DASH": {
-   "days": 7,
+   "days": 8,
    "dollar": 5,
-   "matches": 18
+   "matches": 19
   },
   "DAVE": {
    "days": 1,
@@ -2201,11 +2227,11 @@
    "matches": 648
   },
   "DB": {
-   "days": 40,
+   "days": 41,
    "ratio": 0.353,
    "rated_days": 1,
    "dollar": 0,
-   "matches": 19
+   "matches": 20
   },
   "DBA": {
    "days": 2,
@@ -2221,7 +2247,7 @@
    "days": 1
   },
   "DBS": {
-   "days": 3,
+   "days": 4,
    "dollar": 0,
    "matches": 3
   },
@@ -2231,11 +2257,11 @@
    "matches": 4
   },
   "DC": {
-   "days": 65,
+   "days": 66,
    "ratio": 1.132,
    "rated_days": 2,
    "dollar": 0,
-   "matches": 327
+   "matches": 336
   },
   "DD": {
    "days": 2,
@@ -2253,17 +2279,19 @@
    "matches": 1
   },
   "DDM": {
-   "days": 1
+   "days": 2,
+   "dollar": 0,
+   "matches": 1
   },
   "DDOG": {
-   "days": 67,
+   "days": 68,
    "ratio": 1.446,
    "rated_days": 2,
    "dollar": 4,
    "matches": 396
   },
   "DE": {
-   "days": 87,
+   "days": 88,
    "dollar": 11,
    "matches": 71
   },
@@ -2286,18 +2314,18 @@
    "days": 1
   },
   "DEI": {
-   "days": 33,
+   "days": 34,
    "ratio": 1.059,
    "rated_days": 1,
    "dollar": 0,
-   "matches": 87
+   "matches": 88
   },
   "DELL": {
-   "days": 89,
+   "days": 90,
    "ratio": 1.177,
    "rated_days": 17,
-   "dollar": 83,
-   "matches": 1338
+   "dollar": 87,
+   "matches": 1346
   },
   "DEO": {
    "days": 3,
@@ -2321,7 +2349,7 @@
    "matches": 79
   },
   "DG": {
-   "days": 45,
+   "days": 46,
    "ratio": 1.154,
    "rated_days": 1,
    "dollar": 1,
@@ -2348,9 +2376,9 @@
    "matches": 2
   },
   "DIA": {
-   "days": 8,
+   "days": 9,
    "dollar": 0,
-   "matches": 9
+   "matches": 10
   },
   "DIOD": {
    "days": 2,
@@ -2358,16 +2386,16 @@
    "matches": 1
   },
   "DIS": {
-   "days": 97,
+   "days": 98,
    "dollar": 17,
-   "matches": 149
+   "matches": 150
   },
   "DJT": {
-   "days": 84,
+   "days": 85,
    "ratio": 1.158,
    "rated_days": 11,
-   "dollar": 43,
-   "matches": 637
+   "dollar": 46,
+   "matches": 647
   },
   "DK": {
    "days": 8,
@@ -2380,17 +2408,17 @@
    "matches": 4
   },
   "DKNG": {
-   "days": 41,
+   "days": 42,
    "dollar": 9,
-   "matches": 53
+   "matches": 54
   },
   "DKS": {
-   "days": 5,
+   "days": 6,
    "dollar": 1,
-   "matches": 3
+   "matches": 4
   },
   "DLO": {
-   "days": 1
+   "days": 2
   },
   "DLR": {
    "days": 18,
@@ -2403,16 +2431,16 @@
    "matches": 9
   },
   "DNA": {
-   "days": 23,
+   "days": 24,
    "ratio": 1.0,
    "rated_days": 1,
    "dollar": 1,
    "matches": 64
   },
   "DNN": {
-   "days": 7,
+   "days": 8,
    "dollar": 0,
-   "matches": 8
+   "matches": 9
   },
   "DNUT": {
    "days": 17,
@@ -2452,9 +2480,9 @@
    "days": 2
   },
   "DON": {
-   "days": 29,
+   "days": 30,
    "dollar": 0,
-   "matches": 129
+   "matches": 131
   },
   "DOOO": {
    "days": 4,
@@ -2462,11 +2490,11 @@
    "matches": 2
   },
   "DOW": {
-   "days": 102,
+   "days": 103,
    "ratio": 1.177,
    "rated_days": 13,
    "dollar": 2,
-   "matches": 590
+   "matches": 594
   },
   "DPZ": {
    "days": 14,
@@ -2489,9 +2517,9 @@
    "matches": 6
   },
   "DRIP": {
-   "days": 14,
+   "days": 15,
    "dollar": 0,
-   "matches": 10
+   "matches": 11
   },
   "DRS": {
    "days": 4,
@@ -2509,24 +2537,24 @@
    "matches": 1
   },
   "DS": {
-   "days": 14,
+   "days": 15,
    "dollar": 0,
    "matches": 10
   },
   "DT": {
-   "days": 27,
+   "days": 28,
    "dollar": 0,
    "matches": 40
   },
   "DTE": {
-   "days": 103,
-   "ratio": 0.111,
-   "rated_days": 103,
+   "days": 104,
+   "ratio": 0.113,
+   "rated_days": 104,
    "dollar": 1,
-   "matches": 648
+   "matches": 656
   },
   "DUK": {
-   "days": 7,
+   "days": 8,
    "dollar": 0,
    "matches": 2
   },
@@ -2538,6 +2566,9 @@
    "matches": 97
   },
   "DUST": {
+   "days": 1
+  },
+  "DV": {
    "days": 1
   },
   "DVA": {
@@ -2556,7 +2587,7 @@
    "matches": 1
   },
   "DX": {
-   "days": 2,
+   "days": 3,
    "dollar": 0,
    "matches": 1
   },
@@ -2574,7 +2605,7 @@
    "matches": 4
   },
   "EA": {
-   "days": 78,
+   "days": 79,
    "dollar": 2,
    "matches": 54
   },
@@ -2603,7 +2634,7 @@
    "matches": 105
   },
   "EC": {
-   "days": 42,
+   "days": 43,
    "dollar": 0,
    "matches": 44
   },
@@ -2628,7 +2659,7 @@
    "matches": 1
   },
   "EDIT": {
-   "days": 46,
+   "days": 47,
    "ratio": 0.9,
    "rated_days": 1,
    "dollar": 0,
@@ -2650,12 +2681,12 @@
    "matches": 10
   },
   "EET": {
-   "days": 8,
+   "days": 9,
    "dollar": 0,
-   "matches": 6
+   "matches": 7
   },
   "EFA": {
-   "days": 1,
+   "days": 2,
    "dollar": 0,
    "matches": 1
   },
@@ -2688,7 +2719,7 @@
    "matches": 2
   },
   "ELF": {
-   "days": 31,
+   "days": 32,
    "ratio": 1.206,
    "rated_days": 2,
    "dollar": 13,
@@ -2787,12 +2818,17 @@
    "dollar": 5,
    "matches": 8
   },
+  "ERIE": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 1
+  },
   "ES": {
-   "days": 103,
+   "days": 104,
    "ratio": 1.077,
    "rated_days": 14,
    "dollar": 2,
-   "matches": 587
+   "matches": 588
   },
   "ESG": {
    "days": 8,
@@ -2822,11 +2858,11 @@
    "matches": 1
   },
   "ET": {
-   "days": 83,
+   "days": 84,
    "ratio": 0.902,
    "rated_days": 3,
    "dollar": 5,
-   "matches": 459
+   "matches": 468
   },
   "ETN": {
    "days": 50,
@@ -2837,21 +2873,21 @@
    "days": 1
   },
   "EU": {
-   "days": 96,
+   "days": 97,
    "ratio": 1.1,
-   "rated_days": 36,
+   "rated_days": 37,
    "dollar": 0,
-   "matches": 1212
+   "matches": 1225
   },
   "EURL": {
-   "days": 6,
+   "days": 7,
    "dollar": 0,
    "matches": 5
   },
   "EVER": {
-   "days": 44,
+   "days": 45,
    "dollar": 1,
-   "matches": 258
+   "matches": 260
   },
   "EVTC": {
    "days": 3,
@@ -2880,11 +2916,11 @@
    "days": 1
   },
   "EWY": {
-   "days": 61,
+   "days": 62,
    "ratio": 1.194,
    "rated_days": 6,
    "dollar": 15,
-   "matches": 326
+   "matches": 327
   },
   "EWZ": {
    "days": 2
@@ -2900,7 +2936,9 @@
    "matches": 3
   },
   "EXEL": {
-   "days": 1
+   "days": 2,
+   "dollar": 0,
+   "matches": 1
   },
   "EXLS": {
    "days": 3,
@@ -2926,17 +2964,17 @@
    "matches": 5
   },
   "EYE": {
-   "days": 12,
+   "days": 13,
    "dollar": 0,
-   "matches": 6
+   "matches": 8
   },
   "EZPW": {
-   "days": 8,
+   "days": 9,
    "dollar": 0,
-   "matches": 3
+   "matches": 4
   },
   "EZU": {
-   "days": 1,
+   "days": 2,
    "dollar": 0,
    "matches": 1
   },
@@ -2951,9 +2989,9 @@
    "matches": 23
   },
   "FAB": {
-   "days": 2,
+   "days": 3,
    "dollar": 0,
-   "matches": 2
+   "matches": 3
   },
   "FAN": {
    "days": 3,
@@ -2961,9 +2999,9 @@
    "matches": 2
   },
   "FANG": {
-   "days": 55,
+   "days": 56,
    "dollar": 3,
-   "matches": 58
+   "matches": 59
   },
   "FAS": {
    "days": 5,
@@ -2971,11 +3009,11 @@
    "matches": 5
   },
   "FAST": {
-   "days": 82,
+   "days": 83,
    "ratio": 1.2,
    "rated_days": 1,
    "dollar": 1,
-   "matches": 114
+   "matches": 116
   },
   "FC": {
    "days": 1
@@ -2986,18 +3024,18 @@
    "matches": 1
   },
   "FCEL": {
-   "days": 36,
+   "days": 37,
    "ratio": 2.341,
    "rated_days": 2,
    "dollar": 8,
-   "matches": 200
+   "matches": 201
   },
   "FCF": {
-   "days": 55,
+   "days": 56,
    "ratio": 1.1,
    "rated_days": 5,
    "dollar": 0,
-   "matches": 361
+   "matches": 363
   },
   "FCFS": {
    "days": 1
@@ -3018,7 +3056,7 @@
    "matches": 23
   },
   "FE": {
-   "days": 14,
+   "days": 15,
    "dollar": 1,
    "matches": 4
   },
@@ -3066,7 +3104,7 @@
    "matches": 848
   },
   "FILL": {
-   "days": 1,
+   "days": 2,
    "dollar": 0,
    "matches": 1
   },
@@ -3081,17 +3119,17 @@
    "matches": 24
   },
   "FIVE": {
-   "days": 22,
+   "days": 23,
    "dollar": 0,
-   "matches": 13
+   "matches": 15
   },
   "FIVN": {
    "days": 2
   },
   "FIX": {
-   "days": 34,
+   "days": 35,
    "dollar": 8,
-   "matches": 42
+   "matches": 43
   },
   "FLEX": {
    "days": 21,
@@ -3111,7 +3149,7 @@
    "matches": 85
   },
   "FLO": {
-   "days": 4,
+   "days": 5,
    "dollar": 2,
    "matches": 4
   },
@@ -3126,11 +3164,11 @@
    "matches": 1
   },
   "FLY": {
-   "days": 45,
+   "days": 46,
    "ratio": 1.2,
    "rated_days": 2,
-   "dollar": 19,
-   "matches": 243
+   "dollar": 20,
+   "matches": 244
   },
   "FM": {
    "days": 14,
@@ -3153,9 +3191,9 @@
    "matches": 1
   },
   "FN": {
-   "days": 3,
+   "days": 4,
    "dollar": 1,
-   "matches": 6
+   "matches": 9
   },
   "FNMA": {
    "days": 1,
@@ -3173,7 +3211,7 @@
    "matches": 1
   },
   "FOR": {
-   "days": 85,
+   "days": 86,
    "ratio": 0.0,
    "rated_days": 17
   },
@@ -3198,9 +3236,9 @@
    "matches": 65
   },
   "FPE": {
-   "days": 13,
+   "days": 14,
    "dollar": 0,
-   "matches": 15
+   "matches": 16
   },
   "FPS": {
    "days": 8,
@@ -3223,9 +3261,9 @@
    "matches": 7
   },
   "FRMI": {
-   "days": 7,
+   "days": 8,
    "dollar": 2,
-   "matches": 32
+   "matches": 35
   },
   "FRO": {
    "days": 2,
@@ -3237,6 +3275,11 @@
   },
   "FRPT": {
    "days": 1
+  },
+  "FRSH": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 1
   },
   "FRT": {
    "days": 6,
@@ -3289,9 +3332,9 @@
    "matches": 1
   },
   "FTW": {
-   "days": 8,
+   "days": 9,
    "dollar": 0,
-   "matches": 29
+   "matches": 32
   },
   "FTXL": {
    "days": 3,
@@ -3302,9 +3345,9 @@
    "days": 1
   },
   "FUN": {
-   "days": 9,
+   "days": 10,
    "dollar": 2,
-   "matches": 7
+   "matches": 8
   },
   "FUTU": {
    "days": 5,
@@ -3370,7 +3413,7 @@
    "matches": 7
   },
   "GDX": {
-   "days": 22,
+   "days": 23,
    "dollar": 2,
    "matches": 30
   },
@@ -3385,7 +3428,7 @@
    "matches": 2
   },
   "GE": {
-   "days": 102,
+   "days": 103,
    "dollar": 12,
    "matches": 190
   },
@@ -3441,7 +3484,7 @@
    "matches": 1
   },
   "GH": {
-   "days": 23,
+   "days": 24,
    "dollar": 1,
    "matches": 12
   },
@@ -3464,26 +3507,26 @@
    "matches": 1
   },
   "GIS": {
-   "days": 52,
+   "days": 53,
    "dollar": 3,
    "matches": 63
   },
   "GL": {
-   "days": 102,
+   "days": 103,
    "ratio": 1.1,
    "rated_days": 3,
    "dollar": 0,
-   "matches": 410
+   "matches": 417
   },
   "GLAD": {
    "days": 1
   },
   "GLD": {
-   "days": 79,
+   "days": 80,
    "ratio": 1.167,
    "rated_days": 7,
    "dollar": 20,
-   "matches": 480
+   "matches": 492
   },
   "GLOB": {
    "days": 1
@@ -3504,11 +3547,11 @@
    "matches": 3
   },
   "GLW": {
-   "days": 93,
+   "days": 94,
    "ratio": 1.155,
    "rated_days": 8,
    "dollar": 40,
-   "matches": 379
+   "matches": 380
   },
   "GM": {
    "days": 99,
@@ -3521,47 +3564,47 @@
    "matches": 1
   },
   "GME": {
-   "days": 43,
+   "days": 44,
    "ratio": 1.109,
    "rated_days": 4,
    "dollar": 5,
    "matches": 319
   },
   "GO": {
-   "days": 93,
+   "days": 94,
    "ratio": 0.0,
    "rated_days": 7,
    "dollar": 5,
    "matches": 5
   },
   "GOAT": {
-   "days": 55,
+   "days": 56,
    "ratio": 1.25,
    "rated_days": 1,
    "dollar": 1,
-   "matches": 219
+   "matches": 221
   },
   "GOLD": {
-   "days": 26,
+   "days": 27,
    "dollar": 1,
-   "matches": 60
+   "matches": 63
   },
   "GOOG": {
-   "days": 103,
-   "ratio": 1.107,
-   "rated_days": 77,
-   "dollar": 183,
-   "matches": 4415
+   "days": 104,
+   "ratio": 1.108,
+   "rated_days": 78,
+   "dollar": 184,
+   "matches": 4493
   },
   "GOOGL": {
-   "days": 97,
-   "ratio": 1.109,
-   "rated_days": 69,
-   "dollar": 167,
-   "matches": 3569
+   "days": 98,
+   "ratio": 1.111,
+   "rated_days": 70,
+   "dollar": 169,
+   "matches": 3618
   },
   "GP": {
-   "days": 3,
+   "days": 4,
    "dollar": 0,
    "matches": 9
   },
@@ -3577,9 +3620,9 @@
    "days": 1
   },
   "GPS": {
-   "days": 76,
+   "days": 77,
    "dollar": 0,
-   "matches": 86
+   "matches": 87
   },
   "GRAB": {
    "days": 7,
@@ -3665,9 +3708,9 @@
    "matches": 1
   },
   "GUSH": {
-   "days": 7,
+   "days": 8,
    "dollar": 0,
-   "matches": 5
+   "matches": 6
   },
   "GWRE": {
    "days": 1,
@@ -3675,7 +3718,7 @@
    "matches": 5
   },
   "GWW": {
-   "days": 2,
+   "days": 3,
    "dollar": 0,
    "matches": 1
   },
@@ -3690,9 +3733,9 @@
    "matches": 8
   },
   "HALO": {
-   "days": 11,
+   "days": 12,
    "dollar": 0,
-   "matches": 3
+   "matches": 4
   },
   "HAO": {
    "days": 1,
@@ -3700,7 +3743,7 @@
    "matches": 3
   },
   "HAS": {
-   "days": 99,
+   "days": 100,
    "dollar": 2,
    "matches": 2
   },
@@ -3710,11 +3753,11 @@
    "matches": 1
   },
   "HBM": {
-   "days": 87,
+   "days": 88,
    "ratio": 1.0,
    "rated_days": 28,
    "dollar": 1,
-   "matches": 692
+   "matches": 698
   },
   "HCA": {
    "days": 21,
@@ -3722,11 +3765,11 @@
    "matches": 13
   },
   "HD": {
-   "days": 90,
+   "days": 91,
    "ratio": 1.053,
    "rated_days": 2,
    "dollar": 6,
-   "matches": 189
+   "matches": 195
   },
   "HDB": {
    "days": 2,
@@ -3734,14 +3777,14 @@
    "matches": 1
   },
   "HE": {
-   "days": 59,
+   "days": 60,
    "dollar": 0,
-   "matches": 343
+   "matches": 350
   },
   "HEAR": {
-   "days": 4,
+   "days": 5,
    "dollar": 0,
-   "matches": 2
+   "matches": 4
   },
   "HELP": {
    "days": 4,
@@ -3764,16 +3807,16 @@
    "matches": 1
   },
   "HII": {
-   "days": 18,
+   "days": 19,
    "dollar": 0,
-   "matches": 7
+   "matches": 8
   },
   "HIMS": {
-   "days": 46,
+   "days": 47,
    "ratio": 1.091,
    "rated_days": 5,
    "dollar": 56,
-   "matches": 435
+   "matches": 439
   },
   "HIMX": {
    "days": 5,
@@ -3781,14 +3824,14 @@
    "matches": 21
   },
   "HIVE": {
-   "days": 21,
-   "ratio": 1.225,
-   "rated_days": 4,
-   "dollar": 22,
-   "matches": 193
+   "days": 22,
+   "ratio": 1.273,
+   "rated_days": 5,
+   "dollar": 24,
+   "matches": 216
   },
   "HL": {
-   "days": 40,
+   "days": 41,
    "dollar": 1,
    "matches": 34
   },
@@ -3826,19 +3869,19 @@
    "matches": 15
   },
   "HOOD": {
-   "days": 101,
-   "ratio": 1.111,
-   "rated_days": 73,
-   "dollar": 333,
-   "matches": 2785
+   "days": 102,
+   "ratio": 1.11,
+   "rated_days": 74,
+   "dollar": 334,
+   "matches": 2800
   },
   "HOPE": {
-   "days": 3
+   "days": 4
   },
   "HOUR": {
-   "days": 10,
+   "days": 11,
    "dollar": 0,
-   "matches": 54
+   "matches": 56
   },
   "HOV": {
    "days": 3,
@@ -3846,11 +3889,11 @@
    "matches": 2
   },
   "HP": {
-   "days": 26,
+   "days": 27,
    "ratio": 1.167,
    "rated_days": 5,
    "dollar": 0,
-   "matches": 170
+   "matches": 171
   },
   "HPE": {
    "days": 94,
@@ -3872,11 +3915,11 @@
    "matches": 149
   },
   "HR": {
-   "days": 70,
+   "days": 71,
    "ratio": 1.167,
    "rated_days": 1,
    "dollar": 0,
-   "matches": 201
+   "matches": 203
   },
   "HRB": {
    "days": 3,
@@ -3908,12 +3951,17 @@
    "dollar": 2,
    "matches": 5
   },
+  "HTHT": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 4
+  },
   "HTZ": {
-   "days": 17,
-   "ratio": 1.125,
-   "rated_days": 6,
-   "dollar": 438,
-   "matches": 2696
+   "days": 18,
+   "ratio": 1.131,
+   "rated_days": 7,
+   "dollar": 450,
+   "matches": 2753
   },
   "HTZZ": {
    "days": 1
@@ -3956,14 +4004,14 @@
    "matches": 9
   },
   "HY": {
-   "days": 11,
+   "days": 12,
    "ratio": 0.583,
    "rated_days": 1,
    "dollar": 0,
    "matches": 15
   },
   "HYG": {
-   "days": 6,
+   "days": 7,
    "dollar": 0,
    "matches": 4
   },
@@ -4022,18 +4070,18 @@
    "matches": 1
   },
   "IBKR": {
-   "days": 89,
+   "days": 90,
    "ratio": 1.222,
    "rated_days": 9,
    "dollar": 2,
-   "matches": 518
+   "matches": 524
   },
   "IBM": {
-   "days": 102,
+   "days": 103,
    "ratio": 1.125,
    "rated_days": 41,
    "dollar": 175,
-   "matches": 3401
+   "matches": 3404
   },
   "IBRX": {
    "days": 8,
@@ -4041,9 +4089,9 @@
    "matches": 18
   },
   "ICE": {
-   "days": 98,
+   "days": 99,
    "dollar": 2,
-   "matches": 216
+   "matches": 217
   },
   "ICHR": {
    "days": 1
@@ -4101,11 +4149,11 @@
    "matches": 1
   },
   "IG": {
-   "days": 53,
+   "days": 54,
    "ratio": 1.132,
    "rated_days": 2,
    "dollar": 0,
-   "matches": 173
+   "matches": 175
   },
   "IGE": {
    "days": 2
@@ -4119,11 +4167,11 @@
    "matches": 1
   },
   "IGV": {
-   "days": 49,
+   "days": 50,
    "ratio": 1.091,
    "rated_days": 5,
    "dollar": 11,
-   "matches": 269
+   "matches": 271
   },
   "IH": {
    "days": 3
@@ -4137,9 +4185,9 @@
    "days": 1
   },
   "III": {
-   "days": 24,
+   "days": 25,
    "dollar": 0,
-   "matches": 26
+   "matches": 27
   },
   "IJH": {
    "days": 1,
@@ -4152,9 +4200,9 @@
    "matches": 35
   },
   "IMAX": {
-   "days": 14,
+   "days": 15,
    "dollar": 4,
-   "matches": 60
+   "matches": 63
   },
   "INDI": {
    "days": 5,
@@ -4167,9 +4215,11 @@
    "matches": 9
   },
   "INFQ": {
-   "days": 2,
+   "days": 3,
+   "ratio": 1.6,
+   "rated_days": 1,
    "dollar": 0,
-   "matches": 13
+   "matches": 29
   },
   "INGR": {
    "days": 2
@@ -4195,11 +4245,11 @@
    "days": 2
   },
   "INTC": {
-   "days": 102,
+   "days": 103,
    "ratio": 1.143,
    "rated_days": 73,
    "dollar": 208,
-   "matches": 4178
+   "matches": 4187
   },
   "INTL": {
    "days": 8,
@@ -4207,18 +4257,18 @@
    "matches": 19
   },
   "INTU": {
-   "days": 93,
+   "days": 94,
    "ratio": 1.154,
    "rated_days": 9,
    "dollar": 15,
-   "matches": 463
+   "matches": 465
   },
   "IONQ": {
-   "days": 50,
+   "days": 51,
    "ratio": 1.118,
    "rated_days": 7,
    "dollar": 22,
-   "matches": 392
+   "matches": 394
   },
   "IOT": {
    "days": 4,
@@ -4228,16 +4278,16 @@
    "matches": 26
   },
   "IOVA": {
-   "days": 18,
+   "days": 19,
    "dollar": 3,
-   "matches": 24
+   "matches": 28
   },
   "IP": {
-   "days": 101,
+   "days": 102,
    "ratio": 1.0,
    "rated_days": 5,
    "dollar": 1,
-   "matches": 408
+   "matches": 410
   },
   "IPGP": {
    "days": 5,
@@ -4255,11 +4305,11 @@
    "matches": 4
   },
   "IQ": {
-   "days": 102,
+   "days": 103,
    "ratio": 1.091,
    "rated_days": 21,
    "dollar": 2,
-   "matches": 764
+   "matches": 773
   },
   "IQV": {
    "days": 1
@@ -4275,11 +4325,11 @@
    "matches": 14
   },
   "IREN": {
-   "days": 87,
+   "days": 88,
    "ratio": 1.2,
    "rated_days": 29,
-   "dollar": 88,
-   "matches": 1314
+   "dollar": 91,
+   "matches": 1322
   },
   "IRM": {
    "days": 23,
@@ -4294,7 +4344,7 @@
    "matches": 67
   },
   "IT": {
-   "days": 103,
+   "days": 104,
    "ratio": 0.0,
    "rated_days": 74,
    "dollar": 4,
@@ -4321,7 +4371,7 @@
    "matches": 1
   },
   "ITT": {
-   "days": 23,
+   "days": 24,
    "dollar": 0,
    "matches": 16
   },
@@ -4331,9 +4381,9 @@
    "matches": 4
   },
   "IVV": {
-   "days": 4,
+   "days": 5,
    "dollar": 0,
-   "matches": 1
+   "matches": 2
   },
   "IVZ": {
    "days": 5,
@@ -4346,11 +4396,11 @@
    "matches": 7
   },
   "IWM": {
-   "days": 76,
+   "days": 77,
    "ratio": 1.167,
    "rated_days": 24,
    "dollar": 10,
-   "matches": 762
+   "matches": 770
   },
   "IXN": {
    "days": 1,
@@ -4365,7 +4415,9 @@
    "matches": 240
   },
   "JAN": {
-   "days": 1
+   "days": 2,
+   "dollar": 0,
+   "matches": 1
   },
   "JBGS": {
    "days": 1,
@@ -4383,9 +4435,9 @@
    "matches": 11
   },
   "JBLU": {
-   "days": 11,
+   "days": 12,
    "dollar": 0,
-   "matches": 12
+   "matches": 13
   },
   "JBS": {
    "days": 3,
@@ -4398,16 +4450,16 @@
    "matches": 2
   },
   "JD": {
-   "days": 56,
+   "days": 57,
    "ratio": 1.042,
    "rated_days": 7,
    "dollar": 1,
-   "matches": 352
+   "matches": 353
   },
   "JEPI": {
-   "days": 10,
+   "days": 11,
    "dollar": 0,
-   "matches": 6
+   "matches": 7
   },
   "JETS": {
    "days": 2,
@@ -4415,7 +4467,7 @@
    "matches": 1
   },
   "JKHY": {
-   "days": 1,
+   "days": 2,
    "dollar": 0,
    "matches": 1
   },
@@ -4430,14 +4482,14 @@
    "matches": 62
   },
   "JNK": {
-   "days": 5,
+   "days": 6,
    "dollar": 0,
    "matches": 3
   },
   "JNUG": {
-   "days": 9,
+   "days": 10,
    "dollar": 1,
-   "matches": 19
+   "matches": 21
   },
   "JOB": {
    "days": 1,
@@ -4445,9 +4497,9 @@
    "matches": 4
   },
   "JOBY": {
-   "days": 12,
+   "days": 13,
    "dollar": 6,
-   "matches": 40
+   "matches": 41
   },
   "JOE": {
    "days": 2,
@@ -4455,11 +4507,11 @@
    "matches": 1
   },
   "JPM": {
-   "days": 100,
+   "days": 101,
    "ratio": 0.937,
    "rated_days": 20,
    "dollar": 18,
-   "matches": 813
+   "matches": 815
   },
   "JPN": {
    "days": 3,
@@ -4467,11 +4519,11 @@
    "matches": 1
   },
   "JUST": {
-   "days": 89,
+   "days": 90,
    "ratio": 2.727,
    "rated_days": 7,
    "dollar": 0,
-   "matches": 1673
+   "matches": 1694
   },
   "KB": {
    "days": 7,
@@ -4504,11 +4556,11 @@
    "matches": 2
   },
   "KEEL": {
-   "days": 35,
-   "ratio": 1.167,
-   "rated_days": 5,
-   "dollar": 33,
-   "matches": 273
+   "days": 36,
+   "ratio": 1.174,
+   "rated_days": 6,
+   "dollar": 42,
+   "matches": 299
   },
   "KEN": {
    "days": 1
@@ -4524,16 +4576,16 @@
    "matches": 10
   },
   "KEYS": {
-   "days": 16,
+   "days": 17,
    "ratio": 1.25,
    "rated_days": 1,
    "dollar": 1,
-   "matches": 34
+   "matches": 36
   },
   "KG": {
-   "days": 1,
+   "days": 2,
    "dollar": 0,
-   "matches": 1
+   "matches": 4
   },
   "KGC": {
    "days": 4,
@@ -4554,9 +4606,9 @@
    "matches": 10
   },
   "KIND": {
-   "days": 2,
+   "days": 3,
    "dollar": 0,
-   "matches": 3
+   "matches": 4
   },
   "KKR": {
    "days": 5,
@@ -4569,17 +4621,19 @@
    "matches": 111
   },
   "KLAR": {
-   "days": 6,
+   "days": 7,
+   "ratio": 1.417,
+   "rated_days": 1,
    "dollar": 4,
-   "matches": 33
+   "matches": 50
   },
   "KLC": {
    "days": 1
   },
   "KMB": {
-   "days": 38,
+   "days": 39,
    "dollar": 1,
-   "matches": 14
+   "matches": 15
   },
   "KMI": {
    "days": 8,
@@ -4605,17 +4659,17 @@
    "days": 1
   },
   "KO": {
-   "days": 100,
+   "days": 101,
    "ratio": 1.108,
    "rated_days": 4,
    "dollar": 34,
-   "matches": 320
+   "matches": 321
   },
   "KOD": {
    "days": 1
   },
   "KODK": {
-   "days": 4,
+   "days": 5,
    "dollar": 1,
    "matches": 4
   },
@@ -4635,14 +4689,16 @@
    "matches": 6
   },
   "KORU": {
-   "days": 64,
+   "days": 65,
    "ratio": 1.158,
    "rated_days": 13,
    "dollar": 30,
-   "matches": 495
+   "matches": 498
   },
   "KOS": {
-   "days": 1
+   "days": 2,
+   "dollar": 0,
+   "matches": 1
   },
   "KR": {
    "days": 59,
@@ -4702,7 +4758,7 @@
    "matches": 13
   },
   "LAD": {
-   "days": 5,
+   "days": 6,
    "dollar": 0,
    "matches": 2
   },
@@ -4769,9 +4825,9 @@
    "days": 1
   },
   "LEE": {
-   "days": 3,
+   "days": 4,
    "dollar": 0,
-   "matches": 9
+   "matches": 10
   },
   "LEG": {
    "days": 22,
@@ -4799,7 +4855,7 @@
    "matches": 11
   },
   "LGIH": {
-   "days": 1,
+   "days": 2,
    "dollar": 0,
    "matches": 1
   },
@@ -4809,9 +4865,9 @@
    "matches": 3
   },
   "LHX": {
-   "days": 9,
+   "days": 10,
    "dollar": 1,
-   "matches": 3
+   "matches": 4
   },
   "LI": {
    "days": 8,
@@ -4819,9 +4875,9 @@
    "matches": 2
   },
   "LIFE": {
-   "days": 17,
+   "days": 18,
    "dollar": 0,
-   "matches": 72
+   "matches": 74
   },
   "LII": {
    "days": 4,
@@ -4839,11 +4895,11 @@
    "matches": 14
   },
   "LINK": {
-   "days": 99,
+   "days": 100,
    "ratio": 1.191,
    "rated_days": 14,
    "dollar": 0,
-   "matches": 879
+   "matches": 889
   },
   "LION": {
    "days": 1,
@@ -4854,11 +4910,11 @@
    "days": 2
   },
   "LITE": {
-   "days": 92,
+   "days": 93,
    "ratio": 1.167,
    "rated_days": 13,
-   "dollar": 74,
-   "matches": 529
+   "dollar": 76,
+   "matches": 532
   },
   "LIVE": {
    "days": 1,
@@ -4866,7 +4922,7 @@
    "matches": 4
   },
   "LLY": {
-   "days": 98,
+   "days": 99,
    "ratio": 1.029,
    "rated_days": 2,
    "dollar": 36,
@@ -4883,16 +4939,16 @@
    "matches": 3
   },
   "LMT": {
-   "days": 94,
+   "days": 95,
    "dollar": 12,
    "matches": 169
   },
   "LNG": {
-   "days": 40,
+   "days": 41,
    "ratio": 1.154,
    "rated_days": 1,
    "dollar": 2,
-   "matches": 106
+   "matches": 108
   },
   "LOCO": {
    "days": 2,
@@ -4915,12 +4971,12 @@
    "matches": 302
   },
   "LOVE": {
-   "days": 57,
+   "days": 58,
    "dollar": 1,
    "matches": 1
   },
   "LOW": {
-   "days": 81,
+   "days": 82,
    "dollar": 2,
    "matches": 2
   },
@@ -4950,11 +5006,11 @@
    "matches": 8
   },
   "LRCX": {
-   "days": 88,
+   "days": 89,
    "ratio": 1.227,
    "rated_days": 2,
    "dollar": 15,
-   "matches": 157
+   "matches": 158
   },
   "LSAT": {
    "days": 3,
@@ -4996,16 +5052,16 @@
    "matches": 7
   },
   "LULU": {
-   "days": 92,
+   "days": 93,
    "ratio": 1.083,
    "rated_days": 9,
    "dollar": 56,
-   "matches": 711
+   "matches": 716
   },
   "LUMN": {
-   "days": 10,
+   "days": 11,
    "dollar": 3,
-   "matches": 14
+   "matches": 15
   },
   "LUNA": {
    "days": 6,
@@ -5013,11 +5069,11 @@
    "matches": 3
   },
   "LUNR": {
-   "days": 80,
+   "days": 81,
    "ratio": 1.12,
    "rated_days": 40,
    "dollar": 48,
-   "matches": 1881
+   "matches": 1891
   },
   "LUV": {
    "days": 16,
@@ -5050,7 +5106,7 @@
    "matches": 4
   },
   "LYFT": {
-   "days": 19,
+   "days": 20,
    "dollar": 2,
    "matches": 16
   },
@@ -5070,11 +5126,11 @@
    "matches": 252
   },
   "MA": {
-   "days": 99,
+   "days": 100,
    "ratio": 0.8,
    "rated_days": 3,
    "dollar": 3,
-   "matches": 250
+   "matches": 253
   },
   "MAA": {
    "days": 12,
@@ -5087,7 +5143,7 @@
    "matches": 4
   },
   "MAGA": {
-   "days": 8,
+   "days": 9,
    "dollar": 0,
    "matches": 2
   },
@@ -5168,16 +5224,16 @@
    "matches": 1
   },
   "MC": {
-   "days": 41,
+   "days": 42,
    "dollar": 0,
-   "matches": 136
+   "matches": 139
   },
   "MCD": {
-   "days": 99,
+   "days": 100,
    "ratio": 1.077,
    "rated_days": 3,
    "dollar": 12,
-   "matches": 314
+   "matches": 317
   },
   "MCHI": {
    "days": 1
@@ -5201,7 +5257,7 @@
    "days": 1
   },
   "MD": {
-   "days": 22,
+   "days": 23,
    "dollar": 0,
    "matches": 22
   },
@@ -5228,9 +5284,9 @@
    "matches": 4
   },
   "MDT": {
-   "days": 34,
+   "days": 35,
    "dollar": 0,
-   "matches": 15
+   "matches": 16
   },
   "MDU": {
    "days": 2
@@ -5246,11 +5302,11 @@
    "matches": 4
   },
   "META": {
-   "days": 103,
-   "ratio": 1.104,
-   "rated_days": 88,
-   "dollar": 346,
-   "matches": 6842
+   "days": 104,
+   "ratio": 1.103,
+   "rated_days": 89,
+   "dollar": 350,
+   "matches": 6949
   },
   "METC": {
    "days": 7,
@@ -5294,7 +5350,7 @@
    "matches": 21
   },
   "MID": {
-   "days": 6,
+   "days": 7,
    "dollar": 0,
    "matches": 2
   },
@@ -5321,9 +5377,14 @@
    "matches": 3
   },
   "MLM": {
-   "days": 47,
+   "days": 48,
    "dollar": 0,
    "matches": 22
+  },
+  "MLN": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 2
   },
   "MMA": {
    "days": 9,
@@ -5336,9 +5397,9 @@
    "matches": 14
   },
   "MMS": {
-   "days": 37,
+   "days": 38,
    "dollar": 0,
-   "matches": 35
+   "matches": 37
   },
   "MNDY": {
    "days": 8,
@@ -5356,7 +5417,7 @@
    "matches": 1
   },
   "MNST": {
-   "days": 38,
+   "days": 39,
    "dollar": 1,
    "matches": 26
   },
@@ -5364,9 +5425,9 @@
    "days": 1
   },
   "MO": {
-   "days": 99,
+   "days": 100,
    "dollar": 4,
-   "matches": 95
+   "matches": 97
   },
   "MOAT": {
    "days": 10,
@@ -5374,7 +5435,7 @@
    "matches": 15
   },
   "MOD": {
-   "days": 8,
+   "days": 9,
    "dollar": 2,
    "matches": 21
   },
@@ -5409,11 +5470,11 @@
    "matches": 32
   },
   "MP": {
-   "days": 36,
+   "days": 37,
    "ratio": 1.21,
    "rated_days": 3,
    "dollar": 14,
-   "matches": 165
+   "matches": 172
   },
   "MPC": {
    "days": 31,
@@ -5433,7 +5494,7 @@
    "matches": 356
   },
   "MRCY": {
-   "days": 1,
+   "days": 2,
    "dollar": 0,
    "matches": 1
   },
@@ -5448,25 +5509,25 @@
    "matches": 8
   },
   "MRNA": {
-   "days": 56,
+   "days": 57,
    "ratio": 1.202,
    "rated_days": 2,
    "dollar": 8,
-   "matches": 100
+   "matches": 103
   },
   "MRVL": {
-   "days": 101,
+   "days": 102,
    "ratio": 1.111,
-   "rated_days": 54,
-   "dollar": 99,
-   "matches": 4628
+   "rated_days": 55,
+   "dollar": 101,
+   "matches": 4652
   },
   "MS": {
-   "days": 97,
+   "days": 98,
    "ratio": 1.3,
    "rated_days": 1,
    "dollar": 11,
-   "matches": 304
+   "matches": 306
   },
   "MSCI": {
    "days": 82,
@@ -5474,11 +5535,11 @@
    "matches": 107
   },
   "MSFT": {
-   "days": 103,
-   "ratio": 1.077,
-   "rated_days": 100,
-   "dollar": 636,
-   "matches": 22734
+   "days": 104,
+   "ratio": 1.078,
+   "rated_days": 101,
+   "dollar": 638,
+   "matches": 22813
   },
   "MSGS": {
    "days": 5,
@@ -5496,18 +5557,18 @@
    "matches": 10
   },
   "MSOS": {
-   "days": 15,
+   "days": 16,
    "ratio": 1.059,
    "rated_days": 1,
    "dollar": 5,
    "matches": 36
   },
   "MSTR": {
-   "days": 98,
+   "days": 99,
    "ratio": 1.1,
    "rated_days": 58,
-   "dollar": 107,
-   "matches": 2778
+   "dollar": 109,
+   "matches": 2789
   },
   "MT": {
    "days": 60,
@@ -5515,7 +5576,7 @@
    "matches": 17
   },
   "MTB": {
-   "days": 3,
+   "days": 4,
    "dollar": 0,
    "matches": 1
   },
@@ -5530,12 +5591,12 @@
    "matches": 15
   },
   "MTG": {
-   "days": 17,
+   "days": 18,
    "dollar": 0,
-   "matches": 26
+   "matches": 27
   },
   "MTN": {
-   "days": 7,
+   "days": 8,
    "dollar": 1,
    "matches": 10
   },
@@ -5553,11 +5614,11 @@
    "days": 1
   },
   "MU": {
-   "days": 103,
+   "days": 104,
    "ratio": 1.052,
-   "rated_days": 103,
-   "dollar": 1419,
-   "matches": 50188
+   "rated_days": 104,
+   "dollar": 1438,
+   "matches": 50492
   },
   "MUFG": {
    "days": 2,
@@ -5609,11 +5670,11 @@
    "matches": 3
   },
   "NBIS": {
-   "days": 101,
-   "ratio": 1.135,
-   "rated_days": 84,
-   "dollar": 320,
-   "matches": 5498
+   "days": 102,
+   "ratio": 1.133,
+   "rated_days": 85,
+   "dollar": 324,
+   "matches": 5604
   },
   "NBN": {
    "days": 2,
@@ -5631,9 +5692,9 @@
    "matches": 1
   },
   "NDAQ": {
-   "days": 14,
-   "dollar": 0,
-   "matches": 8
+   "days": 15,
+   "dollar": 1,
+   "matches": 9
   },
   "NE": {
    "days": 5,
@@ -5646,7 +5707,7 @@
    "matches": 3
   },
   "NEE": {
-   "days": 37,
+   "days": 38,
    "dollar": 2,
    "matches": 36
   },
@@ -5661,16 +5722,21 @@
    "matches": 4
   },
   "NERD": {
-   "days": 8,
+   "days": 9,
    "dollar": 0,
-   "matches": 6
+   "matches": 8
+  },
+  "NESR": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 1
   },
   "NET": {
-   "days": 32,
+   "days": 33,
    "ratio": 1.118,
    "rated_days": 3,
-   "dollar": 29,
-   "matches": 171
+   "dollar": 30,
+   "matches": 175
   },
   "NEU": {
    "days": 1,
@@ -5691,11 +5757,11 @@
    "matches": 2
   },
   "NFLX": {
-   "days": 103,
-   "ratio": 1.133,
-   "rated_days": 61,
-   "dollar": 88,
-   "matches": 2557
+   "days": 104,
+   "ratio": 1.136,
+   "rated_days": 62,
+   "dollar": 90,
+   "matches": 2582
   },
   "NFTY": {
    "days": 2,
@@ -5726,7 +5792,7 @@
    "matches": 1
   },
   "NI": {
-   "days": 46,
+   "days": 47,
    "dollar": 0,
    "matches": 25
   },
@@ -5743,11 +5809,11 @@
    "matches": 102
   },
   "NKE": {
-   "days": 101,
-   "ratio": 1.109,
-   "rated_days": 4,
-   "dollar": 42,
-   "matches": 457
+   "days": 102,
+   "ratio": 1.108,
+   "rated_days": 5,
+   "dollar": 48,
+   "matches": 559
   },
   "NKTR": {
    "days": 1
@@ -5781,9 +5847,9 @@
    "matches": 23
   },
   "NNN": {
-   "days": 6,
+   "days": 7,
    "dollar": 0,
-   "matches": 3
+   "matches": 4
   },
   "NOC": {
    "days": 58,
@@ -5791,11 +5857,11 @@
    "matches": 50
   },
   "NOK": {
-   "days": 92,
-   "ratio": 1.138,
-   "rated_days": 43,
-   "dollar": 202,
-   "matches": 1639
+   "days": 93,
+   "ratio": 1.14,
+   "rated_days": 44,
+   "dollar": 209,
+   "matches": 1684
   },
   "NOV": {
    "days": 24,
@@ -5808,11 +5874,11 @@
    "matches": 1
   },
   "NOW": {
-   "days": 103,
-   "ratio": 1.583,
-   "rated_days": 83,
-   "dollar": 613,
-   "matches": 5861
+   "days": 104,
+   "ratio": 1.587,
+   "rated_days": 84,
+   "dollar": 617,
+   "matches": 5892
   },
   "NP": {
    "days": 3,
@@ -5835,9 +5901,9 @@
    "matches": 3
   },
   "NSA": {
-   "days": 19,
+   "days": 20,
    "dollar": 0,
-   "matches": 17
+   "matches": 18
   },
   "NSC": {
    "days": 3,
@@ -5880,16 +5946,16 @@
    "matches": 7
   },
   "NU": {
-   "days": 18,
+   "days": 19,
    "ratio": 1.105,
    "rated_days": 1,
    "dollar": 8,
-   "matches": 87
+   "matches": 89
   },
   "NUE": {
-   "days": 9,
+   "days": 10,
    "dollar": 0,
-   "matches": 6
+   "matches": 7
   },
   "NUTX": {
    "days": 1,
@@ -5905,21 +5971,21 @@
    "matches": 17
   },
   "NVDA": {
-   "days": 103,
-   "ratio": 1.09,
-   "rated_days": 102,
-   "dollar": 542,
-   "matches": 18690
+   "days": 104,
+   "ratio": 1.091,
+   "rated_days": 103,
+   "dollar": 551,
+   "matches": 18824
   },
   "NVEC": {
    "days": 4
   },
   "NVO": {
-   "days": 96,
+   "days": 97,
    "ratio": 1.106,
    "rated_days": 4,
    "dollar": 11,
-   "matches": 254
+   "matches": 256
   },
   "NVR": {
    "days": 2,
@@ -5930,14 +5996,14 @@
    "days": 3
   },
   "NVTS": {
-   "days": 33,
+   "days": 34,
    "ratio": 1.171,
    "rated_days": 6,
    "dollar": 13,
-   "matches": 240
+   "matches": 242
   },
   "NWL": {
-   "days": 11,
+   "days": 12,
    "dollar": 2,
    "matches": 9
   },
@@ -6002,7 +6068,7 @@
    "matches": 1
   },
   "OG": {
-   "days": 71,
+   "days": 72,
    "ratio": 1.231,
    "rated_days": 3,
    "dollar": 0,
@@ -6014,11 +6080,11 @@
    "matches": 8
   },
   "OI": {
-   "days": 67,
+   "days": 68,
    "ratio": 1.1,
    "rated_days": 1,
    "dollar": 0,
-   "matches": 223
+   "matches": 229
   },
   "OKE": {
    "days": 4,
@@ -6026,11 +6092,11 @@
    "matches": 1
   },
   "OKLO": {
-   "days": 77,
+   "days": 78,
    "ratio": 1.179,
    "rated_days": 25,
    "dollar": 91,
-   "matches": 905
+   "matches": 908
   },
   "OKTA": {
    "days": 16,
@@ -6049,39 +6115,42 @@
    "dollar": 0,
    "matches": 19
   },
+  "OM": {
+   "days": 1
+  },
   "OMER": {
    "days": 1,
    "dollar": 0,
    "matches": 6
   },
   "ON": {
-   "days": 103,
+   "days": 104,
    "ratio": 0.0,
    "rated_days": 15,
-   "dollar": 15,
-   "matches": 15
+   "dollar": 16,
+   "matches": 16
   },
   "ONDS": {
-   "days": 76,
+   "days": 77,
    "ratio": 1.2,
-   "rated_days": 29,
-   "dollar": 81,
-   "matches": 1115
+   "rated_days": 30,
+   "dollar": 85,
+   "matches": 1139
   },
   "ONEQ": {
    "days": 2
   },
   "ONON": {
-   "days": 3,
+   "days": 4,
    "dollar": 0,
-   "matches": 5
+   "matches": 6
   },
   "OPEN": {
-   "days": 93,
+   "days": 94,
    "ratio": 0.267,
    "rated_days": 33,
-   "dollar": 359,
-   "matches": 359
+   "dollar": 362,
+   "matches": 362
   },
   "OPER": {
    "days": 10,
@@ -6099,21 +6168,21 @@
    "matches": 4
   },
   "OR": {
-   "days": 72,
+   "days": 73,
    "ratio": 1.583,
    "rated_days": 1,
    "dollar": 0,
-   "matches": 794
+   "matches": 798
   },
   "ORC": {
    "days": 1
   },
   "ORCL": {
-   "days": 103,
+   "days": 104,
    "ratio": 1.1,
    "rated_days": 54,
-   "dollar": 147,
-   "matches": 2377
+   "dollar": 148,
+   "matches": 2381
   },
   "ORLA": {
    "days": 2,
@@ -6153,12 +6222,12 @@
    "matches": 26
   },
   "OUST": {
-   "days": 21,
-   "dollar": 17,
-   "matches": 81
+   "days": 22,
+   "dollar": 19,
+   "matches": 88
   },
   "OUT": {
-   "days": 55
+   "days": 56
   },
   "OVV": {
    "days": 1
@@ -6169,9 +6238,9 @@
    "matches": 27
   },
   "OXY": {
-   "days": 73,
+   "days": 74,
    "dollar": 32,
-   "matches": 105
+   "matches": 106
   },
   "OZ": {
    "days": 1,
@@ -6187,7 +6256,7 @@
    "days": 2
   },
   "PAAS": {
-   "days": 6,
+   "days": 7,
    "dollar": 0,
    "matches": 3
   },
@@ -6220,26 +6289,26 @@
    "matches": 11
   },
   "PANW": {
-   "days": 53,
+   "days": 54,
    "ratio": 1.05,
    "rated_days": 4,
-   "dollar": 31,
-   "matches": 411
+   "dollar": 32,
+   "matches": 413
   },
   "PATH": {
-   "days": 35,
+   "days": 36,
    "ratio": 1.168,
    "rated_days": 3,
-   "dollar": 52,
-   "matches": 311
+   "dollar": 53,
+   "matches": 312
   },
   "PAX": {
-   "days": 1
+   "days": 2
   },
   "PAY": {
-   "days": 3,
+   "days": 4,
    "dollar": 0,
-   "matches": 11
+   "matches": 13
   },
   "PAYC": {
    "days": 1
@@ -6255,7 +6324,7 @@
    "matches": 2
   },
   "PB": {
-   "days": 18,
+   "days": 19,
    "dollar": 0,
    "matches": 5
   },
@@ -6275,7 +6344,7 @@
    "matches": 1
   },
   "PBR": {
-   "days": 16,
+   "days": 17,
    "dollar": 1,
    "matches": 9
   },
@@ -6307,12 +6376,12 @@
    "matches": 71
   },
   "PD": {
-   "days": 2,
+   "days": 3,
    "dollar": 0,
    "matches": 1
   },
   "PDD": {
-   "days": 11,
+   "days": 12,
    "dollar": 0,
    "matches": 4
   },
@@ -6351,9 +6420,9 @@
    "matches": 3
   },
   "PEP": {
-   "days": 75,
+   "days": 76,
    "dollar": 6,
-   "matches": 92
+   "matches": 93
   },
   "PETS": {
    "days": 3,
@@ -6361,14 +6430,14 @@
    "matches": 2
   },
   "PFE": {
-   "days": 76,
-   "dollar": 7,
-   "matches": 92
+   "days": 77,
+   "dollar": 8,
+   "matches": 93
   },
   "PG": {
-   "days": 72,
+   "days": 73,
    "dollar": 3,
-   "matches": 65
+   "matches": 67
   },
   "PGEN": {
    "days": 13,
@@ -6441,11 +6510,11 @@
    "days": 1
   },
   "PL": {
-   "days": 57,
+   "days": 58,
    "ratio": 1.121,
    "rated_days": 14,
    "dollar": 20,
-   "matches": 559
+   "matches": 563
   },
   "PLAB": {
    "days": 9,
@@ -6476,18 +6545,18 @@
    "matches": 1
   },
   "PLTR": {
-   "days": 100,
-   "ratio": 1.145,
-   "rated_days": 68,
+   "days": 101,
+   "ratio": 1.154,
+   "rated_days": 69,
    "dollar": 115,
-   "matches": 3343
+   "matches": 3364
   },
   "PLUG": {
-   "days": 48,
+   "days": 49,
    "ratio": 1.095,
    "rated_days": 5,
    "dollar": 40,
-   "matches": 224
+   "matches": 225
   },
   "PLUS": {
    "days": 4
@@ -6518,11 +6587,11 @@
    "matches": 15
   },
   "POET": {
-   "days": 66,
+   "days": 67,
    "ratio": 1.131,
    "rated_days": 30,
-   "dollar": 131,
-   "matches": 1720
+   "dollar": 135,
+   "matches": 1728
   },
   "POOL": {
    "days": 10,
@@ -6593,11 +6662,11 @@
    "matches": 1
   },
   "PS": {
-   "days": 61,
+   "days": 62,
    "ratio": 0.2,
    "rated_days": 1,
    "dollar": 0,
-   "matches": 80
+   "matches": 81
   },
   "PSA": {
    "days": 97,
@@ -6638,7 +6707,7 @@
    "days": 1
   },
   "PST": {
-   "days": 21,
+   "days": 22,
    "dollar": 0,
    "matches": 42
   },
@@ -6651,7 +6720,7 @@
    "days": 2
   },
   "PTON": {
-   "days": 26,
+   "days": 27,
    "dollar": 2,
    "matches": 17
   },
@@ -6666,24 +6735,27 @@
    "matches": 1
   },
   "PUMP": {
-   "days": 76,
+   "days": 77,
    "ratio": 0.0,
    "rated_days": 8
   },
   "PWR": {
-   "days": 35,
+   "days": 36,
    "dollar": 0,
-   "matches": 22
+   "matches": 25
   },
   "PWZ": {
    "days": 2
   },
+  "PY": {
+   "days": 1
+  },
   "PYPL": {
-   "days": 98,
+   "days": 99,
    "ratio": 1.093,
    "rated_days": 3,
    "dollar": 16,
-   "matches": 345
+   "matches": 346
   },
   "PZZA": {
    "days": 7,
@@ -6730,9 +6802,9 @@
    "matches": 2
   },
   "QLD": {
-   "days": 9,
+   "days": 10,
    "dollar": 0,
-   "matches": 6
+   "matches": 8
   },
   "QLYS": {
    "days": 1
@@ -6748,16 +6820,16 @@
    "matches": 36
   },
   "QQQ": {
-   "days": 103,
-   "ratio": 1.092,
-   "rated_days": 101,
-   "dollar": 201,
-   "matches": 10600
+   "days": 104,
+   "ratio": 1.09,
+   "rated_days": 102,
+   "dollar": 202,
+   "matches": 10689
   },
   "QQQM": {
-   "days": 29,
+   "days": 30,
    "dollar": 1,
-   "matches": 59
+   "matches": 62
   },
   "QRVO": {
    "days": 3,
@@ -6813,15 +6885,20 @@
    "dollar": 4,
    "matches": 20
   },
+  "RAIL": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 2
+  },
   "RAMP": {
    "days": 2,
    "dollar": 0,
    "matches": 1
   },
   "RARE": {
-   "days": 10,
-   "dollar": 0,
-   "matches": 3
+   "days": 11,
+   "dollar": 1,
+   "matches": 5
   },
   "RBA": {
    "days": 6,
@@ -6848,7 +6925,7 @@
    "matches": 44
   },
   "RC": {
-   "days": 20,
+   "days": 21,
    "ratio": 1.143,
    "rated_days": 3,
    "dollar": 0,
@@ -6875,11 +6952,11 @@
    "days": 1
   },
   "RDDT": {
-   "days": 103,
-   "ratio": 1.12,
-   "rated_days": 86,
-   "dollar": 260,
-   "matches": 4761
+   "days": 104,
+   "ratio": 1.115,
+   "rated_days": 87,
+   "dollar": 269,
+   "matches": 4873
   },
   "RDW": {
    "days": 47,
@@ -6889,12 +6966,12 @@
    "matches": 591
   },
   "RE": {
-   "days": 94,
+   "days": 95,
    "dollar": 0,
-   "matches": 527
+   "matches": 532
   },
   "REAL": {
-   "days": 92,
+   "days": 93,
    "dollar": 2,
    "matches": 2
   },
@@ -6972,14 +7049,19 @@
    "matches": 1
   },
   "RICK": {
-   "days": 3,
-   "dollar": 0,
-   "matches": 1
+   "days": 4,
+   "dollar": 1,
+   "matches": 2
   },
   "RIG": {
-   "days": 5,
+   "days": 6,
    "dollar": 6,
-   "matches": 16
+   "matches": 20
+  },
+  "RIGL": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 1
   },
   "RIO": {
    "days": 6,
@@ -6987,9 +7069,9 @@
    "matches": 4
   },
   "RIOT": {
-   "days": 49,
-   "dollar": 7,
-   "matches": 36
+   "days": 50,
+   "dollar": 8,
+   "matches": 39
   },
   "RIVN": {
    "days": 55,
@@ -6999,11 +7081,11 @@
    "matches": 429
   },
   "RKLB": {
-   "days": 101,
+   "days": 102,
    "ratio": 1.125,
-   "rated_days": 92,
+   "rated_days": 93,
    "dollar": 167,
-   "matches": 6291
+   "matches": 6316
   },
   "RKT": {
    "days": 14,
@@ -7029,7 +7111,7 @@
    "matches": 35
   },
   "RMD": {
-   "days": 32,
+   "days": 33,
    "dollar": 6,
    "matches": 13
   },
@@ -7048,9 +7130,9 @@
    "days": 2
   },
   "ROBO": {
-   "days": 6,
+   "days": 7,
    "dollar": 0,
-   "matches": 3
+   "matches": 4
   },
   "ROCK": {
    "days": 15,
@@ -7058,7 +7140,7 @@
    "matches": 8
   },
   "ROG": {
-   "days": 2,
+   "days": 3,
    "dollar": 0,
    "matches": 1
   },
@@ -7099,9 +7181,9 @@
    "days": 3
   },
   "ROST": {
-   "days": 14,
-   "dollar": 4,
-   "matches": 13
+   "days": 15,
+   "dollar": 5,
+   "matches": 14
   },
   "RPD": {
    "days": 10,
@@ -7114,7 +7196,7 @@
    "matches": 3
   },
   "RPM": {
-   "days": 11,
+   "days": 12,
    "dollar": 0,
    "matches": 4
   },
@@ -7137,16 +7219,16 @@
    "matches": 4
   },
   "RSP": {
-   "days": 26,
+   "days": 27,
    "ratio": 1.1,
    "rated_days": 1,
    "dollar": 1,
-   "matches": 69
+   "matches": 70
   },
   "RTH": {
-   "days": 15,
+   "days": 16,
    "dollar": 0,
-   "matches": 16
+   "matches": 17
   },
   "RTO": {
    "days": 2,
@@ -7154,11 +7236,11 @@
    "matches": 6
   },
   "RTX": {
-   "days": 49,
+   "days": 50,
    "ratio": 1.25,
    "rated_days": 1,
    "dollar": 6,
-   "matches": 142
+   "matches": 145
   },
   "RUM": {
    "days": 2,
@@ -7166,7 +7248,7 @@
    "matches": 6
   },
   "RUN": {
-   "days": 58,
+   "days": 59,
    "dollar": 2,
    "matches": 2
   },
@@ -7181,16 +7263,16 @@
    "matches": 3
   },
   "RXRX": {
-   "days": 5,
+   "days": 6,
    "dollar": 1,
-   "matches": 5
+   "matches": 8
   },
   "RXT": {
-   "days": 21,
+   "days": 22,
    "ratio": 1.148,
    "rated_days": 2,
    "dollar": 10,
-   "matches": 111
+   "matches": 113
   },
   "RY": {
    "days": 31,
@@ -7203,9 +7285,12 @@
    "matches": 195
   },
   "SA": {
-   "days": 37,
+   "days": 38,
    "dollar": 0,
-   "matches": 75
+   "matches": 76
+  },
+  "SAA": {
+   "days": 1
   },
   "SAFE": {
    "days": 16
@@ -7221,14 +7306,14 @@
    "matches": 13
   },
   "SAM": {
-   "days": 14,
+   "days": 15,
    "dollar": 1,
    "matches": 9
   },
   "SAN": {
-   "days": 22,
+   "days": 23,
    "dollar": 1,
-   "matches": 14
+   "matches": 15
   },
   "SAP": {
    "days": 92,
@@ -7260,9 +7345,9 @@
    "matches": 127
   },
   "SB": {
-   "days": 17,
+   "days": 18,
    "dollar": 0,
-   "matches": 6
+   "matches": 8
   },
   "SBAC": {
    "days": 2,
@@ -7270,7 +7355,7 @@
    "matches": 3
   },
   "SBS": {
-   "days": 2
+   "days": 3
   },
   "SBSW": {
    "days": 6,
@@ -7301,11 +7386,11 @@
    "matches": 5
   },
   "SCHD": {
-   "days": 39,
+   "days": 40,
    "ratio": 1.182,
    "rated_days": 1,
    "dollar": 4,
-   "matches": 142
+   "matches": 144
   },
   "SCHE": {
    "days": 2
@@ -7334,12 +7419,17 @@
    "matches": 1
   },
   "SCHW": {
-   "days": 32,
+   "days": 33,
    "dollar": 2,
-   "matches": 19
+   "matches": 21
   },
   "SCHX": {
    "days": 4,
+   "dollar": 0,
+   "matches": 1
+  },
+  "SCSC": {
+   "days": 1,
    "dollar": 0,
    "matches": 1
   },
@@ -7369,9 +7459,9 @@
    "matches": 1
   },
   "SE": {
-   "days": 38,
+   "days": 39,
    "dollar": 1,
-   "matches": 52
+   "matches": 53
   },
   "SEDG": {
    "days": 8,
@@ -7379,7 +7469,7 @@
    "matches": 6
   },
   "SEE": {
-   "days": 72
+   "days": 73
   },
   "SELF": {
    "days": 1,
@@ -7392,9 +7482,9 @@
    "days": 2
   },
   "SERV": {
-   "days": 13,
+   "days": 14,
    "dollar": 0,
-   "matches": 7
+   "matches": 10
   },
   "SEZL": {
    "days": 1,
@@ -7402,11 +7492,11 @@
    "matches": 2
   },
   "SF": {
-   "days": 47,
+   "days": 48,
    "ratio": 1.0,
    "rated_days": 1,
    "dollar": 0,
-   "matches": 102
+   "matches": 104
   },
   "SFD": {
    "days": 1,
@@ -7436,11 +7526,11 @@
    "matches": 19
   },
   "SGOV": {
-   "days": 43,
+   "days": 44,
    "ratio": 1.245,
    "rated_days": 2,
    "dollar": 3,
-   "matches": 182
+   "matches": 183
   },
   "SH": {
    "days": 11
@@ -7496,7 +7586,7 @@
    "matches": 3
   },
   "SIL": {
-   "days": 7,
+   "days": 8,
    "dollar": 0,
    "matches": 5
   },
@@ -7516,7 +7606,7 @@
    "matches": 51
   },
   "SIRI": {
-   "days": 9,
+   "days": 10,
    "dollar": 1,
    "matches": 10
   },
@@ -7586,18 +7676,18 @@
    "matches": 2
   },
   "SLS": {
-   "days": 76,
+   "days": 77,
    "ratio": 1.182,
    "rated_days": 26,
    "dollar": 52,
-   "matches": 1015
+   "matches": 1025
   },
   "SLV": {
-   "days": 67,
+   "days": 68,
    "ratio": 1.091,
    "rated_days": 11,
    "dollar": 14,
-   "matches": 529
+   "matches": 531
   },
   "SM": {
    "days": 17,
@@ -7617,11 +7707,11 @@
    "matches": 2
   },
   "SMCI": {
-   "days": 102,
-   "ratio": 1.125,
-   "rated_days": 47,
-   "dollar": 77,
-   "matches": 2092
+   "days": 103,
+   "ratio": 1.134,
+   "rated_days": 48,
+   "dollar": 78,
+   "matches": 2119
   },
   "SMG": {
    "days": 3,
@@ -7629,18 +7719,18 @@
    "matches": 3
   },
   "SMH": {
-   "days": 96,
+   "days": 97,
    "ratio": 1.167,
    "rated_days": 29,
-   "dollar": 110,
-   "matches": 920
+   "dollar": 111,
+   "matches": 930
   },
   "SMR": {
-   "days": 40,
+   "days": 41,
    "ratio": 1.042,
    "rated_days": 2,
    "dollar": 31,
-   "matches": 231
+   "matches": 234
   },
   "SMTC": {
    "days": 12,
@@ -7653,26 +7743,33 @@
    "matches": 6
   },
   "SNA": {
-   "days": 1,
+   "days": 2,
    "dollar": 2,
    "matches": 2
   },
   "SNAP": {
-   "days": 57,
-   "ratio": 1.155,
-   "rated_days": 8,
-   "dollar": 20,
-   "matches": 434
+   "days": 58,
+   "ratio": 1.154,
+   "rated_days": 9,
+   "dollar": 22,
+   "matches": 449
   },
   "SND": {
-   "days": 14
+   "days": 15,
+   "dollar": 0,
+   "matches": 1
   },
   "SNDK": {
-   "days": 103,
+   "days": 104,
    "ratio": 1.084,
-   "rated_days": 97,
-   "dollar": 361,
-   "matches": 14231
+   "rated_days": 98,
+   "dollar": 373,
+   "matches": 14639
+  },
+  "SNDX": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 1
   },
   "SNEX": {
    "days": 2,
@@ -7685,11 +7782,11 @@
    "matches": 2
   },
   "SNOW": {
-   "days": 43,
+   "days": 44,
    "ratio": 1.154,
    "rated_days": 5,
-   "dollar": 61,
-   "matches": 501
+   "dollar": 63,
+   "matches": 503
   },
   "SNP": {
    "days": 22,
@@ -7705,7 +7802,7 @@
    "days": 3
   },
   "SO": {
-   "days": 102,
+   "days": 103,
    "ratio": 0.0,
    "rated_days": 9
   },
@@ -7715,11 +7812,11 @@
    "matches": 21
   },
   "SOFI": {
-   "days": 76,
+   "days": 77,
    "ratio": 1.167,
    "rated_days": 21,
    "dollar": 47,
-   "matches": 821
+   "matches": 828
   },
   "SOL": {
    "days": 19,
@@ -7749,32 +7846,32 @@
    "matches": 7
   },
   "SOUN": {
-   "days": 52,
+   "days": 53,
    "ratio": 1.129,
    "rated_days": 18,
    "dollar": 203,
-   "matches": 1422
+   "matches": 1425
   },
   "SOXL": {
-   "days": 97,
-   "ratio": 1.126,
-   "rated_days": 72,
+   "days": 98,
+   "ratio": 1.127,
+   "rated_days": 73,
    "dollar": 53,
-   "matches": 2830
+   "matches": 2851
   },
   "SOXS": {
-   "days": 93,
+   "days": 94,
    "ratio": 1.138,
    "rated_days": 52,
-   "dollar": 51,
-   "matches": 1547
+   "dollar": 52,
+   "matches": 1553
   },
   "SOXX": {
-   "days": 88,
+   "days": 89,
    "ratio": 1.134,
    "rated_days": 24,
-   "dollar": 36,
-   "matches": 748
+   "dollar": 37,
+   "matches": 758
   },
   "SPB": {
    "days": 10,
@@ -7782,18 +7879,18 @@
    "matches": 9
   },
   "SPCE": {
-   "days": 58,
+   "days": 59,
    "ratio": 1.145,
    "rated_days": 12,
    "dollar": 401,
    "matches": 8803
   },
   "SPCX": {
-   "days": 89,
-   "ratio": 1.113,
-   "rated_days": 86,
-   "dollar": 688,
-   "matches": 17586
+   "days": 90,
+   "ratio": 1.114,
+   "rated_days": 87,
+   "dollar": 693,
+   "matches": 17738
   },
   "SPG": {
    "days": 3,
@@ -7806,7 +7903,7 @@
    "matches": 22
   },
   "SPGM": {
-   "days": 1,
+   "days": 2,
    "dollar": 0,
    "matches": 1
   },
@@ -7821,18 +7918,18 @@
    "matches": 4
   },
   "SPMO": {
-   "days": 23,
+   "days": 24,
    "ratio": 1.1,
    "rated_days": 1,
    "dollar": 3,
-   "matches": 69
+   "matches": 78
   },
   "SPOT": {
-   "days": 16,
+   "days": 17,
    "ratio": 1.091,
    "rated_days": 1,
    "dollar": 1,
-   "matches": 32
+   "matches": 34
   },
   "SPT": {
    "days": 3,
@@ -7847,7 +7944,7 @@
    "matches": 183
   },
   "SPXL": {
-   "days": 12,
+   "days": 13,
    "dollar": 1,
    "matches": 14
   },
@@ -7862,11 +7959,11 @@
    "matches": 1
   },
   "SPY": {
-   "days": 103,
+   "days": 104,
    "ratio": 1.071,
-   "rated_days": 103,
-   "dollar": 479,
-   "matches": 32315
+   "rated_days": 104,
+   "dollar": 493,
+   "matches": 32662
   },
   "SPYD": {
    "days": 11,
@@ -7884,11 +7981,11 @@
    "matches": 2
   },
   "SQQQ": {
-   "days": 52,
+   "days": 53,
    "ratio": 1.0,
    "rated_days": 1,
    "dollar": 14,
-   "matches": 258
+   "matches": 261
   },
   "SR": {
    "days": 10,
@@ -7919,7 +8016,7 @@
    "days": 5
   },
   "SSD": {
-   "days": 58,
+   "days": 59,
    "ratio": 0.933,
    "rated_days": 1,
    "dollar": 0,
@@ -7969,12 +8066,12 @@
    "matches": 1
   },
   "STC": {
-   "days": 18,
+   "days": 19,
    "dollar": 0,
-   "matches": 43
+   "matches": 46
   },
   "STEM": {
-   "days": 9,
+   "days": 10,
    "dollar": 0,
    "matches": 17
   },
@@ -7986,7 +8083,9 @@
    "matches": 26
   },
   "STLA": {
-   "days": 2
+   "days": 3,
+   "dollar": 0,
+   "matches": 1
   },
   "STLD": {
    "days": 11,
@@ -7994,7 +8093,7 @@
    "matches": 10
   },
   "STM": {
-   "days": 11,
+   "days": 12,
    "dollar": 3,
    "matches": 10
   },
@@ -8028,11 +8127,11 @@
    "matches": 1
   },
   "STX": {
-   "days": 88,
+   "days": 89,
    "ratio": 1.113,
    "rated_days": 6,
    "dollar": 64,
-   "matches": 463
+   "matches": 467
   },
   "STZ": {
    "days": 20,
@@ -8169,7 +8268,7 @@
    "matches": 2
   },
   "TD": {
-   "days": 76,
+   "days": 77,
    "ratio": 1.117,
    "rated_days": 2,
    "dollar": 0,
@@ -8210,9 +8309,9 @@
    "matches": 212
   },
   "TECH": {
-   "days": 23,
+   "days": 24,
    "dollar": 0,
-   "matches": 41
+   "matches": 42
   },
   "TECK": {
    "days": 2,
@@ -8225,9 +8324,9 @@
    "matches": 1
   },
   "TECS": {
-   "days": 5,
+   "days": 6,
    "dollar": 0,
-   "matches": 5
+   "matches": 6
   },
   "TEL": {
    "days": 17,
@@ -8245,9 +8344,9 @@
    "matches": 22
   },
   "TER": {
-   "days": 47,
+   "days": 48,
    "dollar": 1,
-   "matches": 66
+   "matches": 73
   },
   "TERM": {
    "days": 9,
@@ -8265,9 +8364,9 @@
    "matches": 3
   },
   "TGB": {
-   "days": 3,
+   "days": 4,
    "dollar": 0,
-   "matches": 1
+   "matches": 2
   },
   "TGIF": {
    "days": 2,
@@ -8275,20 +8374,20 @@
    "matches": 1
   },
   "TGT": {
-   "days": 51,
+   "days": 52,
    "dollar": 3,
-   "matches": 55
+   "matches": 59
   },
   "TGTX": {
    "days": 2
   },
   "TH": {
-   "days": 68,
+   "days": 69,
    "dollar": 0,
    "matches": 5
   },
   "THC": {
-   "days": 28,
+   "days": 29,
    "dollar": 0,
    "matches": 10
   },
@@ -8308,17 +8407,17 @@
    "matches": 6
   },
   "TIL": {
-   "days": 63,
+   "days": 64,
    "dollar": 0,
-   "matches": 274
+   "matches": 278
   },
   "TIP": {
-   "days": 7,
+   "days": 8,
    "dollar": 0,
-   "matches": 3
+   "matches": 4
   },
   "TJX": {
-   "days": 20,
+   "days": 21,
    "dollar": 0,
    "matches": 12
   },
@@ -8346,11 +8445,11 @@
    "matches": 27
   },
   "TLT": {
-   "days": 49,
-   "ratio": 1.055,
-   "rated_days": 6,
+   "days": 50,
+   "ratio": 1.048,
+   "rated_days": 7,
    "dollar": 11,
-   "matches": 324
+   "matches": 363
   },
   "TM": {
    "days": 92,
@@ -8393,9 +8492,9 @@
    "matches": 13
   },
   "TOL": {
-   "days": 2,
+   "days": 3,
    "dollar": 0,
-   "matches": 2
+   "matches": 3
   },
   "TOP": {
    "days": 16
@@ -8427,11 +8526,11 @@
    "matches": 3
   },
   "TQQQ": {
-   "days": 88,
+   "days": 89,
    "ratio": 1.167,
    "rated_days": 17,
    "dollar": 7,
-   "matches": 702
+   "matches": 709
   },
   "TR": {
    "days": 15
@@ -8483,7 +8582,7 @@
    "matches": 6
   },
   "TS": {
-   "days": 38,
+   "days": 39,
    "dollar": 0,
    "matches": 27
   },
@@ -8503,21 +8602,21 @@
    "matches": 9
   },
   "TSLA": {
-   "days": 103,
-   "ratio": 1.083,
-   "rated_days": 90,
-   "dollar": 204,
-   "matches": 6515
+   "days": 104,
+   "ratio": 1.082,
+   "rated_days": 91,
+   "dollar": 205,
+   "matches": 6568
   },
   "TSLX": {
    "days": 1
   },
   "TSM": {
-   "days": 101,
+   "days": 102,
    "ratio": 1.111,
    "rated_days": 17,
    "dollar": 40,
-   "matches": 963
+   "matches": 970
   },
   "TSN": {
    "days": 14,
@@ -8540,11 +8639,11 @@
    "matches": 6
   },
   "TTD": {
-   "days": 62,
+   "days": 63,
    "ratio": 1.129,
    "rated_days": 3,
    "dollar": 13,
-   "matches": 177
+   "matches": 179
   },
   "TTEK": {
    "days": 5,
@@ -8621,13 +8720,18 @@
    "dollar": 0,
    "matches": 1
   },
+  "TYD": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 1
+  },
   "TZA": {
    "days": 1
   },
   "U": {
-   "days": 3,
-   "dollar": 1,
-   "matches": 140
+   "days": 4,
+   "dollar": 2,
+   "matches": 202
   },
   "UA": {
    "days": 24,
@@ -8635,11 +8739,11 @@
    "matches": 11
   },
   "UAE": {
-   "days": 64,
+   "days": 65,
    "ratio": 1.077,
    "rated_days": 9,
    "dollar": 0,
-   "matches": 595
+   "matches": 597
   },
   "UAL": {
    "days": 36,
@@ -8652,14 +8756,14 @@
    "matches": 7
   },
   "UBER": {
-   "days": 50,
+   "days": 51,
    "ratio": 1.2,
    "rated_days": 6,
    "dollar": 27,
-   "matches": 208
+   "matches": 212
   },
   "UBS": {
-   "days": 38,
+   "days": 39,
    "ratio": 1.084,
    "rated_days": 2,
    "dollar": 0,
@@ -8718,11 +8822,11 @@
    "matches": 6
   },
   "UI": {
-   "days": 75,
+   "days": 76,
    "ratio": 1.027,
    "rated_days": 4,
    "dollar": 0,
-   "matches": 375
+   "matches": 376
   },
   "UL": {
    "days": 22,
@@ -8742,16 +8846,16 @@
    "matches": 42
   },
   "UMAC": {
-   "days": 21,
+   "days": 22,
    "ratio": 1.164,
    "rated_days": 4,
-   "dollar": 47,
-   "matches": 260
+   "dollar": 48,
+   "matches": 266
   },
   "UMC": {
-   "days": 10,
+   "days": 11,
    "dollar": 0,
-   "matches": 6
+   "matches": 7
   },
   "UNFI": {
    "days": 1,
@@ -8764,11 +8868,11 @@
    "matches": 7
   },
   "UNH": {
-   "days": 101,
+   "days": 102,
    "ratio": 1.12,
    "rated_days": 16,
    "dollar": 25,
-   "matches": 823
+   "matches": 830
   },
   "UNIT": {
    "days": 3,
@@ -8786,11 +8890,11 @@
    "matches": 11
   },
   "UP": {
-   "days": 88,
+   "days": 89,
    "ratio": 3.577,
    "rated_days": 38,
    "dollar": 0,
-   "matches": 3312
+   "matches": 3333
   },
   "UPRO": {
    "days": 10,
@@ -8798,11 +8902,11 @@
    "matches": 9
   },
   "UPS": {
-   "days": 78,
+   "days": 79,
    "ratio": 1.05,
    "rated_days": 2,
    "dollar": 1,
-   "matches": 122
+   "matches": 124
   },
   "UPST": {
    "days": 6,
@@ -8838,9 +8942,9 @@
    "matches": 2
   },
   "USAR": {
-   "days": 4,
-   "dollar": 5,
-   "matches": 23
+   "days": 5,
+   "dollar": 6,
+   "matches": 27
   },
   "USAS": {
    "days": 2
@@ -8864,16 +8968,16 @@
    "matches": 1
   },
   "USO": {
-   "days": 97,
-   "ratio": 1.077,
-   "rated_days": 63,
+   "days": 98,
+   "ratio": 1.08,
+   "rated_days": 64,
    "dollar": 50,
-   "matches": 2015
+   "matches": 2036
   },
   "UST": {
-   "days": 17,
+   "days": 18,
    "dollar": 1,
-   "matches": 9
+   "matches": 10
   },
   "UTHR": {
    "days": 1
@@ -8899,9 +9003,9 @@
    "matches": 250
   },
   "UVXY": {
-   "days": 23,
+   "days": 24,
    "dollar": 6,
-   "matches": 42
+   "matches": 44
   },
   "UWM": {
    "days": 7,
@@ -8919,14 +9023,14 @@
    "matches": 1875
   },
   "VAL": {
-   "days": 2,
+   "days": 3,
    "dollar": 0,
-   "matches": 3
+   "matches": 7
   },
   "VC": {
-   "days": 85,
+   "days": 86,
    "dollar": 0,
-   "matches": 165
+   "matches": 168
   },
   "VCIG": {
    "days": 1,
@@ -8939,9 +9043,9 @@
    "matches": 5
   },
   "VDC": {
-   "days": 6,
+   "days": 7,
    "dollar": 0,
-   "matches": 1
+   "matches": 2
   },
   "VDE": {
    "days": 3,
@@ -8965,6 +9069,11 @@
    "dollar": 1,
    "matches": 23
   },
+  "VEGA": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 1
+  },
   "VERA": {
    "days": 1,
    "dollar": 0,
@@ -8986,7 +9095,7 @@
    "matches": 5
   },
   "VG": {
-   "days": 61,
+   "days": 62,
    "ratio": 1.195,
    "rated_days": 2,
    "dollar": 23,
@@ -9011,9 +9120,9 @@
    "matches": 1
   },
   "VGT": {
-   "days": 17,
+   "days": 18,
    "dollar": 1,
-   "matches": 24
+   "matches": 26
   },
   "VIAV": {
    "days": 10,
@@ -9052,7 +9161,9 @@
    "matches": 2
   },
   "VIXY": {
-   "days": 2
+   "days": 3,
+   "dollar": 1,
+   "matches": 1
   },
   "VKTX": {
    "days": 3,
@@ -9060,14 +9171,19 @@
    "matches": 10
   },
   "VLO": {
-   "days": 24,
+   "days": 25,
    "dollar": 2,
-   "matches": 13
+   "matches": 14
   },
   "VLY": {
    "days": 3,
    "dollar": 0,
    "matches": 1
+  },
+  "VNET": {
+   "days": 1,
+   "dollar": 0,
+   "matches": 4
   },
   "VNOM": {
    "days": 9,
@@ -9085,11 +9201,11 @@
    "matches": 1
   },
   "VOO": {
-   "days": 102,
-   "ratio": 1.146,
-   "rated_days": 74,
+   "days": 103,
+   "ratio": 1.15,
+   "rated_days": 75,
    "dollar": 29,
-   "matches": 1807
+   "matches": 1830
   },
   "VOOG": {
    "days": 2
@@ -9115,9 +9231,9 @@
    "matches": 3
   },
   "VPN": {
-   "days": 26,
+   "days": 27,
    "dollar": 0,
-   "matches": 42
+   "matches": 43
   },
   "VRDN": {
    "days": 3,
@@ -9152,11 +9268,11 @@
    "matches": 1
   },
   "VRT": {
-   "days": 64,
+   "days": 65,
    "ratio": 1.083,
    "rated_days": 3,
    "dollar": 9,
-   "matches": 204
+   "matches": 205
   },
   "VRTX": {
    "days": 29,
@@ -9164,9 +9280,9 @@
    "matches": 18
   },
   "VSAT": {
-   "days": 24,
+   "days": 25,
    "dollar": 3,
-   "matches": 28
+   "matches": 29
   },
   "VSCO": {
    "days": 3,
@@ -9179,21 +9295,21 @@
    "matches": 6
   },
   "VST": {
-   "days": 53,
+   "days": 54,
    "dollar": 4,
    "matches": 75
   },
   "VT": {
-   "days": 60,
+   "days": 61,
    "dollar": 2,
    "matches": 238
   },
   "VTI": {
-   "days": 67,
+   "days": 68,
    "ratio": 1.215,
    "rated_days": 2,
    "dollar": 4,
-   "matches": 363
+   "matches": 367
   },
   "VTOL": {
    "days": 1,
@@ -9224,7 +9340,7 @@
    "matches": 6
   },
   "VVV": {
-   "days": 9,
+   "days": 10,
    "dollar": 0,
    "matches": 7
   },
@@ -9254,9 +9370,9 @@
    "matches": 5
   },
   "WANT": {
-   "days": 35,
+   "days": 36,
    "dollar": 0,
-   "matches": 185
+   "matches": 189
   },
   "WAT": {
    "days": 11,
@@ -9292,7 +9408,7 @@
    "days": 3
   },
   "WD": {
-   "days": 32,
+   "days": 33,
    "dollar": 0,
    "matches": 48
   },
@@ -9304,11 +9420,11 @@
    "matches": 54
   },
   "WDC": {
-   "days": 101,
-   "ratio": 1.118,
-   "rated_days": 33,
-   "dollar": 62,
-   "matches": 1543
+   "days": 102,
+   "ratio": 1.121,
+   "rated_days": 34,
+   "dollar": 63,
+   "matches": 1567
   },
   "WDFC": {
    "days": 9,
@@ -9324,11 +9440,11 @@
    "days": 65
   },
   "WEN": {
-   "days": 90,
-   "ratio": 1.171,
-   "rated_days": 43,
-   "dollar": 914,
-   "matches": 7117
+   "days": 91,
+   "ratio": 1.176,
+   "rated_days": 44,
+   "dollar": 916,
+   "matches": 7130
   },
   "WES": {
    "days": 2
@@ -9344,7 +9460,7 @@
    "matches": 30
   },
   "WFH": {
-   "days": 14,
+   "days": 15,
    "dollar": 0,
    "matches": 20
   },
@@ -9354,9 +9470,9 @@
    "matches": 1
   },
   "WH": {
-   "days": 85,
+   "days": 86,
    "dollar": 0,
-   "matches": 146
+   "matches": 147
   },
   "WHR": {
    "days": 31,
@@ -9364,9 +9480,9 @@
    "matches": 19
   },
   "WING": {
-   "days": 9,
+   "days": 10,
    "dollar": 1,
-   "matches": 4
+   "matches": 5
   },
   "WIT": {
    "days": 7,
@@ -9394,18 +9510,18 @@
    "matches": 4
   },
   "WMT": {
-   "days": 100,
+   "days": 101,
    "ratio": 1.117,
    "rated_days": 14,
    "dollar": 22,
-   "matches": 508
+   "matches": 512
   },
   "WOLF": {
-   "days": 26,
+   "days": 27,
    "ratio": 1.166,
    "rated_days": 2,
-   "dollar": 33,
-   "matches": 162
+   "dollar": 34,
+   "matches": 164
   },
   "WOOF": {
    "days": 1,
@@ -9413,9 +9529,9 @@
    "matches": 3
   },
   "WOW": {
-   "days": 35,
+   "days": 36,
    "dollar": 0,
-   "matches": 158
+   "matches": 162
   },
   "WPM": {
    "days": 15,
@@ -9461,11 +9577,11 @@
    "matches": 1
   },
   "WTI": {
-   "days": 89,
+   "days": 90,
    "ratio": 1.1,
    "rated_days": 15,
    "dollar": 0,
-   "matches": 593
+   "matches": 595
   },
   "WTRG": {
    "days": 1,
@@ -9473,21 +9589,21 @@
    "matches": 1
   },
   "WTS": {
-   "days": 2,
+   "days": 3,
    "dollar": 1,
-   "matches": 3
+   "matches": 4
   },
   "WU": {
-   "days": 35,
+   "days": 36,
    "dollar": 4,
    "matches": 16
   },
   "WULF": {
-   "days": 17,
+   "days": 18,
    "ratio": 1.077,
    "rated_days": 1,
    "dollar": 14,
-   "matches": 78
+   "matches": 82
   },
   "WWR": {
    "days": 2
@@ -9523,14 +9639,14 @@
    "matches": 1
   },
   "XLE": {
-   "days": 41,
+   "days": 42,
    "dollar": 11,
-   "matches": 129
+   "matches": 132
   },
   "XLF": {
-   "days": 7,
+   "days": 8,
    "dollar": 4,
-   "matches": 22
+   "matches": 23
   },
   "XLI": {
    "days": 2
@@ -9576,19 +9692,19 @@
    "matches": 3
   },
   "XOM": {
-   "days": 98,
+   "days": 99,
    "ratio": 1.118,
    "rated_days": 3,
    "dollar": 36,
-   "matches": 293
+   "matches": 296
   },
   "XOP": {
-   "days": 2,
+   "days": 3,
    "dollar": 0,
-   "matches": 1
+   "matches": 2
   },
   "XP": {
-   "days": 41,
+   "days": 42,
    "dollar": 0,
    "matches": 20
   },
@@ -9614,7 +9730,7 @@
    "matches": 1
   },
   "XT": {
-   "days": 7
+   "days": 8
   },
   "XXII": {
    "days": 3
@@ -9656,11 +9772,11 @@
    "matches": 1
   },
   "YOU": {
-   "days": 102,
-   "ratio": 3.662,
-   "rated_days": 76,
+   "days": 103,
+   "ratio": 3.682,
+   "rated_days": 77,
    "dollar": 0,
-   "matches": 6101
+   "matches": 6156
   },
   "YPF": {
    "days": 3,
@@ -9673,9 +9789,9 @@
    "matches": 14
   },
   "YUM": {
-   "days": 25,
-   "dollar": 7,
-   "matches": 29
+   "days": 26,
+   "dollar": 10,
+   "matches": 32
   },
   "YUMC": {
    "days": 2,
@@ -9696,7 +9812,7 @@
    "matches": 2
   },
   "ZETA": {
-   "days": 11,
+   "days": 12,
    "dollar": 5,
    "matches": 39
   },
@@ -9714,7 +9830,7 @@
    "matches": 1
   },
   "ZIM": {
-   "days": 3,
+   "days": 4,
    "dollar": 0,
    "matches": 11
   },
@@ -9736,9 +9852,9 @@
    "matches": 1
   },
   "ZROZ": {
-   "days": 7,
+   "days": 8,
    "dollar": 0,
-   "matches": 4
+   "matches": 7
   },
   "ZS": {
    "days": 72,
@@ -9753,7 +9869,7 @@
    "matches": 36
   },
   "ZYME": {
-   "days": 2,
+   "days": 3,
    "dollar": 0,
    "matches": 1
   }
@@ -9792,6 +9908,7 @@
   "CVS",
   "D",
   "DAY",
+  "DB",
   "DC",
   "DEI",
   "DON",
@@ -9818,6 +9935,7 @@
   "IE",
   "IG",
   "III",
+  "INFQ",
   "JUST",
   "LEG",
   "LIFE",
