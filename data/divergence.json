@@ -9941,6 +9941,44 @@
   }
  },
  "min_days_for_ranking": 10,
+ "diverging": {
+  "YOU": {
+   "ratio": 3.682,
+   "rated_days": 77
+  },
+  "UP": {
+   "ratio": 3.577,
+   "rated_days": 38
+  },
+  "IT": {
+   "ratio": 0.0,
+   "rated_days": 74
+  },
+  "ON": {
+   "ratio": 0.0,
+   "rated_days": 15
+  },
+  "ALL": {
+   "ratio": 0.0,
+   "rated_days": 41
+  },
+  "FOR": {
+   "ratio": 0.0,
+   "rated_days": 17
+  },
+  "BE": {
+   "ratio": 0.071,
+   "rated_days": 35
+  },
+  "DTE": {
+   "ratio": 0.113,
+   "rated_days": 104
+  },
+  "OPEN": {
+   "ratio": 0.267,
+   "rated_days": 33
+  }
+ },
  "never_dollar": [
   "AAA",
   "AADX",

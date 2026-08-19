@@ -507,3 +507,39 @@ def test_artifact_labels_still_describe_the_data():
         "NOW is back in WORDLIKE — see data/artifacts.json 'cleared'. Its three spikes are "
         "ServiceNow, and $-only counting misses them by 15x.")
     assert "DTE" not in art["cleared"], "DTE is a confirmed artefact, not a cleared one"
+
+
+def test_the_divergence_worklist_is_computed_once():
+    """data/divergence.json carries `diverging`, and it is small.
+
+    The bug this exists for shipped to the live site: the browser derived the worklist
+    itself with `Math.abs(r.ratio - common) <= 0.5` as the skip guard. `ratio` is absent
+    for the ~1,500 rows never seen at a countable volume, `undefined - 1.125` is NaN, and
+    `NaN <= 0.5` is false — so the guard skipped nothing and 1,639 ordinary tickers wore a
+    "diverging, unchecked" badge. The workflow summary had already made the same mistake
+    with a Python KeyError, which was louder and therefore caught sooner.
+
+    Three consumers were each re-deriving one answer. Now divergence.py writes it and they
+    read it. This asserts the field exists, that it is a worklist rather than the whole
+    board, and that every entry carries the volume behind it — a bare ratio with no day
+    count is what let one-mention rows into the list twice before.
+    """
+    p = os.path.join(ROOT, "data", "divergence.json")
+    if not os.path.exists(p):
+        return
+    with open(p) as f:
+        d = json.load(f)
+    assert "diverging" in d, (
+        "divergence.json has no `diverging` field — rerun scripts/divergence.py. Without it "
+        "app.html and the workflow fall back to deriving the worklist themselves, which is "
+        "the bug this field exists to remove.")
+    dg, tickers = d["diverging"], d.get("tickers", {})
+    assert len(dg) < max(40, len(tickers) * 0.05), (
+        f"{len(dg)} of {len(tickers)} tickers are on the worklist. It is meant to be the few "
+        f"worth reading the text for; this size means a guard stopped working.")
+    floor = d.get("min_days", 6)
+    for tk, v in dg.items():
+        assert "ratio" in v and "rated_days" in v, f"{tk} on the worklist without both figures"
+        assert v["rated_days"] >= floor, (
+            f"{tk} is on the worklist on {v['rated_days']} counted days, below min_days "
+            f"{floor} — one- and two-day samples are what put V, PM, T, F and DAY on it before")

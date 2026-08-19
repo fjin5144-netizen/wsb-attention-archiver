@@ -790,11 +790,18 @@ function buildFlags(art,dv){
      row that does mean what it says is noise — and the divergence badge's own wording,
      "nobody has read the text yet", would have been simply untrue on these two. */
   const done=new Set(Object.keys((art&&art.cleared)||{}).filter(k=>/^[A-Z]{1,5}$/.test(k)));
-  if(dv&&dv.tickers){
+  /* Read the worklist the scan computed rather than deriving it again. Deriving it here was
+     a bug with a long tail: `ratio` is absent for the rows never seen at a countable volume,
+     and Math.abs(undefined - common) is NaN, and NaN <= 0.5 is false — so the guard meant to
+     skip them skipped nothing and 1,639 ordinary rows wore a "diverging, nobody has checked"
+     badge on the live site. The same derivation had already gone wrong in the workflow
+     summary for the same reason. It is computed once now, in divergence.py, and read here. */
+  const dg=(dv&&dv.diverging)||null;
+  if(dg){
     const c=dv.common||1;
-    for(const [tk,r] of Object.entries(dv.tickers)){
-      if(FLAG[tk]||done.has(tk)||Math.abs(r.ratio-c)<=0.5)continue;
-      FLAG[tk]={kind:'apart',ratio:r.ratio,days:r.days,common:c};
+    for(const [tk,r] of Object.entries(dg)){
+      if(FLAG[tk]||done.has(tk))continue;
+      FLAG[tk]={kind:'apart',ratio:r.ratio,days:r.rated_days,common:c};
     }
   }
 }

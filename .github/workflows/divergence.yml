@@ -119,27 +119,18 @@ jobs:
           known = set(art.get("confirmed", {})) | {k for k in art.get("our_own_errors", {}) if k.isupper()} \
                   | {k for k in art.get("cleared", {}) if k.isupper()}
           c = d.get("common", 1)
-          # `ratio` is absent for the 1,538 rows counted but never at a volume that could
-          # produce one — a one-mention row gives 0 or 2 and neither is a measurement. Reading
-          # it unconditionally was a KeyError waiting for the next scheduled run.
-          # Two guards, and the same distinction behind both. `ratio` is absent for the
-          # 1,538 rows counted but never at a volume that could produce one — a one-mention
-          # row gives 0 or 2 and neither is a measurement — and reading it unconditionally
-          # was a KeyError waiting for the next run. `rated_days` then keeps a row off the
-          # worklist until it has been measured often enough to be worth a person's time:
-          # without it the list came back with BAM, BOOM, CAR, CE, DB on one or two days
-          # apiece, which is the same coverage-for-evidence mistake in a third place.
+          # divergence.py computes the worklist and writes it as `diverging`. This used to
+          # re-derive it and got it wrong; so did the browser. One derivation, three readers.
+          new = d.get("diverging", {})
           floor = d.get("min_days", 6)
-          new = {t: (v["ratio"], v.get("rated_days", 0)) for t, v in d["tickers"].items()
-                 if t not in known and "ratio" in v
-                 and v.get("rated_days", 0) >= floor and abs(v["ratio"] - c) > 0.5}
           rated = sum(1 for v in d["tickers"].values() if "ratio" in v)
           print(f"### {d['days']} days counted · {len(d['tickers'])} rows have a record, "
                 f"{rated} of them at a volume that can be compared · common ratio {c}\n")
           if new:
-              print("**Tickers diverging with no entry in artifacts.json — read the text:**\n")
-              for t, (r, n) in sorted(new.items(), key=lambda x: -abs(x[1][0] - c)):
-                  print(f"- `{t}` ratio {r} over {n} counted days")
+              print("**Tickers whose two counts disagree:**\n")
+              for t, v in sorted(new.items(), key=lambda x: -abs(x[1]["ratio"] - c)):
+                  mark = "" if t in known else "  <- no entry in artifacts.json"
+                  print(f"- `{t}` ratio {v['ratio']} over {v['rated_days']} counted days{mark}")
               print("\nDivergence is a question, not a verdict. It also cannot see the "
                     "artefacts both rules share, such as EU.")
           else:

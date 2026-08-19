@@ -296,6 +296,16 @@ def main():
                                 if dollar[tk][1] else {})}
                         for tk in sorted(seen_all)},
             "min_days_for_ranking": min_days,
+            # The worklist itself, computed once. Three consumers were each deriving it
+            # from `tickers` — this script's report, the workflow summary and the browser —
+            # and two got it wrong the same way: `ratio` is absent for the rows never seen
+            # at a countable volume, and `Math.abs(undefined - common) <= 0.5` is false, so
+            # the guard meant to skip them let all 1,538 through and the site badged them
+            # as suspect. A derivation repeated in three places is a derivation that will
+            # disagree with itself; this is the one answer, and consumers read it.
+            "diverging": {tk: {"ratio": round(r, 3), "rated_days": len(ratios[tk])}
+                          for tk, r, n in rows
+                          if n >= min_days and abs(r - common) > 0.5},
             "never_dollar": [tk for tk, n in silent],
             "never_dollar_min_matches": NEVER_DOLLAR_MIN,
         }, f, indent=1)
