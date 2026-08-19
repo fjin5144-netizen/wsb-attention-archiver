@@ -18,10 +18,10 @@
     "win_rate": 45
    },
    "placebo": {
-    "n": 266,
+    "n": 267,
     "median": -0.22,
-    "trimmed_mean": 0.5,
-    "mean": 1.19,
+    "trimmed_mean": 0.61,
+    "mean": 1.28,
     "win_rate": 49
    },
    "gap_median": -1.06
@@ -36,9 +36,9 @@
     "win_rate": 35
    },
    "placebo": {
-    "n": 256,
+    "n": 255,
     "median": -1.17,
-    "trimmed_mean": -0.29,
+    "trimmed_mean": -0.3,
     "mean": 1.55,
     "win_rate": 46
    },
@@ -54,13 +54,13 @@
     "win_rate": 33
    },
    "placebo": {
-    "n": 222,
-    "median": -1.43,
-    "trimmed_mean": -1.2,
-    "mean": 0.85,
+    "n": 220,
+    "median": -1.84,
+    "trimmed_mean": -1.54,
+    "mean": 0.6,
     "win_rate": 45
    },
-   "gap_median": -5.08
+   "gap_median": -4.67
   }
  ]
 }
