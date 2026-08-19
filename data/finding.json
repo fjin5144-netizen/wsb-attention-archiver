@@ -1,66 +1,66 @@
 {
- "events": 292,
+ "events": 293,
  "archive_days": 111,
  "span": [
   "2026-05-01",
   "2026-08-19"
  ],
- "prices_through": "2026-08-18",
+ "prices_through": "2026-08-19",
  "headline_sessions": 20,
  "horizons": [
   {
    "sessions": 5,
    "spike": {
-    "n": 263,
-    "median": -1.28,
-    "trimmed_mean": -1.49,
-    "mean": -0.4,
+    "n": 266,
+    "median": -1.53,
+    "trimmed_mean": -1.73,
+    "mean": -0.62,
     "win_rate": 45
    },
    "placebo": {
-    "n": 268,
-    "median": -0.33,
-    "trimmed_mean": 0.4,
-    "mean": 1.22,
+    "n": 270,
+    "median": -0.28,
+    "trimmed_mean": 0.39,
+    "mean": 1.23,
     "win_rate": 48
    },
-   "gap_median": -0.95
+   "gap_median": -1.25
   },
   {
    "sessions": 10,
    "spike": {
-    "n": 240,
+    "n": 244,
     "median": -4.93,
-    "trimmed_mean": -4.8,
-    "mean": -3.9,
+    "trimmed_mean": -4.82,
+    "mean": -3.94,
     "win_rate": 35
    },
    "placebo": {
-    "n": 256,
-    "median": -1.27,
-    "trimmed_mean": -0.55,
-    "mean": 1.12,
-    "win_rate": 45
+    "n": 260,
+    "median": -1.2,
+    "trimmed_mean": -0.42,
+    "mean": 1.21,
+    "win_rate": 47
    },
-   "gap_median": -3.66
+   "gap_median": -3.73
   },
   {
    "sessions": 20,
    "spike": {
-    "n": 208,
-    "median": -6.51,
-    "trimmed_mean": -9.02,
-    "mean": -8.78,
+    "n": 213,
+    "median": -6.43,
+    "trimmed_mean": -8.75,
+    "mean": -8.5,
     "win_rate": 33
    },
    "placebo": {
-    "n": 221,
-    "median": -0.88,
-    "trimmed_mean": -1.45,
-    "mean": 0.43,
-    "win_rate": 47
+    "n": 226,
+    "median": -1.11,
+    "trimmed_mean": -1.56,
+    "mean": 0.3,
+    "win_rate": 46
    },
-   "gap_median": -5.63
+   "gap_median": -5.32
   }
  ]
 }
