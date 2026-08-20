@@ -9943,8 +9943,8 @@
  "min_days_for_ranking": 10,
  "diverging": {
   "YOU": {
-   "ratio": 3.682,
-   "rated_days": 77
+   "ratio": 3.702,
+   "rated_days": 78
   },
   "UP": {
    "ratio": 3.577,
@@ -9952,7 +9952,7 @@
   },
   "IT": {
    "ratio": 0.0,
-   "rated_days": 74
+   "rated_days": 75
   },
   "ON": {
    "ratio": 0.0,
@@ -9967,12 +9967,12 @@
    "rated_days": 17
   },
   "BE": {
-   "ratio": 0.071,
-   "rated_days": 35
+   "ratio": 0.069,
+   "rated_days": 36
   },
   "DTE": {
-   "ratio": 0.113,
-   "rated_days": 104
+   "ratio": 0.111,
+   "rated_days": 105
   },
   "OPEN": {
    "ratio": 0.267,
