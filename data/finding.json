@@ -29,10 +29,10 @@
   {
    "sessions": 10,
    "spike": {
-    "n": 253,
-    "median": -4.61,
-    "trimmed_mean": -4.61,
-    "mean": -3.71,
+    "n": 254,
+    "median": -4.55,
+    "trimmed_mean": -4.58,
+    "mean": -3.69,
     "win_rate": 35
    },
    "placebo": {
@@ -42,7 +42,7 @@
     "mean": -0.11,
     "win_rate": 46
    },
-   "gap_median": -3.19
+   "gap_median": -3.13
   },
   {
    "sessions": 20,
@@ -54,10 +54,10 @@
     "win_rate": 33
    },
    "placebo": {
-    "n": 217,
+    "n": 219,
     "median": -1.44,
-    "trimmed_mean": -2.69,
-    "mean": -1.9,
+    "trimmed_mean": -2.54,
+    "mean": -1.77,
     "win_rate": 45
    },
    "gap_median": -4.56
