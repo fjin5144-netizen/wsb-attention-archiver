@@ -1,0 +1,90 @@
+name: Site health
+
+# The one layer nothing else watches: the LIVE site. Unit tests cover the Python, the
+# E2E test drives a local server, every workflow checks its own steps — and the three
+# bugs that reached readers this month (Jekyll hiding _dates.json, a NaN guard badging
+# 1,639 clean rows, a stale-looking cancelled build) lived precisely in the gap between
+# "everything green" and "what a browser actually gets". scripts/site_health.py asks
+# the production site the questions a reader's browser would; this runs it.
+#
+# Same colour discipline as the watchdog: finding a problem files an issue and leaves
+# the run green, so a red run means the probe itself is broken and nothing else.
+
+on:
+  schedule:
+    # After the last archive run of the day settles, and again after the morning
+    # divergence commit — the two moments a deploy could have gone out broken.
+    - cron: '50 0 * * *'
+    - cron: '50 5 * * *'
+    - cron: '50 13 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Probe the live site
+        id: probe
+        # Exit 1 is "found something" and must not colour the run; only exit 2 — the
+        # probe itself broken — goes red. Same contract as the watchdog, for the same
+        # reason: red has to keep meaning exactly one thing.
+        run: |
+          set +e
+          python3 scripts/site_health.py > report.md 2>&1
+          code=$?
+          set -e
+          cat report.md
+          cat report.md >> $GITHUB_STEP_SUMMARY
+          echo "found=$([ $code -eq 1 ] && echo yes || echo no)" >> $GITHUB_OUTPUT
+          if [ $code -ge 2 ]; then
+            echo "::error::The probe itself failed — this is a bug in site_health.py."
+            exit 1
+          fi
+          exit 0
+
+      - name: Open, update or close the alert
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # gh calls retried, then downgraded to a warning: a GitHub API blip is not a
+          # site problem and must not look like one. Same helper as the other alerts.
+          gh_try() {
+            for i in 1 2 3; do
+              out=$(gh "$@" 2>&1) && { printf '%s' "$out"; return 0; }
+              echo "gh $1 failed (attempt $i): $out" >&2
+              sleep $((i * 5))
+            done
+            echo "::warning title=Alert not delivered::gh failed three times — likely a GitHub outage. The report is in this run's summary."
+            return 1
+          }
+          N=$(gh_try issue list --state open --limit 50 --json number,title \
+                -q "[.[] | select(.title | contains(\"Site problem\"))][0].number // empty") || exit 0
+          BODY="$(cat report.md)"
+          LINK="[site-health run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+          if [ "${{ steps.probe.outputs.found }}" = "yes" ]; then
+            FP=$(grep -o 'wd-fingerprint:[a-f0-9]*' report.md | head -1)
+            if [ -n "$N" ]; then
+              SEEN=$(gh_try issue view "$N" --json body,comments \
+                       -q '.body + " " + ([.comments[].body] | join(" "))') || exit 0
+              if [ -n "$FP" ] && printf '%s' "$SEEN" | grep -q "$FP"; then
+                echo "unchanged ($FP) — not commenting again"
+              else
+                gh_try issue comment "$N" --body "$BODY"$'\n\n'"$LINK"
+              fi
+            else
+              gh_try issue create --title "🚨 Site problem" --body "$BODY"$'\n\n'"$LINK"
+            fi
+            exit 0
+          fi
+          if [ -n "$N" ]; then
+            gh_try issue comment "$N" --body "Recovered."$'\n\n'"$BODY"$'\n\n'"$LINK"
+            gh_try issue close "$N"
+          fi
+          echo "healthy"
