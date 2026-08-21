@@ -739,7 +739,7 @@ const pxOf=(tk,day)=>{
    the bare uppercase word and are wrong together. A page that showed only divergence
    would render EU as clean, and agreement would be doing the laundering. SELF and TASK
    are the same shape. Of seven confirmed artefacts the scan sees three. */
-let FLAG={},CHECK=null,DAILY=null,DAILYQ=null;
+let FLAG={},CHECK=null,DAILY=null,DAILYQ=null,GAP=null,GAPQ=null;
 /* How firm is the rank on the row? Not "was this checked" — that is a different question and
    the one that got answered first by mistake. AVGO showed #7 on 2026-08-14 with 123 mentions
    against NOK's 118, a five-mention gap, while the two counting rules differ by 12.5% on
@@ -910,6 +910,11 @@ function ret(tk,d,n){const[p,i]=priceIdx(tk,d);
   EVENTS=ev;FINDING=fi;PRICES=px;RANK=rk;
   buildFlags(art,dv);
   /* 213 KB gzipped, and nothing on the board needs it — only an opened ticker does. */
+  /* The 75 days ApeWisdom never covered, counted from the raw posts under this project's
+     own rule. Lazy for the same reason as the daily ratios: only an opened ticker needs it. */
+  window.needGap=()=>{if(GAPQ)return GAPQ;
+    GAPQ=gj(`${BASE}data/gap_series.json`).then(j=>{GAP=j&&j.counts?j:null;
+      if(VIEW!=='market')render();}).catch(()=>{GAP=null;});return GAPQ;};
   window.needDaily=()=>{if(DAILYQ)return DAILYQ;
     DAILYQ=gj(`${BASE}data/divergence_daily.json`).then(j=>{DAILY=j&&j.days||null;
       if(VIEW!=='market')render();}).catch(()=>{DAILY=null;});return DAILYQ;};
@@ -1156,10 +1161,14 @@ const CHARTS={}; let CHID=0;
    zero axis — the whole point of GEX is which side of zero it is on, and one flat
    purple line said nothing about that. */
 function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$',opts={}){
+  /* Our own count of the 75 uncovered days. Same axis, deliberately not the same
+     ink: hollow bars in a different hue, so the eye reads two measurements rather
+     than one line that happens to change texture. */
+  const own=opts.own||null;
   const padL=44,padR=mentions?44:14,padT=opts.spikes&&opts.spikes.length?19:12,padB=22;
   const iw=w-padL-padR, ih=h-padT-padB;
   const n=days.length; if(!n)return '';
-  const mMax=mentions?Math.max(1,...mentions.map(v=>v||0)):1;
+  const mMax=mentions?Math.max(1,...mentions.map(v=>v||0),...(own?own.map(v=>v||0):[0])):1;
   const pv=prices.filter(v=>v!=null);
   const pMin=pv.length?Math.min(...pv):0, pMax=pv.length?Math.max(...pv):1;
   const pSpan=(pMax-pMin)||1;
@@ -1182,6 +1191,11 @@ function chart(days,mentions,prices,spikeDay,w=760,h=230,unit='$',opts={}){
   const bw=Math.max(1.5,Math.min(11,(n===1?iw*0.3:gap)*0.72));
   const SPK=new Set(opts.spikes||[]);
   let bars='',line='';
+  if(own)days.forEach((d,i)=>{
+    if(own[i]==null)return;
+    const bh=own[i]/mMax*ih*0.82;
+    bars+=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${(padT+ih-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,1.5).toFixed(1)}" rx="${bw<3?0.5:1.5}" fill="none" stroke="var(--acc2,#8b7cf6)" stroke-width="1" opacity="0.85"><title>${d} · ${own[i]} mentions · counted here from the raw posts, not by ApeWisdom · UTC day, not a rolling 24h read</title></rect>`;
+  });
   if(mentions)days.forEach((d,i)=>{
     if(mentions[i]==null)return;   // absent from the board ≠ mentioned zero times
     const bh=mentions[i]/mMax*ih*0.82;
@@ -2285,9 +2299,20 @@ function tkSeries(tk,endDay,win){
   /* Deduped: 2026-05-12 and 2026-07-18 exist in both lists, and counting them twice
      would overstate coverage in the note by exactly the amount nobody would notice. */
   const reads=[...new Set([...DAYS,...WBDAYS])].filter(d=>inR(d)&&mAt(d,tk)!=null).sort();
-  const days=[...new Set([...sess,...reads])].sort();
+  /* 2026-02-15..04-30 has no ApeWisdom reading and never will. What it has is the raw
+     text, counted here under our own rule — a different window, a different tokeniser and
+     a different ticker universe, so it is carried as its own array and drawn as its own
+     segment. Merging it into `mentions` would put a 1.12x ruler end-to-end with the
+     archive's and invite the one reading this whole project exists to prevent. */
+  const gm={};
+  if(GAP&&GAP.counts&&GAP.counts[tk])
+    GAP.days.forEach((d,i)=>{const v=GAP.counts[tk][i]; if(inR(d)&&v>0)gm[d]=v;});
+  const gdays=Object.keys(gm);
+  const days=[...new Set([...sess,...reads,...gdays])].sort();
   return {days,
-    mentions:days.map(d=>mAt(d,tk)),
+    mentions:days.map(d=>gm[d]!=null?null:mAt(d,tk)),
+    own:days.map(d=>gm[d]??null),
+    ownDays:gdays.length,
     prices:days.map(d=>pmap[d]??null),
     reads:reads.length, sess:sess.length,
     /* Crawl days carry rank and mentions but only the top 100, and they are not
@@ -2412,6 +2437,7 @@ function eventDetail(){
       {spikes:EVENTS.filter(v=>v.tk===e.tk&&v.d!==e.d&&days.includes(v.d)).map(v=>v.d)})}
     <div class="cLegend"><span><i style="background:var(--acc)"></i>price</span>
       <span><i style="background:var(--bar)"></i>mentions</span>
+      ${S.ownDays?`<span><i style="border:1px solid var(--acc2,#8b7cf6)"></i>counted here — ApeWisdom has no data</span>`:''}
       <span><i style="background:var(--dn)"></i>spike day</span>
       <span><i style="border:1px solid var(--bar)"></i>read before the close — not comparable</span>
       <span class="hoverHint">hover the chart for any day's price and mentions</span></div>
@@ -2431,6 +2457,7 @@ function boardDetail(){
   const S=tkSeries(r.ticker,DAY);
   const cuts=S.cuts||[];
   const prior=S.days, mm=S.mentions, pl=S.prices;
+  if(!GAP&&window.needGap)window.needGap();
   const mine=EVENTS.filter(e=>e.tk===r.ticker);
   const inView=mine.filter(e=>prior.includes(e.d)).map(e=>e.d);
   const st=(k,v,c='')=>`<div class="stat"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`;
@@ -2529,10 +2556,11 @@ function boardDetail(){
     ${st('past spikes',r.ctx===false?'n/a':mine.length)}
   </div>
   <div class="liveSlot" data-tk="${r.ticker}"></div>
-  <div class="chartbox">${prior.length?chart(prior,mm,pl,r.hot?DAY:'',760,230,'$',{timeAxis:true,spikes:inView,cuts})
+  <div class="chartbox">${prior.length?chart(prior,mm,pl,r.hot?DAY:'',760,230,'$',{timeAxis:true,spikes:inView,cuts,own:S.own})
       :'<p class="note">No price or attention data in this range.</p>'}
     <div class="cLegend"><span><i style="background:var(--acc)"></i>price</span>
       <span><i style="background:var(--bar)"></i>mentions</span>
+      ${S.ownDays?`<span><i style="border:1px solid var(--acc2,#8b7cf6)"></i>counted here — ApeWisdom has no data</span>`:''}
       ${inView.length?'<span><i style="background:var(--dn)"></i>confirmed spike</span>':''}
       ${cuts.length?'<span><i style="background:var(--ink3)"></i>board depth changed</span>':''}
       <span><i style="border:1px solid var(--bar)"></i>read before the close</span>
