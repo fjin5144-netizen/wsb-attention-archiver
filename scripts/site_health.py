@@ -33,7 +33,7 @@ itself failed. A wd-fingerprint line dedups the alert issue.
     python3 scripts/site_health.py
     python3 scripts/site_health.py --site http://localhost:8777
 """
-import datetime as dt, hashlib, json, re, subprocess, sys, urllib.request
+import datetime as dt, hashlib, json, re, subprocess, sys, time, urllib.request
 
 SITE = "https://fjin5144-netizen.github.io/wsb-attention-archiver"
 
@@ -59,10 +59,22 @@ MARKERS = [
 ]
 
 
-def fetch(base, path):
-    req = urllib.request.Request(f"{base}/{path}", headers={"User-Agent": "site-health"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return r.read()
+def fetch(base, path, tries=3):
+    """Three tries with a pause, because the very first live run of this probe reported
+    gap_series.json as a 503 that was gone two seconds later — a CDN blip, not the site.
+    A monitor that files an issue for another machine's hiccup is the cry-wolf alarm
+    this whole file exists to avoid; a real outage fails all three times just fine."""
+    last = None
+    for i in range(tries):
+        try:
+            req = urllib.request.Request(f"{base}/{path}",
+                                         headers={"User-Agent": "site-health"})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return r.read()
+        except Exception as e:
+            last = e
+            time.sleep(2 * (i + 1))
+    raise last
 
 
 def run(base):
