@@ -71,10 +71,10 @@
   },
   {
    "label": "daily archive (2026)",
-   "days": 115,
+   "days": 116,
    "span": [
     "2026-05-01",
-    "2026-08-23"
+    "2026-08-24"
    ],
    "tickers_ever_top3": 35,
    "horizons": [
@@ -88,13 +88,13 @@
       "win_rate": 50
      },
      "rest_of_board": {
-      "n": 236,
-      "median": -0.28,
-      "trimmed_mean": 1.41,
-      "mean": 2.28,
-      "win_rate": 44
+      "n": 227,
+      "median": -0.23,
+      "trimmed_mean": 1.43,
+      "mean": 2.64,
+      "win_rate": 46
      },
-     "gap_median": 0.28
+     "gap_median": 0.23
     },
     {
      "sessions": 10,
@@ -106,13 +106,13 @@
       "win_rate": 48
      },
      "rest_of_board": {
-      "n": 221,
-      "median": 0.61,
-      "trimmed_mean": 0.32,
-      "mean": 0.18,
-      "win_rate": 60
+      "n": 238,
+      "median": 0.73,
+      "trimmed_mean": 2.06,
+      "mean": 2.84,
+      "win_rate": 62
      },
-     "gap_median": -1.09
+     "gap_median": -1.21
     },
     {
      "sessions": 20,
@@ -124,13 +124,13 @@
       "win_rate": 45
      },
      "rest_of_board": {
-      "n": 216,
-      "median": -0.3,
-      "trimmed_mean": 0.42,
-      "mean": 3.54,
-      "win_rate": 49
+      "n": 207,
+      "median": -0.55,
+      "trimmed_mean": 0.08,
+      "mean": 2.49,
+      "win_rate": 46
      },
-     "gap_median": -0.16
+     "gap_median": 0.09
     }
    ]
   }
