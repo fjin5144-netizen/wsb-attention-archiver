@@ -18,10 +18,10 @@
     "win_rate": 45
    },
    "placebo": {
-    "n": 285,
+    "n": 287,
     "median": -0.35,
-    "trimmed_mean": -0.64,
-    "mean": 0.13,
+    "trimmed_mean": -0.58,
+    "mean": 0.21,
     "win_rate": 48
    },
    "gap_median": -1.19
@@ -36,13 +36,13 @@
     "win_rate": 35
    },
    "placebo": {
-    "n": 252,
-    "median": 0.57,
-    "trimmed_mean": 1.43,
-    "mean": 3.15,
+    "n": 253,
+    "median": 0.53,
+    "trimmed_mean": 1.4,
+    "mean": 3.11,
     "win_rate": 51
    },
-   "gap_median": -5.06
+   "gap_median": -5.02
   },
   {
    "sessions": 20,
