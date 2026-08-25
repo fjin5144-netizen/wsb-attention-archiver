@@ -1,8 +1,8 @@
 {
  "ver": "3.3",
  "dix": "ok squeezemetrics (3851 rows, last 2026-08-24)",
- "spy": "ok cboe spot-append (2026-08-25 = 767); stooq: could not convert string to float: 'e.encode(c+n))'; yahoo: HTTP Error 429: Too Many Requests",
+ "spy": "ok cboe spot-append (2026-08-25 = 764); stooq: could not convert string to float: 'e.encode(c+n))'; yahoo: HTTP Error 429: Too Many Requests",
  "skew": "ok cboe (499d)",
- "gex": "ok cboe (-1.37B)",
- "last_run": "2026-08-25T14:06:12+00:00"
+ "gex": "ok cboe (-4.05B)",
+ "last_run": "2026-08-25T15:08:07+00:00"
 }
