@@ -90,8 +90,8 @@
      "rest_of_board": {
       "n": 238,
       "median": -0.28,
-      "trimmed_mean": 1.0,
-      "mean": 2.0,
+      "trimmed_mean": 0.86,
+      "mean": 1.82,
       "win_rate": 43
      },
      "gap_median": 0.28
@@ -126,9 +126,9 @@
      "rest_of_board": {
       "n": 201,
       "median": -0.55,
-      "trimmed_mean": 0.07,
-      "mean": 2.95,
-      "win_rate": 45
+      "trimmed_mean": 0.27,
+      "mean": 3.28,
+      "win_rate": 46
      },
      "gap_median": 0.09
     }
