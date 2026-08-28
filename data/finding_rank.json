@@ -90,8 +90,8 @@
      "rest_of_board": {
       "n": 244,
       "median": -0.28,
-      "trimmed_mean": 1.25,
-      "mean": 2.53,
+      "trimmed_mean": 1.21,
+      "mean": 2.5,
       "win_rate": 46
      },
      "gap_median": 0.28
@@ -108,9 +108,9 @@
      "rest_of_board": {
       "n": 238,
       "median": 0.45,
-      "trimmed_mean": 0.45,
-      "mean": 1.17,
-      "win_rate": 57
+      "trimmed_mean": 0.33,
+      "mean": 0.9,
+      "win_rate": 56
      },
      "gap_median": -0.93
     },
@@ -126,8 +126,8 @@
      "rest_of_board": {
       "n": 209,
       "median": 0.15,
-      "trimmed_mean": 0.97,
-      "mean": 4.26,
+      "trimmed_mean": 0.95,
+      "mean": 4.22,
       "win_rate": 51
      },
      "gap_median": -0.61
