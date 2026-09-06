@@ -1,0 +1,43 @@
+name: Deploy to Pages
+
+# This exists because the legacy Pages builder died under this repository and would not
+# come back. On 2026-08-29 the whole site served "There isn't a GitHub Pages site here"
+# while the Pages API insisted the last build succeeded; a forced rebuild returned
+# "queued" twice and never ran, and after unpublishing and re-enabling, the builds list
+# stayed empty. The legacy path is a black box with no logs and, evidently, no floor.
+#
+# This workflow is the same publish done in the open: pack the tree, deploy it, both
+# steps visible in this run. It also ends the .nojekyll dependency — there is no Jekyll
+# here to hide underscore files — though the file and its guard test stay, so a future
+# flip back to the legacy builder does not quietly re-lose data/px/_dates.json.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Deploys are idempotent and the newest tree wins, so cancel the stale one — which is
+# also what the legacy builder's "cancelled" runs were doing, minus the red mark.
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
