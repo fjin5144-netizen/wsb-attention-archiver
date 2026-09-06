@@ -126,15 +126,27 @@ def run(base):
                 bad.append(f"app.html lost `{needle}` ({what})")
         scripts = re.findall(r"<script>([\s\S]*?)</script>", page)
         if scripts:
+            # A real file, not /dev/stdin. On the Actions runner node resolves /dev/stdin
+            # to /proc/PID/fd/pipe:[N] and fails with ENOENT before reading a byte, which
+            # this probe then reported as "a corrupt deploy" — three times a day for a
+            # week, and with the PID in the message the fingerprint changed every time,
+            # so the dedup that should have collapsed the spam never matched. A false
+            # alarm that also defeats its own rate-limiting is the worst kind.
+            import tempfile
+            with tempfile.NamedTemporaryFile(suffix=".js", delete=False) as tf:
+                tf.write(max(scripts, key=len).encode())
+                tmp = tf.name
             try:
-                subprocess.run(["node", "--check", "/dev/stdin"],
-                               input=max(scripts, key=len).encode(),
+                subprocess.run(["node", "--check", tmp],
                                capture_output=True, timeout=30, check=True)
             except FileNotFoundError:
                 pass          # no node here — the check is extra, not the point
             except subprocess.CalledProcessError as e:
                 bad.append(f"app.html script fails to parse: "
                            f"{e.stderr.decode()[:200]} — a corrupt or truncated deploy")
+            finally:
+                import os as _os
+                _os.unlink(tmp)
 
     return bad
 
@@ -148,7 +160,11 @@ def main():
         sys.exit(2)
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
     if bad:
-        fp = hashlib.sha1("\n".join(sorted(bad)).encode()).hexdigest()[:12]
+        # Volatile digits out of the fingerprint: a message that embeds a PID or an
+        # offset would otherwise mint a fresh fingerprint per run, and 21 identical
+        # comments taught that lesson already.
+        norm = [re.sub(r"\d+", "#", b) for b in sorted(bad)]
+        fp = hashlib.sha1("\n".join(norm).encode()).hexdigest()[:12]
         print(f"### Site problem · {stamp}\n")
         for b in bad:
             print(f"- {b}")
