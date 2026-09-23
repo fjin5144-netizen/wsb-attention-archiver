@@ -19,11 +19,6 @@ name: Cross-check the board against the raw posts
 # confirmed artefacts were found by a person reading the text, and no cron replaces that.
 
 on:
-  schedule:
-    # Well after archive.yml's last run, so the day being checked is settled. Arctic Shift
-    # also lags real time by an hour or two; asking at 04:20 UTC for a day that ended at
-    # 00:00 gives it room.
-    - cron: '20 4 * * *'
   workflow_dispatch:
     inputs:
       day:

@@ -11,12 +11,6 @@ name: Site health
 # the run green, so a red run means the probe itself is broken and nothing else.
 
 on:
-  schedule:
-    # After the last archive run of the day settles, and again after the morning
-    # divergence commit — the two moments a deploy could have gone out broken.
-    - cron: '50 0 * * *'
-    - cron: '50 5 * * *'
-    - cron: '50 13 * * *'
   workflow_dispatch:
 
 permissions:

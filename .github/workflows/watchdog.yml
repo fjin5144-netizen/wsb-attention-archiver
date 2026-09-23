@@ -9,10 +9,6 @@ name: Collection watchdog
 # cannot get a runner, this still might.
 
 on:
-  schedule:
-    - cron: '35 1 * * *'    # after midnight UTC: did the day that just ended settle?
-    - cron: '35 9 * * *'
-    - cron: '35 17 * * *'
   workflow_dispatch:
 
 concurrency:

@@ -15,9 +15,6 @@ name: Offsite mirror
 # rather than failing daily over something nobody has configured yet.
 
 on:
-  schedule:
-    - cron: '20 3 * * *'     # after the archive day has settled
-    - cron: '20 15 * * *'
   workflow_dispatch:
 
 concurrency:
